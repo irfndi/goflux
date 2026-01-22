@@ -80,67 +80,86 @@ func (pd *PatternDetector) Detect(index int) Pattern {
 
 	candle := pd.GetCandle(index)
 
-	if candle.isDoji() {
-		if candle.isDragonflyDoji() {
+	if p := detectSingleCandlePattern(candle); p != None {
+		return p
+	}
+
+	if p := pd.detectTwoCandlePattern(index, candle); p != None {
+		return p
+	}
+
+	if p := pd.detectThreeCandlePattern(index, candle); p != None {
+		return p
+	}
+
+	return None
+}
+
+func detectSingleCandlePattern(c Candle) Pattern {
+	if c.isDoji() {
+		if c.isDragonflyDoji() {
 			return DragonflyDoji
 		}
-		if candle.isGravestoneDoji() {
+		if c.isGravestoneDoji() {
 			return GravestoneDoji
 		}
 		return Doji
 	}
-
-	if candle.isHammer() {
+	if c.isHammer() {
 		return Hammer
 	}
-	if candle.isInvertedHammer() {
+	if c.isInvertedHammer() {
 		return InvertedHammer
 	}
-
-	if candle.isMarubozu() {
+	if c.isMarubozu() {
 		return Marubozu
 	}
-	if candle.isSpinningTop() {
+	if c.isSpinningTop() {
 		return SpinningTop
 	}
+	return None
+}
 
-	if index >= 1 {
-		current := candle
-		prev := pd.GetCandle(index - 1)
-
-		if current.isBullishEngulfing(prev) {
-			return BullishEngulfing
-		}
-		if current.isBearishEngulfing(prev) {
-			return BearishEngulfing
-		}
-		if current.isBullishHarami(prev) {
-			return BullishHarami
-		}
-		if current.isBearishHarami(prev) {
-			return BearishHarami
-		}
-		if current.isPiercingLine(prev) {
-			return PiercingLine
-		}
-		if current.isDarkCloudCover(prev) {
-			return DarkCloudCover
-		}
+func (pd *PatternDetector) detectTwoCandlePattern(index int, current Candle) Pattern {
+	if index < 1 {
+		return None
 	}
 
-	if index >= 2 {
-		current := candle
-		first := pd.GetCandle(index - 2)
-		middle := pd.GetCandle(index - 1)
+	prev := pd.GetCandle(index - 1)
+	if current.isBullishEngulfing(prev) {
+		return BullishEngulfing
+	}
+	if current.isBearishEngulfing(prev) {
+		return BearishEngulfing
+	}
+	if current.isBullishHarami(prev) {
+		return BullishHarami
+	}
+	if current.isBearishHarami(prev) {
+		return BearishHarami
+	}
+	if current.isPiercingLine(prev) {
+		return PiercingLine
+	}
+	if current.isDarkCloudCover(prev) {
+		return DarkCloudCover
+	}
+	return None
+}
 
-		if current.isMorningStar(first, middle) {
-			return MorningStar
-		}
-		if current.isEveningStar(first, middle) {
-			return EveningStar
-		}
+func (pd *PatternDetector) detectThreeCandlePattern(index int, current Candle) Pattern {
+	if index < 2 {
+		return None
 	}
 
+	first := pd.GetCandle(index - 2)
+	middle := pd.GetCandle(index - 1)
+	if current.isMorningStar(first, middle) {
+		return MorningStar
+	}
+	if current.isEveningStar(first, middle) {
+		return EveningStar
+	}
 	return None
 }
 
@@ -381,49 +400,32 @@ func (c Candle) isDarkCloudCover(prev Candle) bool {
 	return openAbove && closesBelowMidpoint && closesBelowPrevOpen
 }
 
+var patternNames = map[Pattern]string{
+	Doji:               "Doji",
+	DragonflyDoji:      "Dragonfly Doji",
+	GravestoneDoji:     "Gravestone Doji",
+	Hammer:             "Hammer",
+	InvertedHammer:     "Inverted Hammer",
+	HangingMan:         "Hanging Man",
+	ShootingStar:       "Shooting Star",
+	BullishEngulfing:   "Bullish Engulfing",
+	BearishEngulfing:   "Bearish Engulfing",
+	BullishHarami:      "Bullish Harami",
+	BearishHarami:      "Bearish Harami",
+	MorningStar:        "Morning Star",
+	EveningStar:        "Evening Star",
+	ThreeWhiteSoldiers: "Three White Soldiers",
+	ThreeBlackCrows:    "Three Black Crows",
+	SpinningTop:        "Spinning Top",
+	Marubozu:           "Marubozu",
+	DojiStar:           "Doji Star",
+	PiercingLine:       "Piercing Line",
+	DarkCloudCover:     "Dark Cloud Cover",
+}
+
 func (p Pattern) String() string {
-	switch p {
-	case Doji:
-		return "Doji"
-	case DragonflyDoji:
-		return "Dragonfly Doji"
-	case GravestoneDoji:
-		return "Gravestone Doji"
-	case Hammer:
-		return "Hammer"
-	case InvertedHammer:
-		return "Inverted Hammer"
-	case HangingMan:
-		return "Hanging Man"
-	case ShootingStar:
-		return "Shooting Star"
-	case BullishEngulfing:
-		return "Bullish Engulfing"
-	case BearishEngulfing:
-		return "Bearish Engulfing"
-	case BullishHarami:
-		return "Bullish Harami"
-	case BearishHarami:
-		return "Bearish Harami"
-	case MorningStar:
-		return "Morning Star"
-	case EveningStar:
-		return "Evening Star"
-	case ThreeWhiteSoldiers:
-		return "Three White Soldiers"
-	case ThreeBlackCrows:
-		return "Three Black Crows"
-	case SpinningTop:
-		return "Spinning Top"
-	case Marubozu:
-		return "Marubozu"
-	case DojiStar:
-		return "Doji Star"
-	case PiercingLine:
-		return "Piercing Line"
-	case DarkCloudCover:
-		return "Dark Cloud Cover"
-	default:
-		return "None"
+	if s, ok := patternNames[p]; ok {
+		return s
 	}
+	return "None"
 }

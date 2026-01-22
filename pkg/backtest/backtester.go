@@ -87,158 +87,207 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 	record := trading.NewTradingRecord()
 
 	for i := 0; i < len(b.series.Candles); i++ {
-		equityCurve[i] = equity
+		b.step(i, &positions, &trades, equityCurve, &equity, record, config)
+	}
 
-		candle := b.series.Candles[i]
-		if candle == nil {
+	b.finalizeOpenPositions(&positions, &trades, &equity)
+
+	return b.calculateResults(trades, equityCurve, config.InitialCapital, equity)
+}
+
+func (b *Backtester) step(
+	index int,
+	positions *[]Position,
+	trades *[]Trade,
+	equityCurve []decimal.Decimal,
+	equity *decimal.Decimal,
+	record *trading.TradingRecord,
+	config BacktestConfig,
+) {
+	equityCurve[index] = *equity
+
+	candle := b.series.Candles[index]
+	if candle == nil {
+		return
+	}
+
+	currentPrice := candle.ClosePrice
+
+	b.closePositionsByStops(index, currentPrice, positions, trades, equity, record)
+	b.applyStrategy(index, currentPrice, positions, trades, equity, record, config)
+}
+
+func (b *Backtester) closePositionsByStops(
+	index int,
+	currentPrice decimal.Decimal,
+	positions *[]Position,
+	trades *[]Trade,
+	equity *decimal.Decimal,
+	record *trading.TradingRecord,
+) {
+	for j := len(*positions) - 1; j >= 0; j-- {
+		pos := (*positions)[j]
+		if !b.exitTriggered(pos, currentPrice) {
 			continue
 		}
 
-		currentPrice := candle.ClosePrice
+		profit := b.positionProfit(pos, currentPrice)
+		*trades = append(*trades, b.makeTrade(pos, index, currentPrice, profit))
+		*equity = equity.Add(profit)
 
-		// Check internal StopLoss/TakeProfit for all open positions
-		for j := len(positions) - 1; j >= 0; j-- {
-			pos := &positions[j]
-			shouldExit := false
+		record.Operate(trading.Order{
+			Side:   trading.SELL,
+			Price:  currentPrice,
+			Amount: pos.Quantity,
+		})
 
-			switch pos.Direction {
-			case "long":
-				if !pos.StopLoss.IsZero() && currentPrice.LTE(pos.StopLoss) {
-					shouldExit = true
-				}
-				if !pos.TakeProfit.IsZero() && currentPrice.GTE(pos.TakeProfit) {
-					shouldExit = true
-				}
-			case "short":
-				if !pos.StopLoss.IsZero() && currentPrice.GTE(pos.StopLoss) {
-					shouldExit = true
-				}
-				if !pos.TakeProfit.IsZero() && currentPrice.LTE(pos.TakeProfit) {
-					shouldExit = true
-				}
-			}
+		*positions = append((*positions)[:j], (*positions)[j+1:]...)
+	}
+}
 
-			if shouldExit {
-				var profit decimal.Decimal
-				switch pos.Direction {
-				case "long":
-					profit = currentPrice.Sub(pos.EntryPrice).Mul(pos.Quantity)
-				default:
-					profit = pos.EntryPrice.Sub(currentPrice).Mul(pos.Quantity)
-				}
-
-				trade := Trade{
-					EntryTime:  pos.EntryTime,
-					EntryPrice: pos.EntryPrice,
-					ExitTime:   i,
-					ExitPrice:  currentPrice,
-					Direction:  pos.Direction,
-					Quantity:   pos.Quantity,
-					Profit:     profit,
-				}
-				trade.ProfitPercent = profit.Div(pos.EntryPrice.Mul(pos.Quantity))
-				trade.Duration = i - pos.EntryTime
-				trades = append(trades, trade)
-				equity = equity.Add(profit)
-
-				// Sync with trading.TradingRecord
-				record.Operate(trading.Order{
-					Side:   trading.SELL,
-					Price:  currentPrice,
-					Amount: pos.Quantity,
-				})
-
-				positions = append(positions[:j], positions[j+1:]...)
-			}
+func (b *Backtester) applyStrategy(
+	index int,
+	currentPrice decimal.Decimal,
+	positions *[]Position,
+	trades *[]Trade,
+	equity *decimal.Decimal,
+	record *trading.TradingRecord,
+	config BacktestConfig,
+) {
+	if b.strategy.ShouldEnter(index, record) {
+		if config.AllowLong {
+			b.openLong(index, currentPrice, positions, equity, record, config)
 		}
-
-		// Strategy Entry
-		if b.strategy.ShouldEnter(i, record) {
-			if config.AllowLong {
-				quantity := config.PositionSize
-				if quantity.IsZero() {
-					quantity = equity.Div(currentPrice)
-				}
-
-				position := Position{
-					EntryTime:  i,
-					EntryPrice: currentPrice,
-					Direction:  "long",
-					Quantity:   quantity,
-				}
-
-				positions = append(positions, position)
-				record.Operate(trading.Order{
-					Side:   trading.BUY,
-					Price:  currentPrice,
-					Amount: quantity,
-				})
-			}
-		} else if b.strategy.ShouldExit(i, record) && len(positions) > 0 {
-			// Strategy Exit
-			for j := len(positions) - 1; j >= 0; j-- {
-				pos := &positions[j]
-				var profit decimal.Decimal
-				switch pos.Direction {
-				case "long":
-					profit = currentPrice.Sub(pos.EntryPrice).Mul(pos.Quantity)
-				default:
-					profit = pos.EntryPrice.Sub(currentPrice).Mul(pos.Quantity)
-				}
-
-				trade := Trade{
-					EntryTime:  pos.EntryTime,
-					EntryPrice: pos.EntryPrice,
-					ExitTime:   i,
-					ExitPrice:  currentPrice,
-					Direction:  pos.Direction,
-					Quantity:   pos.Quantity,
-					Profit:     profit,
-				}
-				trade.ProfitPercent = profit.Div(pos.EntryPrice.Mul(pos.Quantity))
-				trade.Duration = i - pos.EntryTime
-				trades = append(trades, trade)
-				equity = equity.Add(profit)
-
-				record.Operate(trading.Order{
-					Side:   trading.SELL,
-					Price:  currentPrice,
-					Amount: pos.Quantity,
-				})
-
-				positions = append(positions[:j], positions[j+1:]...)
-			}
-		}
+		return
 	}
 
-	// Final close out
-	for _, pos := range positions {
-		candle := b.series.Candles[len(b.series.Candles)-1]
-		currentPrice := candle.ClosePrice
-		var profit decimal.Decimal
-		switch pos.Direction {
-		case "long":
-			profit = currentPrice.Sub(pos.EntryPrice).Mul(pos.Quantity)
-		default:
-			profit = pos.EntryPrice.Sub(currentPrice).Mul(pos.Quantity)
-		}
-
-		trade := Trade{
-			EntryTime:  pos.EntryTime,
-			EntryPrice: pos.EntryPrice,
-			ExitTime:   len(b.series.Candles) - 1,
-			ExitPrice:  currentPrice,
-			Direction:  pos.Direction,
-			Quantity:   pos.Quantity,
-			Profit:     profit,
-		}
-		trade.ProfitPercent = profit.Div(pos.EntryPrice.Mul(pos.Quantity))
-		trade.Duration = trade.ExitTime - trade.EntryTime
-		trades = append(trades, trade)
-		equity = equity.Add(profit)
+	if !b.strategy.ShouldExit(index, record) || len(*positions) == 0 {
+		return
 	}
 
-	return b.calculateResults(trades, equityCurve, config.InitialCapital, equity)
+	b.closeAllPositions(index, currentPrice, positions, trades, equity, record)
+}
+
+func (b *Backtester) openLong(
+	index int,
+	currentPrice decimal.Decimal,
+	positions *[]Position,
+	equity *decimal.Decimal,
+	record *trading.TradingRecord,
+	config BacktestConfig,
+) {
+	quantity := config.PositionSize
+	if quantity.IsZero() {
+		quantity = equity.Div(currentPrice)
+	}
+
+	*positions = append(*positions, Position{
+		EntryTime:  index,
+		EntryPrice: currentPrice,
+		Direction:  "long",
+		Quantity:   quantity,
+	})
+
+	record.Operate(trading.Order{
+		Side:   trading.BUY,
+		Price:  currentPrice,
+		Amount: quantity,
+	})
+}
+
+func (b *Backtester) closeAllPositions(
+	exitTime int,
+	exitPrice decimal.Decimal,
+	positions *[]Position,
+	trades *[]Trade,
+	equity *decimal.Decimal,
+	record *trading.TradingRecord,
+) {
+	for j := len(*positions) - 1; j >= 0; j-- {
+		pos := (*positions)[j]
+		profit := b.positionProfit(pos, exitPrice)
+		*trades = append(*trades, b.makeTrade(pos, exitTime, exitPrice, profit))
+		*equity = equity.Add(profit)
+
+		record.Operate(trading.Order{
+			Side:   trading.SELL,
+			Price:  exitPrice,
+			Amount: pos.Quantity,
+		})
+
+		*positions = append((*positions)[:j], (*positions)[j+1:]...)
+	}
+}
+
+func (b *Backtester) finalizeOpenPositions(positions *[]Position, trades *[]Trade, equity *decimal.Decimal) {
+	if len(*positions) == 0 || len(b.series.Candles) == 0 {
+		return
+	}
+
+	lastIndex := len(b.series.Candles) - 1
+	lastCandle := b.series.Candles[lastIndex]
+	if lastCandle == nil {
+		return
+	}
+	exitPrice := lastCandle.ClosePrice
+
+	for _, pos := range *positions {
+		profit := b.positionProfit(pos, exitPrice)
+		*trades = append(*trades, b.makeTrade(pos, lastIndex, exitPrice, profit))
+		*equity = equity.Add(profit)
+	}
+}
+
+func (b *Backtester) exitTriggered(pos Position, currentPrice decimal.Decimal) bool {
+	if pos.Direction == "long" {
+		return b.exitTriggeredLong(pos, currentPrice)
+	}
+	if pos.Direction == "short" {
+		return b.exitTriggeredShort(pos, currentPrice)
+	}
+	return false
+}
+
+func (b *Backtester) exitTriggeredLong(pos Position, currentPrice decimal.Decimal) bool {
+	if !pos.StopLoss.IsZero() && currentPrice.LTE(pos.StopLoss) {
+		return true
+	}
+	if !pos.TakeProfit.IsZero() && currentPrice.GTE(pos.TakeProfit) {
+		return true
+	}
+	return false
+}
+
+func (b *Backtester) exitTriggeredShort(pos Position, currentPrice decimal.Decimal) bool {
+	if !pos.StopLoss.IsZero() && currentPrice.GTE(pos.StopLoss) {
+		return true
+	}
+	if !pos.TakeProfit.IsZero() && currentPrice.LTE(pos.TakeProfit) {
+		return true
+	}
+	return false
+}
+
+func (b *Backtester) positionProfit(pos Position, exitPrice decimal.Decimal) decimal.Decimal {
+	if pos.Direction == "long" {
+		return exitPrice.Sub(pos.EntryPrice).Mul(pos.Quantity)
+	}
+	return pos.EntryPrice.Sub(exitPrice).Mul(pos.Quantity)
+}
+
+func (b *Backtester) makeTrade(pos Position, exitTime int, exitPrice, profit decimal.Decimal) Trade {
+	trade := Trade{
+		EntryTime:  pos.EntryTime,
+		EntryPrice: pos.EntryPrice,
+		ExitTime:   exitTime,
+		ExitPrice:  exitPrice,
+		Direction:  pos.Direction,
+		Quantity:   pos.Quantity,
+		Profit:     profit,
+	}
+	trade.ProfitPercent = profit.Div(pos.EntryPrice.Mul(pos.Quantity))
+	trade.Duration = exitTime - pos.EntryTime
+	return trade
 }
 
 func (b *Backtester) calculateResults(trades []Trade, equityCurve []decimal.Decimal, initialCapital, finalEquity decimal.Decimal) BacktestResult {
