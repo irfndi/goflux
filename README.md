@@ -8,16 +8,17 @@
 
 ## Features 
 
-- Basic and advanced technical analysis indicators
-- Profit and trade analysis
-- Strategy building and backtesting
-- Timeseries data management
-- Trading rule engine
+- 35+ technical analysis indicators (trend, momentum, volume, moving averages)
+- Performance metrics (Sharpe, Sortino, Calmar, CAGR, drawdown, and more)
+- Candlestick pattern detection (20+ patterns)
+- Rule-based strategy engine (AND/OR/NOT, trailing stops, time-based exits)
+- Backtesting engine with trade & equity analytics
+- Time series utilities (resampling, Heikin Ashi, Renko)
 
 ### Installation
 
 ```sh
-$ go get github.com/irfndi/goflux
+$ go get github.com/irfndi/goflux@latest
 ```
 
 ### Quickstart
@@ -31,7 +32,6 @@ import (
 	"time"
 
 	"github.com/irfndi/goflux/pkg"
-	"github.com/sdcoffey/big"
 )
 
 func main() {
@@ -48,10 +48,11 @@ func main() {
 		period := goflux.NewTimePeriod(time.Unix(start, 0), time.Hour*24)
 
 		candle := goflux.NewCandle(period)
-		candle.OpenPrice = big.NewFromString(datum[1])
-		candle.ClosePrice = big.NewFromString(datum[2])
-		candle.MaxPrice = big.NewFromString(datum[3])
-		candle.MinPrice = big.NewFromString(datum[4])
+		candle.OpenPrice = goflux.NewDecimalFromString(datum[1])
+		candle.ClosePrice = goflux.NewDecimalFromString(datum[2])
+		candle.MaxPrice = goflux.NewDecimalFromString(datum[3])
+		candle.MinPrice = goflux.NewDecimalFromString(datum[4])
+		candle.Volume = goflux.NewDecimalFromString(datum[5])
 
 		series.AddCandle(candle)
 	}
@@ -98,8 +99,8 @@ strategy.ShouldEnter(0, record) // returns false
 See [BEADS.md](BEADS.md) for a detailed roadmap of planned improvements including:
 
 - Modern project structure
-- Additional technical indicators (Ichimoku, ADX, Parabolic SAR, and more)
-- Enhanced trading system
+- Additional indicators and utilities
+- Expanded trading and risk-management rules
 - Comprehensive testing suite
 - Improved documentation
 - CI/CD pipeline with GitHub Actions
