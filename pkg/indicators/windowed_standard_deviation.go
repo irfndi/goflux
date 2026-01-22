@@ -1,6 +1,9 @@
 package indicators
 
-import "github.com/irfndi/goflux/pkg/decimal"
+import (
+	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/math"
+)
 
 type windowedStandardDeviationIndicator struct {
 	Indicator
@@ -21,11 +24,11 @@ func NewWindowedStandardDeviationIndicator(ind Indicator, window int) Indicator 
 func (sdi windowedStandardDeviationIndicator) Calculate(index int) decimal.Decimal {
 	avg := sdi.movingAverage.Calculate(index)
 	variance := decimal.ZERO
-	for i := Max(0, index-sdi.window+1); i <= index; i++ {
+	for i := math.Max(0, index-sdi.window+1); i <= index; i++ {
 		pow := sdi.Indicator.Calculate(i).Sub(avg).Pow(2)
 		variance = variance.Add(pow)
 	}
-	realwindow := Min(sdi.window, index+1)
+	realwindow := math.Min(sdi.window, index+1)
 
 	return variance.Div(decimal.New(float64(realwindow))).Sqrt()
 }

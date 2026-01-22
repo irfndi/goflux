@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/irfndi/goflux/pkg/decimal"
-	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/irfndi/goflux/pkg/series"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,6 +19,10 @@ var mockedTimeSeries = MockTimeSeriesFl(
 	63.73, 63.55, 63.19,
 	63.91, 63.85, 62.95,
 	63.37, 61.33, 61.51)
+
+type Indicator interface {
+	Calculate(int) decimal.Decimal
+}
 
 func RandomTimeSeries(size int) *series.TimeSeries {
 	vals := make([]string, size)
@@ -89,7 +92,7 @@ func DecimalEquals(t *testing.T, expected float64, actual decimal.Decimal) {
 	assert.Equal(t, fmt.Sprintf("%.4f", expected), fmt.Sprintf("%.4f", actual.Float()))
 }
 
-func Dump(indicator indicators.Indicator) (values []float64) {
+func Dump(indicator Indicator) (values []float64) {
 	precision := 4.0
 	m := math.Pow(10, precision)
 
@@ -106,7 +109,7 @@ func Dump(indicator indicators.Indicator) (values []float64) {
 	return
 }
 
-func IndicatorEquals(t *testing.T, expected []float64, indicator indicators.Indicator) {
+func IndicatorEquals(t *testing.T, expected []float64, indicator Indicator) {
 	actualValues := Dump(indicator)
 	assert.EqualValues(t, expected, actualValues)
 }

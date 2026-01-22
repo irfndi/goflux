@@ -1,6 +1,9 @@
 package indicators
 
-import "github.com/irfndi/goflux/pkg/decimal"
+import (
+	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/math"
+)
 
 type gainLossIndicator struct {
 	Indicator
@@ -67,7 +70,7 @@ func NewCumulativeLossesIndicator(indicator Indicator, window int) Indicator {
 func (ci cumulativeIndicator) Calculate(index int) decimal.Decimal {
 	total := decimal.New(0.0)
 
-	for i := Max(1, index-(ci.window-1)); i <= index; i++ {
+	for i := math.Max(1, index-(ci.window-1)); i <= index; i++ {
 		diff := ci.Indicator.Calculate(i).Sub(ci.Indicator.Calculate(i - 1))
 		if diff.Mul(ci.mult).GT(decimal.ZERO) {
 			total = total.Add(diff.Abs())

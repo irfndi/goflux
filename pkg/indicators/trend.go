@@ -1,6 +1,9 @@
 package indicators
 
-import "github.com/irfndi/goflux/pkg/decimal"
+import (
+	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/math"
+)
 
 type trendLineIndicator struct {
 	indicator Indicator
@@ -17,7 +20,7 @@ func NewTrendlineIndicator(indicator Indicator, window int) Indicator {
 }
 
 func (tli trendLineIndicator) Calculate(index int) decimal.Decimal {
-	window := Min(index+1, tli.window)
+	window := math.Min(index+1, tli.window)
 
 	values := make([]decimal.Decimal, window)
 

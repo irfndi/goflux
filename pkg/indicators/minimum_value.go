@@ -1,6 +1,9 @@
 package indicators
 
-import "github.com/irfndi/goflux/pkg/decimal"
+import (
+	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/math"
+)
 
 // NewMinimumValueIndicator returns a derivative Indicator which returns the minimum value
 // present in a given window. Use a window value of -1 to include all values in the
@@ -22,7 +25,7 @@ func (mvi minimumValueIndicator) Calculate(index int) decimal.Decimal {
 
 	start := 0
 	if mvi.window > 0 {
-		start = Max(index-mvi.window+1, 0)
+		start = math.Max(index-mvi.window+1, 0)
 	}
 
 	for i := start; i <= index; i++ {

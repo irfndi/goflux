@@ -1,19 +1,30 @@
 package trading
 
-// PositionNewRule is satisfied when the current position in the trading record is new (no
-// open positions).
-type PositionNewRule struct{}
-
-// IsSatisfied returns true if the current position in the record is new
-func (pnr PositionNewRule) IsSatisfied(index int, record *TradingRecord) bool {
-	return record.CurrentPosition().IsNew()
+type Position struct {
+	entryOrder *Order
+	exitOrder  *Order
 }
 
-// PositionOpenRule is satisfied when the current position in the trading record is open (position
-// has been entered but not exited).
-type PositionOpenRule struct{}
+func (p *Position) IsNew() bool {
+	return p.entryOrder == nil && p.exitOrder == nil
+}
 
-// IsSatisfied returns true if the current position in the record is Open
-func (pnr PositionOpenRule) IsSatisfied(index int, record *TradingRecord) bool {
-	return record.CurrentPosition().IsOpen()
+func (p *Position) IsOpen() bool {
+	return p.entryOrder != nil && p.exitOrder == nil
+}
+
+func (p *Position) EntranceOrder() *Order {
+	return p.entryOrder
+}
+
+func (p *Position) ExitOrder() *Order {
+	return p.exitOrder
+}
+
+func (p *Position) Enter(order Order) {
+	p.entryOrder = &order
+}
+
+func (p *Position) Exit(order Order) {
+	p.exitOrder = &order
 }

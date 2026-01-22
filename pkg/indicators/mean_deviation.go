@@ -1,6 +1,9 @@
 package indicators
 
-import "github.com/irfndi/goflux/pkg/decimal"
+import (
+	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/math"
+)
 
 type meanDeviationIndicator struct {
 	Indicator
@@ -24,12 +27,12 @@ func (mdi meanDeviationIndicator) Calculate(index int) decimal.Decimal {
 	}
 
 	average := mdi.movingAverage.Calculate(index)
-	start := Max(0, index-mdi.window+1)
+	start := math.Max(0, index-mdi.window+1)
 	absoluteDeviations := decimal.New(0)
 
 	for i := start; i <= index; i++ {
 		absoluteDeviations = absoluteDeviations.Add(average.Sub(mdi.Indicator.Calculate(i)).Abs())
 	}
 
-	return absoluteDeviations.Div(decimal.New(float64(Min(mdi.window, index-start+1))))
+	return absoluteDeviations.Div(decimal.New(float64(math.Min(mdi.window, index-start+1))))
 }
