@@ -68,8 +68,8 @@ func LoadCSV(reader io.Reader, config CSVConfig) (*TimeSeries, error) {
 
 		candle := NewCandle(NewTimePeriod(t, 0)) // Initial duration 0
 		candle.OpenPrice = decimal.NewFromString(record[config.OpenIndex])
-		candle.HighPrice = decimal.NewFromString(record[config.HighIndex])
-		candle.LowPrice = decimal.NewFromString(record[config.LowIndex])
+		candle.MaxPrice = decimal.NewFromString(record[config.HighIndex])
+		candle.MinPrice = decimal.NewFromString(record[config.LowIndex])
 		candle.ClosePrice = decimal.NewFromString(record[config.CloseIndex])
 		if config.VolumeIndex < len(record) {
 			candle.Volume = decimal.NewFromString(record[config.VolumeIndex])
@@ -119,8 +119,8 @@ func LoadJSON(reader io.Reader, timeFormat string) (*TimeSeries, error) {
 
 		candle := NewCandle(NewTimePeriod(t, 0))
 		candle.OpenPrice = decimal.New(jc.Open)
-		candle.HighPrice = decimal.New(jc.High)
-		candle.LowPrice = decimal.New(jc.Low)
+		candle.MaxPrice = decimal.New(jc.High)
+		candle.MinPrice = decimal.New(jc.Low)
 		candle.ClosePrice = decimal.New(jc.Close)
 		candle.Volume = decimal.New(jc.Volume)
 
