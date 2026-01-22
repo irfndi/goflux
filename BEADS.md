@@ -131,7 +131,7 @@ Ready for production use.
 - [ ] Achieve 90%+ coverage for all files
 - [x] **FIX: Resolve import cycles between `pkg/indicators` and `pkg/testutils`**
 - [x] Use table-driven tests where appropriate
-- [ ] Add benchmarks for performance-critical code
+- [x] Add benchmarks for performance-critical code
 - [x] Run tests with race detection: `go test -race ./...`
 
 ---
