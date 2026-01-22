@@ -8,7 +8,7 @@ import (
 )
 
 func TestModifiedMovingAverage(t *testing.T) {
-	indicator := indicators.NewMMAIndicator(indicators.NewClosePriceIndicator(mockedseries.TimeSeries), 3)
+	indicator := indicators.NewMMAIndicator(indicators.NewClosePriceIndicator(testutils.MockedTimeSeries), 3)
 
 	expected := []float64{
 		0,

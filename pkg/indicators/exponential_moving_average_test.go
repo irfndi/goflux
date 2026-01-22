@@ -1,9 +1,8 @@
-package indicators_test
+package indicators
 
 import (
 	"testing"
 
-	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/irfndi/goflux/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,13 +24,13 @@ func TestExponentialMovingAverage(t *testing.T) {
 			62.151,
 		}
 
-		closePriceIndicator := indicators.NewClosePriceIndicator(mockedseries.TimeSeries)
-		testutils.IndicatorEquals(t, expectedValues, indicators.NewEMAIndicator(closePriceIndicator, 4))
+		closePriceIndicator := NewClosePriceIndicator(testutils.MockedTimeSeries)
+		testutils.IndicatorEquals(t, expectedValues, NewEMAIndicator(closePriceIndicator, 4))
 	})
 
 	t.Run("Expands Result Cache", func(t *testing.T) {
-		closeIndicator := indicators.NewClosePriceIndicator(randomseries.TimeSeries(1001))
-		ema := indicators.NewEMAIndicator(closeIndicator, 20)
+		closeIndicator := NewClosePriceIndicator(testutils.RandomTimeSeries(1001))
+		ema := NewEMAIndicator(closeIndicator, 20)
 
 		ema.Calculate(1000)
 
@@ -43,19 +42,19 @@ func TestExponentialMovingAverage(t *testing.T) {
 
 func BenchmarkExponetialMovingAverage(b *testing.B) {
 	size := 10000
-	ts := randomseries.TimeSeries(size)
+	ts := testutils.RandomTimeSeries(size)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ema := indicators.NewEMAIndicator(indicators.NewClosePriceIndicator(ts), 10)
+		ema := NewEMAIndicator(NewClosePriceIndicator(ts), 10)
 		ema.Calculate(size - 1)
 	}
 }
 
 func BenchmarkExponentialMovingAverage_Cached(b *testing.B) {
 	size := 10000
-	ts := randomseries.TimeSeries(size)
-	ema := indicators.NewEMAIndicator(indicators.NewClosePriceIndicator(ts), 10)
+	ts := testutils.RandomTimeSeries(size)
+	ema := NewEMAIndicator(NewClosePriceIndicator(ts), 10)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

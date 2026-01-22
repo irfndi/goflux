@@ -1,19 +1,19 @@
 package series_test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
-	"fmt"
-	"strings"
-
 	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/series"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCandle_AddTrade(t *testing.T) {
 	now := time.Now()
-	candle := NewCandle(TimePeriod{
+	candle := series.NewCandle(series.TimePeriod{
 		Start: now,
 		End:   now.Add(time.Minute),
 	})
@@ -34,7 +34,7 @@ func TestCandle_AddTrade(t *testing.T) {
 
 func TestCandle_String(t *testing.T) {
 	now := time.Now()
-	candle := NewCandle(TimePeriod{
+	candle := series.NewCandle(series.TimePeriod{
 		Start: now,
 		End:   now.Add(time.Minute),
 	})

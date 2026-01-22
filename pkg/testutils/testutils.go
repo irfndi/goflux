@@ -13,8 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var candleIndex int
-var mockedTimeSeries = MockTimeSeriesFl(
+var MockedTimeSeries = MockTimeSeriesFl(
 	64.75, 63.79, 63.73,
 	63.73, 63.55, 63.19,
 	63.91, 63.85, 62.95,
@@ -62,8 +61,8 @@ func MockTimeSeriesOCHL(values ...[]float64) *series.TimeSeries {
 
 func MockTimeSeries(values ...string) *series.TimeSeries {
 	ts := series.NewTimeSeries()
-	for _, val := range values {
-		candle := series.NewCandle(series.NewTimePeriod(time.Unix(int64(candleIndex), 0), time.Second))
+	for i, val := range values {
+		candle := series.NewCandle(series.NewTimePeriod(time.Unix(int64(i), 0), time.Second))
 		candle.OpenPrice = decimal.NewFromString(val)
 		candle.ClosePrice = decimal.NewFromString(val)
 		candle.MaxPrice = decimal.NewFromString(val).Add(decimal.ONE)
@@ -71,8 +70,6 @@ func MockTimeSeries(values ...string) *series.TimeSeries {
 		candle.Volume = decimal.NewFromString(val)
 
 		ts.AddCandle(candle)
-
-		candleIndex++
 	}
 
 	return ts

@@ -1,11 +1,16 @@
 package indicators
 
-import "github.com/irfndi/goflux/pkg/decimal"
+import (
+	"sync"
+
+	"github.com/irfndi/goflux/pkg/decimal"
+)
 
 type modifiedMovingAverageIndicator struct {
 	indicator   Indicator
 	window      int
 	resultCache resultCache
+	cacheMu     sync.RWMutex
 }
 
 // NewMMAIndicator returns a derivative indciator which returns the modified moving average of the underlying
@@ -45,4 +50,12 @@ func (mma *modifiedMovingAverageIndicator) setCache(cache resultCache) {
 
 func (mma modifiedMovingAverageIndicator) windowSize() int {
 	return mma.window
+}
+
+func (mma *modifiedMovingAverageIndicator) cacheMutex() *sync.RWMutex {
+	return &mma.cacheMu
+}
+
+func (mma *modifiedMovingAverageIndicator) maxCacheSize() int {
+	return defaultMaxCacheSize
 }

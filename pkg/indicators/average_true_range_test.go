@@ -8,7 +8,7 @@ import (
 )
 
 func TestAverageTrueRangeIndicator(t *testing.T) {
-	atrIndicator := indicators.NewAverageTrueRangeIndicator(mockedseries.TimeSeries, 3)
+	atrIndicator := indicators.NewAverageTrueRangeIndicator(testutils.MockedTimeSeries, 3)
 
 	expectedValues := []float64{
 		0,

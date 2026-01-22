@@ -18,7 +18,7 @@ const example = "EXM"
 
 func TestTotalProfitAnalysis(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
-		record := Newtrading.TradingRecord()
+		record := trading.NewTradingRecord()
 		tpa := analysis.TotalProfitAnalysis{}
 
 		orders := []trading.Order{
@@ -80,7 +80,7 @@ func TestTotalProfitAnalysis(t *testing.T) {
 
 func TestPercentGainAnalysis(t *testing.T) {
 	t.Run("Zero", func(t *testing.T) {
-		record := Newtrading.TradingRecord()
+		record := trading.NewTradingRecord()
 
 		pga := analysis.PercentGainAnalysis{}
 
@@ -88,7 +88,7 @@ func TestPercentGainAnalysis(t *testing.T) {
 	})
 
 	t.Run("Simple gain", func(t *testing.T) {
-		record := Newtrading.TradingRecord()
+		record := trading.NewTradingRecord()
 
 		pga := analysis.PercentGainAnalysis{}
 
@@ -118,7 +118,7 @@ func TestPercentGainAnalysis(t *testing.T) {
 	})
 
 	t.Run("Simple loss", func(t *testing.T) {
-		record := Newtrading.TradingRecord()
+		record := trading.NewTradingRecord()
 
 		pga := analysis.PercentGainAnalysis{}
 
@@ -148,7 +148,7 @@ func TestPercentGainAnalysis(t *testing.T) {
 	})
 
 	t.Run("Small loss and gain", func(t *testing.T) {
-		record := Newtrading.TradingRecord()
+		record := trading.NewTradingRecord()
 
 		pga := analysis.PercentGainAnalysis{}
 
@@ -193,7 +193,7 @@ func TestPercentGainAnalysis(t *testing.T) {
 }
 
 func TestNumTradesAnalysis(t *testing.T) {
-	record := Newtrading.TradingRecord()
+	record := trading.NewTradingRecord()
 
 	var nta analysis.NumTradesAnalysis
 
@@ -207,7 +207,7 @@ func TestLogTradesAnalysis(t *testing.T) {
 		Writer: buffer,
 	}
 
-	record := Newtrading.TradingRecord()
+	record := trading.NewTradingRecord()
 
 	now := time.Now().UTC()
 	dates := []time.Time{
@@ -283,7 +283,7 @@ func TestLogTradesAnalysis(t *testing.T) {
 }
 
 func TestPeriodProfitAnalysis(t *testing.T) {
-	record := Newtrading.TradingRecord()
+	record := trading.NewTradingRecord()
 
 	now := time.Now().Add(-time.Minute * 5)
 
@@ -330,7 +330,7 @@ func TestPeriodProfitAnalysis(t *testing.T) {
 }
 
 func TestProfitableTradesAnalysis(t *testing.T) {
-	record := Newtrading.TradingRecord()
+	record := trading.NewTradingRecord()
 
 	orders := []trading.Order{
 		{
@@ -373,7 +373,7 @@ func TestProfitableTradesAnalysis(t *testing.T) {
 }
 
 func TestAverageProfitAnalysis(t *testing.T) {
-	record := Newtrading.TradingRecord()
+	record := trading.NewTradingRecord()
 
 	orders := []trading.Order{
 		{
@@ -417,12 +417,12 @@ func TestAverageProfitAnalysis(t *testing.T) {
 
 func TestBuyAndHoldAnalysis(t *testing.T) {
 	series := testutils.MockTimeSeries("1", "2", "3", "2", "6")
-	record := Newtrading.TradingRecord()
+	record := trading.NewTradingRecord()
 
 	t.Run("== 0 trades returns zero", func(t *testing.T) {
 		buyAndHoldAnalysis := analysis.BuyAndHoldAnalysis{
-			series.TimeSeries: series,
-			StartingMoney:     1,
+			TimeSeries:    series,
+			StartingMoney: 1,
 		}
 
 		assert.EqualValues(t, 0, buyAndHoldAnalysis.Analyze(record))
@@ -465,8 +465,8 @@ func TestBuyAndHoldAnalysis(t *testing.T) {
 		}
 
 		buyAndHoldAnalysis := analysis.BuyAndHoldAnalysis{
-			series.TimeSeries: series,
-			StartingMoney:     1,
+			TimeSeries:    series,
+			StartingMoney: 1,
 		}
 
 		assert.EqualValues(t, 5, buyAndHoldAnalysis.Analyze(record))

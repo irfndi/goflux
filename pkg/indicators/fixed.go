@@ -10,5 +10,21 @@ func NewFixedIndicator(vals ...float64) Indicator {
 }
 
 func (fi fixedIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || index >= len(fi) {
+		return decimal.ZERO
+	}
 	return decimal.New(fi[index])
+}
+
+type fixedDecimalIndicator []decimal.Decimal
+
+func NewFixedDecimalIndicator(vals ...decimal.Decimal) Indicator {
+	return fixedDecimalIndicator(vals)
+}
+
+func (fi fixedDecimalIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || index >= len(fi) {
+		return decimal.ZERO
+	}
+	return fi[index]
 }

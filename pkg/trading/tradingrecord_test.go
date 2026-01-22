@@ -21,7 +21,7 @@ func TestTradingRecord_CurrentTrade(t *testing.T) {
 
 	yesterday := time.Now().Add(-time.Hour * 24)
 	record.Operate(trading.Order{
-		Side:          BUY,
+		Side:          trading.BUY,
 		Amount:        decimal.ONE,
 		Price:         decimal.NewFromString("2"),
 		ExecutionTime: yesterday,
@@ -34,7 +34,7 @@ func TestTradingRecord_CurrentTrade(t *testing.T) {
 
 	now := time.Now()
 	record.Operate(trading.Order{
-		Side:          SELL,
+		Side:          trading.SELL,
 		Amount:        decimal.NewFromString("3"),
 		Price:         decimal.NewFromString("4"),
 		ExecutionTime: now,
@@ -56,21 +56,21 @@ func TestTradingRecord_Enter(t *testing.T) {
 		now := time.Now()
 
 		record.Operate(trading.Order{
-			Side:          BUY,
+			Side:          trading.BUY,
 			Amount:        decimal.ONE,
 			Price:         decimal.NewFromString("2"),
 			ExecutionTime: now,
 		})
 
 		record.Operate(trading.Order{
-			Side:          SELL,
+			Side:          trading.SELL,
 			Amount:        decimal.NewFromString("2"),
 			Price:         decimal.NewFromString("2"),
 			ExecutionTime: now.Add(time.Minute),
 		})
 
 		record.Operate(trading.Order{
-			Side:          BUY,
+			Side:          trading.BUY,
 			Amount:        decimal.NewFromString("2"),
 			Price:         decimal.NewFromString("2"),
 			ExecutionTime: now.Add(-time.Minute),
@@ -88,14 +88,14 @@ func TestTradingRecord_Exit(t *testing.T) {
 		now := time.Now()
 		record.Operate(trading.Order{
 
-			Side:          BUY,
+			Side:          trading.BUY,
 			Amount:        decimal.ONE,
 			Price:         decimal.NewFromString("2"),
 			ExecutionTime: now,
 		})
 
 		record.Operate(trading.Order{
-			Side:          SELL,
+			Side:          trading.SELL,
 			Amount:        decimal.NewFromString("2"),
 			Price:         decimal.NewFromString("2"),
 			ExecutionTime: now.Add(-time.Minute),

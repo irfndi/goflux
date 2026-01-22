@@ -1,6 +1,8 @@
 package indicators
 
 import (
+	"sync"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 )
 
@@ -9,6 +11,7 @@ type emaIndicator struct {
 	window      int
 	alpha       decimal.Decimal
 	resultCache resultCache
+	cacheMu     sync.RWMutex
 }
 
 // NewEMAIndicator returns a derivative indicator which returns the average of the current and preceding values in
@@ -45,3 +48,11 @@ func (ema *emaIndicator) setCache(newCache resultCache) {
 }
 
 func (ema emaIndicator) windowSize() int { return ema.window }
+
+func (ema *emaIndicator) cacheMutex() *sync.RWMutex {
+	return &ema.cacheMu
+}
+
+func (ema *emaIndicator) maxCacheSize() int {
+	return defaultMaxCacheSize
+}

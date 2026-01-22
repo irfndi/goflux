@@ -9,7 +9,7 @@ import (
 
 func TestKeltnerChannel(t *testing.T) {
 	t.Run("Upper", func(t *testing.T) {
-		upper := indicators.NewKeltnerChannelUpperIndicator(mockedseries.TimeSeries, 3)
+		upper := indicators.NewKeltnerChannelUpperIndicator(testutils.MockedTimeSeries, 3)
 
 		expectedValues := []float64{
 			0,
@@ -30,7 +30,7 @@ func TestKeltnerChannel(t *testing.T) {
 	})
 
 	t.Run("Lower", func(t *testing.T) {
-		lower := indicators.NewKeltnerChannelLowerIndicator(mockedseries.TimeSeries, 3)
+		lower := indicators.NewKeltnerChannelLowerIndicator(testutils.MockedTimeSeries, 3)
 
 		expectedValues := []float64{
 			0,

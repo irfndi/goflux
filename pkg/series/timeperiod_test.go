@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/irfndi/goflux/pkg/series"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleParseTimePeriod() {
 	// Any separator between two times is valid
 	parseable := "2009-01-20T12:00:00 -- 2017-01-20T12:00:00"
-	timePeriod, err := ParseTimePeriod(parseable)
+	timePeriod, err := series.ParseTimePeriod(parseable)
 	if err != nil {
 		return
 	}
@@ -25,7 +25,7 @@ func ExampleParseTimePeriod() {
 func TestParseTimePeriod(t *testing.T) {
 	t.Run("SimpleDT:SimpleDT", func(t *testing.T) {
 		parseable := "2009-01-20T12:00:00 2017-01-20T12:00:00"
-		timePeriod, err := ParseTimePeriod(parseable)
+		timePeriod, err := series.ParseTimePeriod(parseable)
 		assert.NoError(t, err)
 
 		assert.EqualValues(t, 2009, timePeriod.Start.Year())
@@ -45,7 +45,7 @@ func TestParseTimePeriod(t *testing.T) {
 
 	t.Run("SimpleDT:", func(t *testing.T) {
 		parseable := "2009-01-20T12:00:00"
-		timePeriod, err := ParseTimePeriod(parseable)
+		timePeriod, err := series.ParseTimePeriod(parseable)
 		now := time.Now()
 		assert.NoError(t, err)
 
@@ -61,7 +61,7 @@ func TestParseTimePeriod(t *testing.T) {
 
 	t.Run("SimpleDT:SimpleD", func(t *testing.T) {
 		parseable := "2009-01-20T12:00:00 2017-01-20"
-		timePeriod, err := ParseTimePeriod(parseable)
+		timePeriod, err := series.ParseTimePeriod(parseable)
 		assert.NoError(t, err)
 
 		assert.EqualValues(t, 2009, timePeriod.Start.Year())
@@ -81,7 +81,7 @@ func TestParseTimePeriod(t *testing.T) {
 
 	t.Run("SimpleD:SimpleDT", func(t *testing.T) {
 		parseable := "2009-01-20:2017-01-20T12:00:00"
-		timePeriod, err := ParseTimePeriod(parseable)
+		timePeriod, err := series.ParseTimePeriod(parseable)
 		assert.NoError(t, err)
 
 		assert.EqualValues(t, 2009, timePeriod.Start.Year())
@@ -103,7 +103,7 @@ func TestParseTimePeriod(t *testing.T) {
 func TestParse(t *testing.T) {
 	t.Run("SimpleDT:SimpleDT", func(t *testing.T) {
 		parseable := "01/20/2009T12:00:00:01/20/2017T12:00:00"
-		timePeriod, err := Parse(parseable)
+		timePeriod, err := series.Parse(parseable)
 		assert.NoError(t, err)
 
 		assert.EqualValues(t, 2009, timePeriod.Start.Year())
@@ -123,7 +123,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("SimpleDT:", func(t *testing.T) {
 		parseable := "08/15/1991T20:30:00:"
-		timePeriod, err := Parse(parseable)
+		timePeriod, err := series.Parse(parseable)
 		now := time.Now()
 		assert.NoError(t, err)
 
@@ -139,7 +139,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("SimpleDate:SimpleDate", func(t *testing.T) {
 		parseable := "09/01/1773:07/04/1776"
-		timePeriod, err := Parse(parseable)
+		timePeriod, err := series.Parse(parseable)
 		assert.NoError(t, err)
 
 		assert.EqualValues(t, 1773, timePeriod.Start.Year())
@@ -153,7 +153,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("SimpleDate:", func(t *testing.T) {
 		parseable := "07/04/1776:"
-		timePeriod, err := Parse(parseable)
+		timePeriod, err := series.Parse(parseable)
 		now := time.Now()
 		assert.NoError(t, err)
 
@@ -168,7 +168,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("returns error when format invalid", func(t *testing.T) {
 		parseable := "djadk"
-		_, err := Parse(parseable)
+		_, err := series.Parse(parseable)
 
 		assert.EqualError(t, err, "could not parse timerange string djadk")
 	})
@@ -176,7 +176,7 @@ func TestParse(t *testing.T) {
 	t.Run("returns error when start time not parseable", func(t *testing.T) {
 		parseable := "07/04/dksj:"
 
-		_, err := Parse(parseable)
+		_, err := series.Parse(parseable)
 
 		assert.EqualError(t, err, "could not parse time string 07/04/dksj")
 	})
@@ -184,7 +184,7 @@ func TestParse(t *testing.T) {
 	t.Run("returns error when end time not parseable", func(t *testing.T) {
 		parseable := "07/04/1776:ab/04/1776"
 
-		_, err := Parse(parseable)
+		_, err := series.Parse(parseable)
 
 		assert.EqualError(t, err, "could not parse time string ab/04/1776")
 	})
@@ -192,7 +192,7 @@ func TestParse(t *testing.T) {
 
 func TestTimePeriod_Length(t *testing.T) {
 	now := time.Now()
-	tp := TimePeriod{
+	tp := series.TimePeriod{
 		Start: now.Add(-time.Minute * 10),
 		End:   now,
 	}
@@ -204,11 +204,11 @@ func TestTimePeriod_Since(t *testing.T) {
 	now := time.Now()
 
 	t.Run("0", func(t *testing.T) {
-		tp := TimePeriod{
+		tp := series.TimePeriod{
 			Start: now,
 			End:   now.Add(time.Minute),
 		}
-		previousTimePeriod := TimePeriod{
+		previousTimePeriod := series.TimePeriod{
 			Start: now.Add(-time.Minute),
 			End:   now,
 		}
@@ -218,12 +218,12 @@ func TestTimePeriod_Since(t *testing.T) {
 	})
 
 	t.Run("Positive", func(t *testing.T) {
-		tp := TimePeriod{
+		tp := series.TimePeriod{
 			Start: now,
 			End:   now.Add(time.Minute),
 		}
 
-		previousTimePeriod := TimePeriod{
+		previousTimePeriod := series.TimePeriod{
 			Start: now.Add(-time.Minute * 2),
 			End:   now.Add(-time.Minute),
 		}
@@ -238,7 +238,7 @@ func TestTimePeriod_Advance(t *testing.T) {
 	now := time.Now()
 
 	t.Run("Advances by correct amount", func(t *testing.T) {
-		tp := TimePeriod{
+		tp := series.TimePeriod{
 			Start: now,
 			End:   now.Add(time.Minute),
 		}
@@ -253,7 +253,7 @@ func TestTimePeriod_Advance(t *testing.T) {
 func TestTimePeriod_In(t *testing.T) {
 	now := time.Now().Truncate(time.Minute).UTC()
 
-	tp := TimePeriod{
+	tp := series.TimePeriod{
 		Start: now,
 		End:   now.Add(time.Minute),
 	}
@@ -272,7 +272,7 @@ func TestTimePeriod_UTC(t *testing.T) {
 
 	now := time.Now().Truncate(time.Minute).In(location)
 
-	tp := TimePeriod{
+	tp := series.TimePeriod{
 		Start: now,
 		End:   now.Add(time.Minute),
 	}

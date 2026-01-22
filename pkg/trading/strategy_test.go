@@ -18,10 +18,10 @@ func TestRuleStrategy_ShouldEnter(t *testing.T) {
 	t.Run("Returns false if index < unstable period", func(t *testing.T) {
 		record := trading.NewTradingRecord()
 
-		s := RuleStrategy{
-			alwaysSatisfiedRule{},
-			alwaysSatisfiedRule{},
-			5,
+		s := trading.RuleStrategy{
+			EntryRule:      alwaysSatisfiedRule{},
+			ExitRule:       alwaysSatisfiedRule{},
+			UnstablePeriod: 5,
 		}
 
 		assert.False(t, s.ShouldEnter(0, record))
@@ -31,15 +31,15 @@ func TestRuleStrategy_ShouldEnter(t *testing.T) {
 		record := trading.NewTradingRecord()
 
 		record.Operate(trading.Order{
-			Side:   BUY,
+			Side:   trading.BUY,
 			Amount: decimal.ONE,
 			Price:  decimal.ONE,
 		})
 
-		s := RuleStrategy{
-			alwaysSatisfiedRule{},
-			alwaysSatisfiedRule{},
-			5,
+		s := trading.RuleStrategy{
+			EntryRule:      alwaysSatisfiedRule{},
+			ExitRule:       alwaysSatisfiedRule{},
+			UnstablePeriod: 5,
 		}
 
 		assert.False(t, s.ShouldEnter(6, record))
@@ -48,17 +48,17 @@ func TestRuleStrategy_ShouldEnter(t *testing.T) {
 	t.Run("Returns true when position is closed", func(t *testing.T) {
 		record := trading.NewTradingRecord()
 
-		s := RuleStrategy{
-			alwaysSatisfiedRule{},
-			alwaysSatisfiedRule{},
-			5,
+		s := trading.RuleStrategy{
+			EntryRule:      alwaysSatisfiedRule{},
+			ExitRule:       alwaysSatisfiedRule{},
+			UnstablePeriod: 5,
 		}
 
 		assert.True(t, s.ShouldEnter(6, record))
 	})
 
 	t.Run("panics when entry rule is nil", func(t *testing.T) {
-		s := RuleStrategy{
+		s := trading.RuleStrategy{
 			ExitRule:       alwaysSatisfiedRule{},
 			UnstablePeriod: 10,
 		}
@@ -74,15 +74,15 @@ func TestRuleStrategy_ShouldExit(t *testing.T) {
 		record := trading.NewTradingRecord()
 
 		record.Operate(trading.Order{
-			Side:   BUY,
+			Side:   trading.BUY,
 			Amount: decimal.ONE,
 			Price:  decimal.ONE,
 		})
 
-		s := RuleStrategy{
-			alwaysSatisfiedRule{},
-			alwaysSatisfiedRule{},
-			5,
+		s := trading.RuleStrategy{
+			EntryRule:      alwaysSatisfiedRule{},
+			ExitRule:       alwaysSatisfiedRule{},
+			UnstablePeriod: 5,
 		}
 
 		assert.False(t, s.ShouldExit(0, record))
@@ -91,10 +91,10 @@ func TestRuleStrategy_ShouldExit(t *testing.T) {
 	t.Run("Returns false when position is closed", func(t *testing.T) {
 		record := trading.NewTradingRecord()
 
-		s := RuleStrategy{
-			alwaysSatisfiedRule{},
-			alwaysSatisfiedRule{},
-			5,
+		s := trading.RuleStrategy{
+			EntryRule:      alwaysSatisfiedRule{},
+			ExitRule:       alwaysSatisfiedRule{},
+			UnstablePeriod: 5,
 		}
 
 		assert.False(t, s.ShouldExit(6, record))
@@ -104,22 +104,22 @@ func TestRuleStrategy_ShouldExit(t *testing.T) {
 		record := trading.NewTradingRecord()
 
 		record.Operate(trading.Order{
-			Side:   BUY,
+			Side:   trading.BUY,
 			Amount: decimal.ONE,
 			Price:  decimal.ONE,
 		})
 
-		s := RuleStrategy{
-			alwaysSatisfiedRule{},
-			alwaysSatisfiedRule{},
-			5,
+		s := trading.RuleStrategy{
+			EntryRule:      alwaysSatisfiedRule{},
+			ExitRule:       alwaysSatisfiedRule{},
+			UnstablePeriod: 5,
 		}
 
 		assert.True(t, s.ShouldExit(6, record))
 	})
 
 	t.Run("panics when exit rule is nil", func(t *testing.T) {
-		s := RuleStrategy{
+		s := trading.RuleStrategy{
 			EntryRule:      alwaysSatisfiedRule{},
 			UnstablePeriod: 10,
 		}

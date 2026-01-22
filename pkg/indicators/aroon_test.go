@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/irfndi/goflux/pkg/indicators"
+	"github.com/irfndi/goflux/pkg/series"
 	"github.com/irfndi/goflux/pkg/testutils"
 )
 
 func TestAroonUpIndicator(t *testing.T) {
 	t.Run("with < window periods", func(t *testing.T) {
-		series := Newseries.TimeSeries()
-		indicator := indicators.NewHighPriceIndicator(series)
+		ts := series.NewTimeSeries()
+		indicator := indicators.NewHighPriceIndicator(ts)
 
 		aroonUp := indicators.NewAroonUpIndicator(indicator, 10)
 		testutils.DecimalEquals(t, 0, aroonUp.Calculate(0))
@@ -30,8 +31,8 @@ func TestAroonUpIndicator(t *testing.T) {
 
 func TestAroonDownIndicator(t *testing.T) {
 	t.Run("with < window periods", func(t *testing.T) {
-		series := Newseries.TimeSeries()
-		indicator := indicators.NewHighPriceIndicator(series)
+		ts := series.NewTimeSeries()
+		indicator := indicators.NewHighPriceIndicator(ts)
 
 		aroonUp := indicators.NewAroonDownIndicator(indicator, 10)
 		testutils.DecimalEquals(t, 0, aroonUp.Calculate(0))

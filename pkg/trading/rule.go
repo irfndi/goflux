@@ -20,6 +20,11 @@ func Or(r1, r2 Rule) Rule {
 	return orRule{r1, r2}
 }
 
+// Not returns a new rule whereby the passed-in rule must NOT be satisfied for the rule to be satisfied
+func Not(r Rule) Rule {
+	return notRule{r}
+}
+
 type andRule struct {
 	r1 Rule
 	r2 Rule
@@ -36,6 +41,28 @@ type orRule struct {
 
 func (or orRule) IsSatisfied(index int, record *TradingRecord) bool {
 	return or.r1.IsSatisfied(index, record) || or.r2.IsSatisfied(index, record)
+}
+
+type notRule struct {
+	r Rule
+}
+
+func (nr notRule) IsSatisfied(index int, record *TradingRecord) bool {
+	return !nr.r.IsSatisfied(index, record)
+}
+
+// PositionNewRule is a rule that is satisfied when the current position is new
+type PositionNewRule struct{}
+
+func (pnr PositionNewRule) IsSatisfied(index int, record *TradingRecord) bool {
+	return record.CurrentPosition().IsNew()
+}
+
+// PositionOpenRule is a rule that is satisfied when the current position is open
+type PositionOpenRule struct{}
+
+func (por PositionOpenRule) IsSatisfied(index int, record *TradingRecord) bool {
+	return record.CurrentPosition().IsOpen()
 }
 
 // OverIndicatorRule is a rule where the First indicators.Indicator must be greater than the Second indicators.Indicator to be Satisfied

@@ -11,7 +11,7 @@ import (
 )
 
 func TestRelativeStrengthIndexIndicator(t *testing.T) {
-	indicator := indicators.NewRelativeStrengthIndexIndicator(indicators.NewClosePriceIndicator(mockedseries.TimeSeries), 3)
+	indicator := indicators.NewRelativeStrengthIndexIndicator(indicators.NewClosePriceIndicator(testutils.MockedTimeSeries), 3)
 
 	expectedValues := []float64{
 		0,
@@ -32,7 +32,7 @@ func TestRelativeStrengthIndexIndicator(t *testing.T) {
 }
 
 func TestRelativeStrengthIndicator(t *testing.T) {
-	indicator := indicators.NewRelativeStrengthIndicator(indicators.NewClosePriceIndicator(mockedseries.TimeSeries), 3)
+	indicator := indicators.NewRelativeStrengthIndicator(indicators.NewClosePriceIndicator(testutils.MockedTimeSeries), 3)
 
 	expectedValues := []float64{
 		0,

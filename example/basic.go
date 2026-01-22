@@ -4,14 +4,15 @@ import (
 	"strconv"
 	"time"
 
-	goflux "github.com/irfndi/goflux/pkg"
 	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/indicators"
+	"github.com/irfndi/goflux/pkg/series"
 )
 
 // BasicEma is an example of how to create a basic Exponential moving average indicator
 // based on close prices of a timeseries from your exchange of choice.
-func BasicEma() goflux.Indicator {
-	series := goflux.NewTimeSeries()
+func BasicEma() indicators.Indicator {
+	ts := series.NewTimeSeries()
 
 	// fetch this from your preferred exchange
 	dataset := [][]string{
@@ -21,19 +22,19 @@ func BasicEma() goflux.Indicator {
 
 	for _, datum := range dataset {
 		start, _ := strconv.ParseInt(datum[0], 10, 64)
-		period := goflux.NewTimePeriod(time.Unix(start, 0), time.Hour*24)
+		period := series.NewTimePeriod(time.Unix(start, 0), time.Hour*24)
 
-		candle := goflux.NewCandle(period)
+		candle := series.NewCandle(period)
 		candle.OpenPrice = decimal.NewFromString(datum[1])
 		candle.ClosePrice = decimal.NewFromString(datum[2])
 		candle.MaxPrice = decimal.NewFromString(datum[3])
 		candle.MinPrice = decimal.NewFromString(datum[4])
 
-		series.AddCandle(candle)
+		ts.AddCandle(candle)
 	}
 
-	closePrices := goflux.NewClosePriceIndicator(series)
-	movingAverage := goflux.NewEMAIndicator(closePrices, 10)
+	closePrices := indicators.NewClosePriceIndicator(ts)
+	movingAverage := indicators.NewEMAIndicator(closePrices, 10)
 
 	return movingAverage
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestTrueRangeIndicator(t *testing.T) {
-	trueRangeIndicator := indicators.NewTrueRangeIndicator(mockedseries.TimeSeries)
+	trueRangeIndicator := indicators.NewTrueRangeIndicator(testutils.MockedTimeSeries)
 
 	expectedValues := []float64{
 		0,

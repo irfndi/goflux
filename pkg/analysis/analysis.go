@@ -7,6 +7,7 @@ import (
 
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
+	"github.com/irfndi/goflux/pkg/trading"
 ) //lint:file-ignore S1038 prefer Fprintln
 
 // Analysis is an interface that describes a methodology for taking a trading.TradingRecord as input,

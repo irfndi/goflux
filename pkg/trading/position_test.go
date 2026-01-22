@@ -11,7 +11,7 @@ import (
 func TestPositionNewRule(t *testing.T) {
 	t.Run("returns true when position new", func(t *testing.T) {
 		record := trading.NewTradingRecord()
-		rule := PositionNewRule{}
+		rule := trading.PositionNewRule{}
 
 		assert.True(t, rule.IsSatisfied(0, record))
 	})
@@ -20,12 +20,12 @@ func TestPositionNewRule(t *testing.T) {
 		record := trading.NewTradingRecord()
 
 		record.Operate(trading.Order{
-			Side:   BUY,
+			Side:   trading.BUY,
 			Amount: decimal.ONE,
 			Price:  decimal.ONE,
 		})
 
-		rule := PositionNewRule{}
+		rule := trading.PositionNewRule{}
 
 		assert.False(t, rule.IsSatisfied(0, record))
 	})
@@ -35,7 +35,7 @@ func TestPositionOpenRule(t *testing.T) {
 	t.Run("returns false when position new", func(t *testing.T) {
 		record := trading.NewTradingRecord()
 
-		rule := PositionOpenRule{}
+		rule := trading.PositionOpenRule{}
 
 		assert.False(t, rule.IsSatisfied(0, record))
 	})
@@ -44,12 +44,12 @@ func TestPositionOpenRule(t *testing.T) {
 		record := trading.NewTradingRecord()
 
 		record.Operate(trading.Order{
-			Side:   BUY,
+			Side:   trading.BUY,
 			Amount: decimal.ONE,
 			Price:  decimal.ONE,
 		})
 
-		rule := PositionOpenRule{}
+		rule := trading.PositionOpenRule{}
 
 		assert.True(t, rule.IsSatisfied(0, record))
 	})

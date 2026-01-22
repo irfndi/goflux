@@ -1,0 +1,128 @@
+package indicators
+
+import (
+	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/series"
+)
+
+type adLineIndicator struct {
+	Indicator
+	series *series.TimeSeries
+	cache  []decimal.Decimal
+}
+
+// NewADLineIndicator returns an indicator that calculates the Accumulation/Distribution Line.
+// https://www.investopedia.com/terms/a/accumulationdistributionplus.asp
+func NewADLineIndicator(s *series.TimeSeries) Indicator {
+	return &adLineIndicator{
+		series: s,
+		cache:  make([]decimal.Decimal, 0),
+	}
+}
+
+func (adl *adLineIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || index >= len(adl.series.Candles) {
+		return decimal.ZERO
+	}
+
+	if index < len(adl.cache) {
+		return adl.cache[index]
+	}
+
+	start := len(adl.cache)
+	var prevADL decimal.Decimal
+	if start > 0 {
+		prevADL = adl.cache[start-1]
+	}
+
+	for i := start; i <= index; i++ {
+		candle := adl.series.Candles[i]
+		high := candle.MaxPrice
+		low := candle.MinPrice
+		close := candle.ClosePrice
+		volume := candle.Volume
+
+		highLow := high.Sub(low)
+		var mfm decimal.Decimal // Money Flow Multiplier
+		if highLow.IsZero() {
+			mfm = decimal.ZERO
+		} else {
+			mfm = close.Sub(low).Sub(high.Sub(close)).Div(highLow)
+		}
+
+		mfv := mfm.Mul(volume) // Money Flow Volume
+		currentADL := prevADL.Add(mfv)
+
+		adl.cache = append(adl.cache, currentADL)
+		prevADL = currentADL
+	}
+
+	return adl.cache[index]
+}
+
+type mfvIndicator struct {
+	Indicator
+	series *series.TimeSeries
+}
+
+func newMFVIndicator(s *series.TimeSeries) Indicator {
+	return &mfvIndicator{series: s}
+}
+
+func (m *mfvIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || index >= len(m.series.Candles) {
+		return decimal.ZERO
+	}
+	candle := m.series.Candles[index]
+	high := candle.MaxPrice
+	low := candle.MinPrice
+	close := candle.ClosePrice
+	volume := candle.Volume
+
+	highLow := high.Sub(low)
+	if highLow.IsZero() {
+		return decimal.ZERO
+	}
+	mfm := close.Sub(low).Sub(high.Sub(close)).Div(highLow)
+	return mfm.Mul(volume)
+}
+
+type cmfIndicator struct {
+	Indicator
+	series *series.TimeSeries
+	mfv    Indicator
+	volume Indicator
+	window int
+}
+
+// NewCMFIndicator returns an indicator that calculates the Chaikin Money Flow.
+// https://www.investopedia.com/terms/c/chaikinmoneyflow.asp
+func NewCMFIndicator(s *series.TimeSeries, window int) Indicator {
+	return &cmfIndicator{
+		series: s,
+		mfv:    newMFVIndicator(s),
+		volume: NewVolumeIndicator(s),
+		window: window,
+	}
+}
+
+func (c *cmfIndicator) Calculate(index int) decimal.Decimal {
+	if index < c.window-1 {
+		return decimal.ZERO
+	}
+
+	sumMFV := decimal.ZERO
+	sumVolume := decimal.ZERO
+
+	for i := 0; i < c.window; i++ {
+		idx := index - i
+		sumMFV = sumMFV.Add(c.mfv.Calculate(idx))
+		sumVolume = sumVolume.Add(c.volume.Calculate(idx))
+	}
+
+	if sumVolume.IsZero() {
+		return decimal.ZERO
+	}
+
+	return sumMFV.Div(sumVolume)
+}
