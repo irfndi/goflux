@@ -97,6 +97,3 @@ jobs:
       
     - name: Build
       run: go build -v ./...
-      
-    - name: Test build
-      run: go build -v -o goflux ./...
