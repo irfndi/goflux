@@ -1,4 +1,0 @@
-ignore:
-  - testutils.go
-  - example/**/*
-  - scripts/**/*

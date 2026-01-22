@@ -1,0 +1,15 @@
+mode: atomic
+github.com/irfndi/goflux/pkg/math/math.go:4.24,5.11 1 0
+github.com/irfndi/goflux/pkg/math/math.go:5.11,7.3 1 0
+github.com/irfndi/goflux/pkg/math/math.go:8.2,8.10 1 0
+github.com/irfndi/goflux/pkg/math/math.go:12.24,13.11 1 0
+github.com/irfndi/goflux/pkg/math/math.go:13.11,15.3 1 0
+github.com/irfndi/goflux/pkg/math/math.go:16.2,16.10 1 0
+github.com/irfndi/goflux/pkg/math/math.go:20.24,22.12 2 0
+github.com/irfndi/goflux/pkg/math/math.go:22.12,23.15 1 0
+github.com/irfndi/goflux/pkg/math/math.go:23.15,25.4 1 0
+github.com/irfndi/goflux/pkg/math/math.go:26.3,27.9 2 0
+github.com/irfndi/goflux/pkg/math/math.go:30.2,30.10 1 0
+github.com/irfndi/goflux/pkg/math/math.go:34.21,35.11 1 0
+github.com/irfndi/goflux/pkg/math/math.go:35.11,37.3 1 0
+github.com/irfndi/goflux/pkg/math/math.go:39.2,39.10 1 0

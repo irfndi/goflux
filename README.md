@@ -1,71 +1,91 @@
-## Techan
-![](https://travis-ci.org/sdcoffey/techan.svg?branch=master)
+# GoFlux
 
-[![codecov](https://codecov.io/gh/sdcoffey/techan/branch/master/graph/badge.svg)](https://codecov.io/gh/sdcoffey/techan)
+[![Go Reference](https://pkg.go.dev/badge/github.com/irfndi/goflux/pkg.svg)](https://pkg.go.dev/github.com/irfndi/goflux/pkg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/irfndi/goflux)](https://goreportcard.com/report/github.com/irfndi/goflux)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-TechAn is a **tech**nical **an**alysis library for Go! It provides a suite of tools and frameworks to analyze financial data and make trading decisions.
+**GoFlux** is a modern technical analysis library for Go, forked from [techan](https://github.com/sdcoffey/techan) by sdcoffey. This project aims to revitalize and expand the library with modern Go best practices, comprehensive testing, and additional technical analysis indicators.
 
 ## Features 
-* Basic and advanced technical analysis indicators
-* Profit and trade analysis
-* Strategy building
+
+- Basic and advanced technical analysis indicators
+- Profit and trade analysis
+- Strategy building and backtesting
+- Timeseries data management
+- Trading rule engine
 
 ### Installation
+
 ```sh
-$ go get github.com/sdcoffey/techan
+$ go get github.com/irfndi/goflux
 ```
 
 ### Quickstart
+
 ```go
-series := techan.NewTimeSeries()
+package main
 
-// fetch this from your preferred exchange
-dataset := [][]string{
-	// Timestamp, Open, Close, High, Low, volume
-	{"1234567", "1", "2", "3", "5", "6"},
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/irfndi/goflux/pkg"
+	"github.com/sdcoffey/big"
+)
+
+func main() {
+	series := goflux.NewTimeSeries()
+
+	// fetch this from your preferred exchange
+	dataset := [][]string{
+		// Timestamp, Open, Close, High, Low, volume
+		{"1234567", "1", "2", "3", "5", "6"},
+	}
+
+	for _, datum := range dataset {
+		start, _ := strconv.ParseInt(datum[0], 10, 64)
+		period := goflux.NewTimePeriod(time.Unix(start, 0), time.Hour*24)
+
+		candle := goflux.NewCandle(period)
+		candle.OpenPrice = big.NewFromString(datum[1])
+		candle.ClosePrice = big.NewFromString(datum[2])
+		candle.MaxPrice = big.NewFromString(datum[3])
+		candle.MinPrice = big.NewFromString(datum[4])
+
+		series.AddCandle(candle)
+	}
+
+	closePrices := goflux.NewClosePriceIndicator(series)
+	movingAverage := goflux.NewEMAIndicator(closePrices, 10)
+
+	fmt.Println(movingAverage.Calculate(0).FormattedString(2))
 }
-
-for _, datum := range dataset {
-	start, _ := strconv.ParseInt(datum[0], 10, 64)
-	period := techan.NewTimePeriod(time.Unix(start, 0), time.Hour*24)
-
-	candle := techan.NewCandle(period)
-	candle.OpenPrice = big.NewFromString(datum[1])
-	candle.ClosePrice = big.NewFromString(datum[2])
-	candle.MaxPrice = big.NewFromString(datum[3])
-	candle.MinPrice = big.NewFromString(datum[4])
-
-	series.AddCandle(candle)
-}
-
-closePrices := techan.NewClosePriceIndicator(series)
-movingAverage := techan.NewEMAIndicator(closePrices, 10) // Create an exponential moving average with a window of 10
-
-fmt.Println(movingAverage.Calculate(0).FormattedString(2))
 ```
 
 ### Creating trading strategies
+
 ```go
-indicator := techan.NewClosePriceIndicator(series)
+indicator := goflux.NewClosePriceIndicator(series)
 
 // record trades on this object
-record := techan.NewTradingRecord()
+record := goflux.NewTradingRecord()
 
-entryConstant := techan.NewConstantIndicator(30)
-exitConstant := techan.NewConstantIndicator(10)
+entryConstant := goflux.NewConstantIndicator(30)
+exitConstant := goflux.NewConstantIndicator(10)
 
 // Is satisfied when the price ema moves above 30 and the current position is new
-entryRule := techan.And(
-	techan.NewCrossUpIndicatorRule(entryConstant, indicator),
-	techan.PositionNewRule{})
+entryRule := goflux.And(
+	goflux.NewCrossUpIndicatorRule(entryConstant, indicator),
+	goflux.PositionNewRule{})
 	
 // Is satisfied when the price ema moves below 10 and the current position is open
-exitRule := techan.And(
-	techan.NewCrossDownIndicatorRule(indicator, exitConstant),
-	techan.PositionOpenRule{})
+exitRule := goflux.And(
+	goflux.NewCrossDownIndicatorRule(indicator, exitConstant),
+	goflux.PositionOpenRule{})
 
-strategy := techan.RuleStrategy{
-	UnstablePeriod: 10, // Period before which ShouldEnter and ShouldExit will always return false
+strategy := goflux.RuleStrategy{
+	UnstablePeriod: 10, // Period before which ShouldEnter and ShouldExit always return false
 	EntryRule:      entryRule,
 	ExitRule:       exitRule,
 }
@@ -73,14 +93,55 @@ strategy := techan.RuleStrategy{
 strategy.ShouldEnter(0, record) // returns false
 ```
 
-### Enjoying this project?
-Are you using techan in production? You can sponsor its development by buying me a coffee! ☕
+## Roadmap
 
-**ETH:** `0x2D9d3A1c16F118A3a59d0e446d574e1F01F62949`
+See [BEADS.md](BEADS.md) for a detailed roadmap of planned improvements including:
 
-### Credits
-Techan is heavily influenced by the great [ta4j](https://github.com/ta4j/ta4j). Many of the ideas and frameworks in this library owe their genesis to the great work done over there.
+- Modern project structure
+- Additional technical indicators (Ichimoku, ADX, Parabolic SAR, and more)
+- Enhanced trading system
+- Comprehensive testing suite
+- Improved documentation
+- CI/CD pipeline with GitHub Actions
 
-### License
+## Migration from Techan
 
-Techan is released under the MIT license. See [LICENSE](./LICENSE) for details.
+GoFlux maintains backward compatibility with the original techan API. Simply update your imports:
+
+```go
+// Old
+import "github.com/sdcoffey/techan"
+
+// New
+import "github.com/irfndi/goflux/pkg"
+```
+
+The package name is `goflux`, so you can use it directly:
+
+```go
+import "github.com/irfndi/goflux/pkg"
+
+// Usage
+series := goflux.NewTimeSeries()
+```
+
+## Contributing
+
+Contributions are welcome! Please see [BEADS.md](BEADS.md) for planned improvements and areas where help is needed.
+
+To contribute:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Submit a pull request
+
+## Acknowledgments
+
+GoFlux is heavily influenced by the great [ta4j](https://github.com/ta4j/ta4j). Many of the ideas and frameworks in this library owe their genesis to the great work done over there.
+
+Special thanks to **sdcoffey** for creating the original [techan](https://github.com/sdcoffey/techan) library, which serves as the foundation for this project.
+
+## License
+
+GoFlux is released under the MIT license. See [LICENSE](./LICENSE) for details.
