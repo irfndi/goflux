@@ -243,6 +243,9 @@ func (b *Backtester) calculateResults(trades []Trade, equityCurve []decimal.Deci
 		Trades:         trades,
 		InitialCapital: initialCapital,
 		FinalEquity:    finalEquity,
+		GrossProfit:    decimal.ZERO,
+		GrossLoss:      decimal.ZERO,
+		TotalProfit:    decimal.ZERO,
 	}
 
 	if len(trades) == 0 {
@@ -280,9 +283,9 @@ func (b *Backtester) calculateResults(trades []Trade, equityCurve []decimal.Deci
 }
 
 func (b *Backtester) calculateMaxDrawdown(equityCurve []decimal.Decimal, initialCapital decimal.Decimal) (decimal.Decimal, decimal.Decimal) {
-	var maxDrawdown decimal.Decimal
-	var maxDrawdownPercent decimal.Decimal
-	var peak decimal.Decimal = initialCapital
+	maxDrawdown := decimal.ZERO
+	maxDrawdownPercent := decimal.ZERO
+	peak := initialCapital
 
 	for _, equity := range equityCurve {
 		if equity.GT(peak) {

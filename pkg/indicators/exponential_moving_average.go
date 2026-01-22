@@ -41,13 +41,13 @@ func (ema *emaIndicator) Calculate(index int) decimal.Decimal {
 	return result
 }
 
-func (ema emaIndicator) cache() resultCache { return ema.resultCache }
+func (ema *emaIndicator) cache() resultCache { return ema.resultCache }
 
 func (ema *emaIndicator) setCache(newCache resultCache) {
 	ema.resultCache = newCache
 }
 
-func (ema emaIndicator) windowSize() int { return ema.window }
+func (ema *emaIndicator) windowSize() int { return ema.window }
 
 func (ema *emaIndicator) cacheMutex() *sync.RWMutex {
 	return &ema.cacheMu

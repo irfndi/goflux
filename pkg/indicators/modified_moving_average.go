@@ -40,7 +40,7 @@ func (mma *modifiedMovingAverageIndicator) Calculate(index int) decimal.Decimal 
 	return result
 }
 
-func (mma modifiedMovingAverageIndicator) cache() resultCache {
+func (mma *modifiedMovingAverageIndicator) cache() resultCache {
 	return mma.resultCache
 }
 
@@ -48,7 +48,7 @@ func (mma *modifiedMovingAverageIndicator) setCache(cache resultCache) {
 	mma.resultCache = cache
 }
 
-func (mma modifiedMovingAverageIndicator) windowSize() int {
+func (mma *modifiedMovingAverageIndicator) windowSize() int {
 	return mma.window
 }
 

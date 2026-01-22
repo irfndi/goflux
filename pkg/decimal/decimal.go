@@ -1,21 +1,10 @@
 package decimal
 
 import (
+	"fmt"
+	"math"
 	"math/big"
 )
-
-const defaultPrecision = 256
-
-func newFloat() *big.Float {
-	return new(big.Float).SetPrec(defaultPrecision).SetMode(big.ToNearestEven)
-}
-
-func (d Decimal) valueOrZero() *big.Float {
-	if d.val == nil {
-		return newFloat().SetInt64(0)
-	}
-	return d.val
-}
 
 // Decimal represents a high-precision decimal number.
 // It wraps math/big.Float to provide convenient methods for financial calculations.
@@ -32,12 +21,12 @@ var (
 
 // New creates a new Decimal from a float64
 func New(f float64) Decimal {
-	return Decimal{val: newFloat().SetFloat64(f)}
+	return Decimal{val: new(big.Float).SetFloat64(f)}
 }
 
 // NewFromInt creates a new Decimal from an int64
 func NewFromInt(i int64) Decimal {
-	return Decimal{val: newFloat().SetInt64(i)}
+	return Decimal{val: new(big.Float).SetInt64(i)}
 }
 
 // NewFromString creates a new Decimal from a string.
@@ -45,13 +34,13 @@ func NewFromInt(i int64) Decimal {
 func NewFromString(s string) Decimal {
 	val, _, err := big.ParseFloat(s, 10, 256, big.ToNearestEven)
 	if err != nil {
-		panic("invalid decimal string: " + s)
+		panic(fmt.Sprintf("invalid decimal string: %s", s))
 	}
 	return Decimal{val: val}
 }
 
 // NewFromStringWithError creates a new Decimal from a string.
-// It returns an error if the string is not a valid number.
+// Returns error if string is not a valid number.
 func NewFromStringWithError(s string) (Decimal, error) {
 	val, _, err := big.ParseFloat(s, 10, 256, big.ToNearestEven)
 	if err != nil {
@@ -62,89 +51,122 @@ func NewFromStringWithError(s string) (Decimal, error) {
 
 // NewFromBigFloat creates a new Decimal from a big.Float
 func NewFromBigFloat(f *big.Float) Decimal {
-	if f == nil {
-		return Decimal{val: newFloat().SetInt64(0)}
-	}
 	return Decimal{val: new(big.Float).Copy(f)}
 }
 
 // Add returns d + d2
 func (d Decimal) Add(d2 Decimal) Decimal {
-	return Decimal{val: newFloat().Add(d.valueOrZero(), d2.valueOrZero())}
+	if d2.val == nil {
+		return d
+	}
+	if d.val == nil {
+		return d2
+	}
+	return Decimal{val: new(big.Float).Add(d.val, d2.val)}
 }
 
 // Sub returns d - d2
 func (d Decimal) Sub(d2 Decimal) Decimal {
-	return Decimal{val: newFloat().Sub(d.valueOrZero(), d2.valueOrZero())}
+	if d2.val == nil {
+		return d
+	}
+	if d.val == nil {
+		return d2.Neg()
+	}
+	return Decimal{val: new(big.Float).Sub(d.val, d2.val)}
 }
 
 // Mul returns d * d2
 func (d Decimal) Mul(d2 Decimal) Decimal {
-	return Decimal{val: newFloat().Mul(d.valueOrZero(), d2.valueOrZero())}
+	if d.val == nil || d2.val == nil {
+		return Decimal{}
+	}
+	return Decimal{val: new(big.Float).Mul(d.val, d2.val)}
 }
 
 // Div returns d / d2
 func (d Decimal) Div(d2 Decimal) Decimal {
-	if d2.valueOrZero().Sign() == 0 {
-		return ZERO
+	if d2.Zero() {
+		return Decimal{val: big.NewFloat(0)}
 	}
-	return Decimal{val: newFloat().Quo(d.valueOrZero(), d2.valueOrZero())}
+	if d.val == nil || d2.val == nil {
+		return Decimal{}
+	}
+	return Decimal{val: new(big.Float).Quo(d.val, d2.val)}
 }
 
 // GT returns true if d > d2
 func (d Decimal) GT(d2 Decimal) bool {
-	return d.valueOrZero().Cmp(d2.valueOrZero()) > 0
+	if d.val == nil || d2.val == nil {
+		return false
+	}
+	return d.val.Cmp(d2.val) > 0
 }
 
 // GTE returns true if d >= d2
 func (d Decimal) GTE(d2 Decimal) bool {
-	return d.valueOrZero().Cmp(d2.valueOrZero()) >= 0
+	if d.val == nil || d2.val == nil {
+		return d.val == d2.val
+	}
+	return d.val.Cmp(d2.val) >= 0
 }
 
 // LT returns true if d < d2
 func (d Decimal) LT(d2 Decimal) bool {
-	return d.valueOrZero().Cmp(d2.valueOrZero()) < 0
+	if d.val == nil || d2.val == nil {
+		return false
+	}
+	return d.val.Cmp(d2.val) < 0
 }
 
 // LTE returns true if d <= d2
 func (d Decimal) LTE(d2 Decimal) bool {
-	return d.valueOrZero().Cmp(d2.valueOrZero()) <= 0
+	if d.val == nil || d2.val == nil {
+		return d.val == d2.val
+	}
+	return d.val.Cmp(d2.val) <= 0
 }
 
 // EQ returns true if d == d2
 func (d Decimal) EQ(d2 Decimal) bool {
-	return d.valueOrZero().Cmp(d2.valueOrZero()) == 0
+	return d.val.Cmp(d2.val) == 0
 }
 
 // Zero returns true if d == 0
 func (d Decimal) Zero() bool {
-	return d.valueOrZero().Sign() == 0
+	return d.val.Sign() == 0
 }
 
 // Float returns float64 representation of d
 func (d Decimal) Float() float64 {
-	f, _ := d.valueOrZero().Float64()
+	f, _ := d.val.Float64()
 	return f
 }
 
 // String returns string representation of d
 func (d Decimal) String() string {
-	return d.valueOrZero().Text('f', -1)
+	if d.val == nil {
+		return "0"
+	}
+	return d.val.Text('f', -1)
 }
 
 // FormattedString returns string representation of d with fixed precision
 func (d Decimal) FormattedString(precision int) string {
-	return d.valueOrZero().Text('f', precision)
+	if d.val == nil {
+		return "0"
+	}
+	return d.val.Text('f', precision)
 }
 
 // Abs returns absolute value of d
 func (d Decimal) Abs() Decimal {
-	return Decimal{val: newFloat().Abs(d.valueOrZero())}
+	return Decimal{val: new(big.Float).Abs(d.val)}
 }
 
 // Neg returns -d
 func (d Decimal) Neg() Decimal {
-	return Decimal{val: newFloat().Neg(d.valueOrZero())}
+	return Decimal{val: new(big.Float).Neg(d.val)}
 }
 
 // Max returns larger of d and d2
@@ -165,7 +187,7 @@ func (d Decimal) Min(d2 Decimal) Decimal {
 
 // Sqrt returns square root of d
 func (d Decimal) Sqrt() Decimal {
-	return Decimal{val: newFloat().Sqrt(d.valueOrZero())}
+	return Decimal{val: new(big.Float).Sqrt(d.val)}
 }
 
 // Pow returns d^y where y is an integer
@@ -197,18 +219,32 @@ func (d Decimal) Pow(y int) Decimal {
 	return result
 }
 
+// PowFloat returns d^y where y is a float64 using math.Pow
+func (d Decimal) PowFloat(y float64) Decimal {
+	f := math.Pow(d.Float(), y)
+	return New(f)
+}
+
 // Cmp compares d and d2 and returns:
 //
 //	-1 if d <  d2
 //	 0 if d == d2
 //	+1 if d >  d2
 func (d Decimal) Cmp(d2 Decimal) int {
-	return d.valueOrZero().Cmp(d2.valueOrZero())
+	return d.val.Cmp(d2.val)
 }
 
 // Sign returns -1 if d < 0, 0 if d == 0, +1 if d > 0
 func (d Decimal) Sign() int {
-	return d.valueOrZero().Sign()
+	if d.val == nil {
+		return 0
+	}
+	return d.val.Sign()
+}
+
+// IsZero returns true if d == 0
+func (d Decimal) IsZero() bool {
+	return d.Sign() == 0
 }
 
 // IsNegative returns true if d < 0
@@ -221,76 +257,54 @@ func (d Decimal) IsPositive() bool {
 	return d.Sign() > 0
 }
 
-// IsZero returns true if d == 0
-func (d Decimal) IsZero() bool {
-	return d.Sign() == 0
-}
-
-// Round returns d rounded to the nearest integer
+// Round returns d rounded to the nearest integer, with ties rounding away from zero
 func (d Decimal) Round() Decimal {
-	intPart := new(big.Int)
-	d.valueOrZero().Int(intPart)
-
-	intPartFloat := new(big.Float).SetInt(intPart)
-
-	frac := new(big.Float).Sub(d.valueOrZero(), intPartFloat)
-	half := new(big.Float).SetFloat64(0.5)
-
-	if d.valueOrZero().Sign() >= 0 {
-		if frac.Cmp(half) >= 0 {
-			intPart.Add(intPart, new(big.Int).SetInt64(1))
-		}
-	} else {
-		negHalf := new(big.Float).Neg(half)
-		if frac.Cmp(negHalf) <= 0 {
-			intPart.Sub(intPart, new(big.Int).SetInt64(1))
-		}
+	if d.IsZero() {
+		return d
 	}
 
-	result := new(big.Float).SetInt(intPart)
-	return Decimal{val: newFloat().Set(result)}
+	f := d.Float()
+	if d.IsPositive() {
+		return New(float64(int(f + 0.5)))
+	}
+	return New(float64(int(f - 0.5)))
 }
 
-// Floor returns greatest integer value less than or equal to d
+// Floor returns the greatest integer value less than or equal to d
 func (d Decimal) Floor() Decimal {
-	result := new(big.Int)
-	d.valueOrZero().Int(result)
+	z := new(big.Int)
+	d.val.Int(z)
+	result := new(big.Float).SetInt(z)
 
-	resultFloat := new(big.Float).SetInt(result)
-
-	if d.IsNegative() && d.valueOrZero().Cmp(resultFloat) != 0 {
-		result.Add(result, new(big.Int).SetInt64(-1))
+	if d.val.Cmp(result) < 0 {
+		result.Sub(result, new(big.Float).SetInt64(1))
 	}
-
-	return Decimal{val: newFloat().SetInt(result)}
+	return Decimal{val: result}
 }
 
-// Ceil returns least integer value greater than or equal to d
+// Ceil returns the least integer value greater than or equal to d
 func (d Decimal) Ceil() Decimal {
-	result := new(big.Int)
-	d.valueOrZero().Int(result)
+	z := new(big.Int)
+	d.val.Int(z)
+	result := new(big.Float).SetInt(z)
 
-	resultFloat := new(big.Float).SetInt(result)
-
-	if d.IsPositive() && d.valueOrZero().Cmp(resultFloat) != 0 {
-		result.Add(result, new(big.Int).SetInt64(1))
+	if d.val.Cmp(result) > 0 {
+		result.Add(result, new(big.Float).SetInt64(1))
 	}
-
-	return Decimal{val: newFloat().SetInt(result)}
+	return Decimal{val: result}
 }
 
-// Truncate returns integer part of d, dropping any fractional part
+// Truncate returns the integer part of d, dropping any fractional part
 func (d Decimal) Truncate() Decimal {
-	result := new(big.Int)
-	d.valueOrZero().Int(result)
-	return Decimal{val: newFloat().SetInt(result)}
+	z := new(big.Int)
+	d.val.Int(z)
+	return Decimal{val: new(big.Float).SetInt(z)}
 }
 
 // Frac returns the fractional part of d
 func (d Decimal) Frac() Decimal {
-	intPart := new(big.Int)
-	_, _ = d.valueOrZero().Int(intPart)
-	intPartFloat := new(big.Float).SetInt(intPart)
-	frac := new(big.Float).Sub(d.valueOrZero(), intPartFloat)
-	return Decimal{val: newFloat().Set(frac)}
+	z := new(big.Int)
+	d.val.Int(z)
+	result := new(big.Float).SetInt(z)
+	return Decimal{val: new(big.Float).Sub(d.val, result)}
 }

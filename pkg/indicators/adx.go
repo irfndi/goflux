@@ -75,9 +75,9 @@ func (a *adxIndicator) fillCaches(index int) {
 
 		periodDec := decimal.NewFromInt(int64(a.period))
 
-		var smTR decimal.Decimal
-		var smPlus decimal.Decimal
-		var smMinus decimal.Decimal
+		smTR := decimal.ZERO
+		smPlus := decimal.ZERO
+		smMinus := decimal.ZERO
 
 		if i == a.period {
 			for j := 1; j <= a.period; j++ {

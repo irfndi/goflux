@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"math"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 )
 
@@ -65,6 +67,11 @@ func (pm *PerformanceMetrics) Calculate(trades []Trade, equityCurve []EquityPoin
 	pm.InitialEquity = initialEquity
 	pm.FinalEquity = finalEquity
 	pm.TradingDays = tradingDays
+	pm.GrossProfit = decimal.ZERO
+	pm.GrossLoss = decimal.ZERO
+	pm.TotalProfit = decimal.ZERO
+	pm.AverageWinPct = decimal.ZERO
+	pm.AverageLossPct = decimal.ZERO
 
 	if len(trades) == 0 {
 		return
@@ -74,7 +81,8 @@ func (pm *PerformanceMetrics) Calculate(trades []Trade, equityCurve []EquityPoin
 
 	var consecutiveWins, maxConsecutiveWins int
 	var consecutiveLosses, maxConsecutiveLosses int
-	var totalWinPct, totalLossPct decimal.Decimal
+	totalWinPct := decimal.ZERO
+	totalLossPct := decimal.ZERO
 
 	for _, trade := range trades {
 		if trade.IsWin {
@@ -133,9 +141,11 @@ func (pm *PerformanceMetrics) Calculate(trades []Trade, equityCurve []EquityPoin
 }
 
 func (pm *PerformanceMetrics) calculateDrawdownMetrics(equityCurve []EquityPoint) {
-	var maxDrawdown, maxDrawdownPct decimal.Decimal
-	var totalDrawdown, totalDrawdownPct decimal.Decimal
-	var peak decimal.Decimal
+	maxDrawdown := decimal.ZERO
+	maxDrawdownPct := decimal.ZERO
+	totalDrawdown := decimal.ZERO
+	totalDrawdownPct := decimal.ZERO
+	peak := decimal.ZERO
 
 	for _, point := range equityCurve {
 		if point.Equity.GT(peak) {
@@ -210,7 +220,8 @@ func (pm *PerformanceMetrics) calculateCAGR(annualizationFactor decimal.Decimal)
 	}
 
 	equityRatio := pm.FinalEquity.Div(pm.InitialEquity)
-	cagr := equityRatio.Pow(1).Div(years)
+	exponent := 1.0 / years.Float()
+	cagr := decimal.New(math.Pow(equityRatio.Float(), exponent))
 
 	return cagr.Sub(decimal.New(1))
 }
@@ -290,7 +301,7 @@ func (pm *PerformanceMetrics) calculateMeanReturn(trades []Trade) decimal.Decima
 		return decimal.ZERO
 	}
 
-	var sum decimal.Decimal
+	sum := decimal.ZERO
 	for _, trade := range trades {
 		sum = sum.Add(trade.ProfitPct)
 	}
@@ -303,7 +314,7 @@ func (pm *PerformanceMetrics) calculateStandardDeviation(trades []Trade, mean de
 		return decimal.ZERO
 	}
 
-	var sumSquares decimal.Decimal
+	sumSquares := decimal.ZERO
 	for _, trade := range trades {
 		diff := trade.ProfitPct.Sub(mean)
 		sumSquares = sumSquares.Add(diff.Mul(diff))
@@ -319,7 +330,7 @@ func (pm *PerformanceMetrics) calculateDownsideDeviation(trades []Trade, mean de
 		return decimal.ZERO
 	}
 
-	var sumSquares decimal.Decimal
+	sumSquares := decimal.ZERO
 	for _, trade := range trades {
 		if trade.ProfitPct.LT(mean) {
 			diff := mean.Sub(trade.ProfitPct)
@@ -356,7 +367,8 @@ func (pm *PerformanceMetrics) calculateHigherMoments(trades []Trade) {
 		return
 	}
 
-	var sumSkewness, sumKurtosis decimal.Decimal
+	sumSkewness := decimal.ZERO
+	sumKurtosis := decimal.ZERO
 	for _, trade := range trades {
 		z := trade.ProfitPct.Sub(mean).Div(stdDev)
 		sumSkewness = sumSkewness.Add(z.Pow(3))

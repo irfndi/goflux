@@ -3,6 +3,7 @@ package trading
 import (
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/indicators"
+	"github.com/irfndi/goflux/pkg/series"
 )
 
 // Rule is an interface describing an algorithm by which a set of criteria may be satisfied
@@ -103,4 +104,34 @@ func NewPercentChangeRule(indicator indicators.Indicator, percent float64) Rule 
 		indicator: indicators.NewPercentChangeIndicator(indicator),
 		percent:   decimal.New(percent),
 	}
+}
+
+// FixedBarExitRule is a rule that is satisfied when the position has been open for a fixed number of bars.
+// This requires the TimeSeries to be passed in to find the entry index.
+type FixedBarExitRule struct {
+	Series *series.TimeSeries
+	Bars   int
+}
+
+func (fbe FixedBarExitRule) IsSatisfied(index int, record *TradingRecord) bool {
+	if !record.CurrentPosition().IsOpen() {
+		return false
+	}
+
+	pos := record.CurrentPosition()
+	entryTime := pos.EntranceOrder().ExecutionTime
+	entryIndex := -1
+	// Find entry index
+	for i := index; i >= 0; i-- {
+		if fbe.Series.GetCandle(i).Period.End.Equal(entryTime) {
+			entryIndex = i
+			break
+		}
+	}
+
+	if entryIndex == -1 {
+		return false
+	}
+
+	return index-entryIndex >= fbe.Bars
 }

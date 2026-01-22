@@ -6,7 +6,7 @@ import (
 	"github.com/irfndi/goflux/pkg/decimal"
 )
 
-func TestSharpeRatio(t *testing.T) {
+func TestSharpeRatio_PerformanceMetrics(t *testing.T) {
 	trades := []Trade{
 		{Profit: decimal.New(100), ProfitPct: decimal.New(0.01), IsWin: true},
 		{Profit: decimal.New(-50), ProfitPct: decimal.New(-0.005), IsWin: false},
@@ -31,7 +31,7 @@ func TestSharpeRatio(t *testing.T) {
 	}
 }
 
-func TestSortinoRatio(t *testing.T) {
+func TestSortinoRatio_PerformanceMetrics(t *testing.T) {
 	trades := []Trade{
 		{Profit: decimal.New(100), ProfitPct: decimal.New(0.01), IsWin: true},
 		{Profit: decimal.New(-20), ProfitPct: decimal.New(-0.002), IsWin: false},
@@ -50,7 +50,7 @@ func TestSortinoRatio(t *testing.T) {
 	t.Logf("Sortino Ratio: %v", pm.SortinoRatio)
 }
 
-func TestCalmarRatio(t *testing.T) {
+func TestCalmarRatio_PerformanceMetrics(t *testing.T) {
 	trades := []Trade{
 		{Profit: decimal.New(500), ProfitPct: decimal.New(0.05), IsWin: true},
 		{Profit: decimal.New(300), ProfitPct: decimal.New(0.03), IsWin: true},
@@ -75,7 +75,7 @@ func TestCalmarRatio(t *testing.T) {
 	t.Logf("Max Drawdown: %v", pm.MaxDrawdown)
 }
 
-func TestCAGR(t *testing.T) {
+func TestCAGR_PerformanceMetrics(t *testing.T) {
 	trades := []Trade{
 		{Profit: decimal.New(1000), ProfitPct: decimal.New(0.1), IsWin: true},
 	}
@@ -242,7 +242,7 @@ func TestSterlingRatio(t *testing.T) {
 	t.Logf("Sterling Ratio: %v", pm.SterlingRatio)
 }
 
-func TestBurkeRatio(t *testing.T) {
+func TestBurkeRatio_PerformanceMetrics(t *testing.T) {
 	trades := []Trade{
 		{Profit: decimal.New(1000), ProfitPct: decimal.New(0.1), IsWin: true},
 	}
