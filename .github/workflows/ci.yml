@@ -16,7 +16,7 @@ jobs:
     strategy:
       max-parallel: 4  # Run up to 4 jobs in parallel
       matrix:
-        go-version: ['1.21', '1.22', '1.23']
+        go-version: ['1.21', '1.22', '1.23', '1.24', '1.25']
       fail-fast: false  # Don't cancel all jobs if one fails
         
     steps:
@@ -57,7 +57,7 @@ jobs:
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
-      if: matrix.go-version == '1.23'  # Only upload coverage for latest Go
+      if: matrix.go-version == '1.25'  # Only upload coverage for latest Go
       with:
         files: ./coverage.txt
         flags: unittests
@@ -75,7 +75,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: '1.25'
         
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -83,9 +83,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-1.23-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-1.25-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-1.23-
+          ${{ runner.os }}-go-1.25-
           
     - name: Download dependencies
       run: go mod download

@@ -150,24 +150,10 @@ func ClearCache(indicator cachedIndicator) {
 	indicator.setCache(make([]*decimal.Decimal, 0, indicator.windowSize()))
 }
 
-func ClearCacheDirect(c *cache) {
-	c.Clear()
-}
-
 func GetCacheSize(indicator cachedIndicator) int {
 	return len(indicator.cache())
 }
 
-func GetCacheSizeDirect(c *cache) int {
-	return c.Len()
-}
-
 func GetCacheCapacity(indicator cachedIndicator) int {
 	return cap(indicator.cache())
-}
-
-func GetCacheCapacityDirect(c *cache) int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return cap(c.items)
 }

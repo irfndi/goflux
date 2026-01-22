@@ -13,7 +13,7 @@ This file tracks all development tasks for the GoFlux library (fork from techan)
 ** ALL CORE TASKS COMPLETED**
 
 Completed:
-- Systematic code review and optimization for Go 1.25.6
+- Systematic code review and optimization for Go 1.23
 - Fixed compilation errors in `pkg/decimal`
 - Resolved import cycles in tests
 - Removed legacy dependency `sdcoffey/big`
@@ -54,7 +54,7 @@ Ready for production use.
 
 ## Phase 3: Dependency Updates (COMPLETED)
 
-- [x] Update Go version to 1.23
+- [x] Update Go version to 1.25 (latest stable as of 2026-01-15)
 - [x] Update go.mod with new module path
 - [x] Update github.com/stretchr/testify to v1.9.0 (latest)
 - [x] Add golangci-lint configuration
@@ -62,7 +62,7 @@ Ready for production use.
 - [x] Add standard test dependencies if needed
 
 ### CI/CD Improvements (COMPLETED)
-- [x] Configure GitHub Actions to test multiple Go versions (1.21, 1.22, 1.23)
+- [x] Configure GitHub Actions to test multiple Go versions (1.21, 1.22, 1.23, 1.24, 1.25)
 - [x] Enable parallel test execution (max-parallel: 4) for faster CI runs
 - [x] Add go fmt and go vet checks to CI pipeline
 - [x] Enable race detection in tests
@@ -88,7 +88,7 @@ Ready for production use.
   - [x] Review mathematical functions
   - [x] Add comprehensive test coverage (90%+)
   - [x] Check for edge cases
-  - [x] Use modern Go 1.25.6 features
+  - [x] Use modern Go 1.23 features
 
 #### 4.2 Core Data Structures
 - [x] **pkg/series/timeperiod.go**
@@ -196,16 +196,16 @@ Ready for production use.
 
 ## Next Steps
 
-### Sprint 8: Advanced Trading Rules (ACTIVE)
+### Sprint 8: Advanced Trading Rules (COMPLETED)
 - [x] Trailing stop loss
-- [ ] Time-based exits
-- [ ] Trailing take profit
+- [x] Time-based exits
+- [x] Trailing take profit
 - [x] Composite rules (AND/OR/NOT)
 
 ### Sprint 9: Data Management & Visualization (MEDIUM PRIORITY)
 - [ ] CSV/JSON data loaders
 - [ ] Database integration (InfluxDB, TimescaleDB)
-- [ ] Time series resampling (e.g., 1m to 5m, 1h)
+- [x] Time series resampling (e.g., 1m to 5m, 1h)
 - [x] Heikin Ashi candle generation
 - [ ] Renko chart generation
 

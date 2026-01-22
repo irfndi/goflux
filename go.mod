@@ -1,6 +1,6 @@
 module github.com/irfndi/goflux
 
-go 1.23
+go 1.25
 
 require github.com/stretchr/testify v1.9.0
 

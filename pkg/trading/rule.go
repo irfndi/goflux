@@ -1,6 +1,8 @@
 package trading
 
 import (
+	"time"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/irfndi/goflux/pkg/series"
@@ -113,6 +115,14 @@ type FixedBarExitRule struct {
 	Bars   int
 }
 
+// NewFixedBarExitRule returns a new rule that is satisfied when a position has been open for a specified number of bars.
+func NewFixedBarExitRule(series *series.TimeSeries, bars int) Rule {
+	return FixedBarExitRule{
+		Series: series,
+		Bars:   bars,
+	}
+}
+
 func (fbe FixedBarExitRule) IsSatisfied(index int, record *TradingRecord) bool {
 	if !record.CurrentPosition().IsOpen() {
 		return false
@@ -134,4 +144,62 @@ func (fbe FixedBarExitRule) IsSatisfied(index int, record *TradingRecord) bool {
 	}
 
 	return index-entryIndex >= fbe.Bars
+}
+
+// WaitDurationRule is a rule that is satisfied when the position has been open for a certain duration.
+type WaitDurationRule struct {
+	Series   *series.TimeSeries
+	Duration time.Duration
+}
+
+// NewWaitDurationRule returns a new rule that is satisfied when a position has been open for a specified duration.
+func NewWaitDurationRule(series *series.TimeSeries, duration time.Duration) Rule {
+	return WaitDurationRule{
+		Series:   series,
+		Duration: duration,
+	}
+}
+
+func (wdr WaitDurationRule) IsSatisfied(index int, record *TradingRecord) bool {
+	if !record.CurrentPosition().IsOpen() {
+		return false
+	}
+
+	pos := record.CurrentPosition()
+	entryTime := pos.EntranceOrder().ExecutionTime
+	currentTime := wdr.Series.GetCandle(index).Period.End
+
+	return currentTime.Sub(entryTime) >= wdr.Duration
+}
+
+// TimeOfDayExitRule is a rule that is satisfied when the current time of day is at or after a certain time.
+type TimeOfDayExitRule struct {
+	Series *series.TimeSeries
+	Hour   int
+	Minute int
+}
+
+// NewTimeOfDayExitRule returns a new rule that is satisfied when the time of day is at or after the specified hour and minute.
+func NewTimeOfDayExitRule(series *series.TimeSeries, hour, minute int) Rule {
+	return TimeOfDayExitRule{
+		Series: series,
+		Hour:   hour,
+		Minute: minute,
+	}
+}
+
+func (tdr TimeOfDayExitRule) IsSatisfied(index int, record *TradingRecord) bool {
+	if !record.CurrentPosition().IsOpen() {
+		return false
+	}
+
+	currentTime := tdr.Series.GetCandle(index).Period.End
+	if currentTime.Hour() > tdr.Hour {
+		return true
+	}
+	if currentTime.Hour() == tdr.Hour && currentTime.Minute() >= tdr.Minute {
+		return true
+	}
+
+	return false
 }

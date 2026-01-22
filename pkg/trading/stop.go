@@ -129,10 +129,9 @@ func (ttp trailingTakeProfitRule) IsSatisfied(index int, record *TradingRecord) 
 	}
 
 	pos := record.CurrentPosition()
-	openPrice := pos.CostBasis()
+	openPrice := pos.EntranceOrder().Price
 	currentPrice := ttp.series.GetCandle(index).ClosePrice
 
-	// Only trigger if we've hit the threshold at some point
 	entryTime := pos.EntranceOrder().ExecutionTime
 	entryIndex := -1
 	for i := index; i >= 0; i-- {
@@ -166,7 +165,6 @@ func (ttp trailingTakeProfitRule) IsSatisfied(index int, record *TradingRecord) 
 		return false
 	}
 
-	// Now check if we've dropped by trailing amount from maxPriceSinceThreshold
 	drop := currentPrice.Div(maxPriceSinceThreshold).Sub(decimal.ONE)
 	return drop.LTE(ttp.trailing.Neg())
 }
