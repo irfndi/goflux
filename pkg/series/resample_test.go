@@ -1,10 +1,12 @@
 package series
 
 import (
-	"github.com/irfndi/goflux/pkg/decimal"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/irfndi/goflux/pkg/decimal"
 )
 
 func TestResample(t *testing.T) {

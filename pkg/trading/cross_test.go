@@ -3,9 +3,10 @@ package trading_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/irfndi/goflux/pkg/trading"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCrossUpIndicatorRule(t *testing.T) {

@@ -312,4 +312,3 @@ func BenchmarkReturnIfCached(b *testing.B) {
 		})
 	}
 }
-

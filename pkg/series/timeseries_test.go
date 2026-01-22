@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTimeSeries_AddCandle(t *testing.T) {

@@ -3,9 +3,10 @@ package indicators_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/irfndi/goflux/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRelativeVigorIndexIndicator_Calculate(t *testing.T) {

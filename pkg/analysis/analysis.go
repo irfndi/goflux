@@ -68,11 +68,11 @@ type LogTradesAnalysis struct {
 // Analyze logs trades to provided io.Writer
 func (lta LogTradesAnalysis) Analyze(record *trading.TradingRecord) float64 {
 	logOrder := func(trade *trading.Position) {
-		fmt.Fprintln(lta.Writer, fmt.Sprintf("%s - enter with buy %s (%s @ $%s)", trade.EntranceOrder().ExecutionTime.UTC().Format(time.RFC822), trade.EntranceOrder().Security, trade.EntranceOrder().Amount, trade.EntranceOrder().Price))
-		fmt.Fprintln(lta.Writer, fmt.Sprintf("%s - exit with sell %s (%s @ $%s)", trade.ExitOrder().ExecutionTime.UTC().Format(time.RFC822), trade.ExitOrder().Security, trade.ExitOrder().Amount, trade.ExitOrder().Price))
+		fmt.Fprintf(lta.Writer, "%s - enter with buy %s (%s @ $%s)\n", trade.EntranceOrder().ExecutionTime.UTC().Format(time.RFC822), trade.EntranceOrder().Security, trade.EntranceOrder().Amount, trade.EntranceOrder().Price)
+		fmt.Fprintf(lta.Writer, "%s - exit with sell %s (%s @ $%s)\n", trade.ExitOrder().ExecutionTime.UTC().Format(time.RFC822), trade.ExitOrder().Security, trade.ExitOrder().Amount, trade.ExitOrder().Price)
 
 		profit := trade.ExitValue().Sub(trade.CostBasis())
-		fmt.Fprintln(lta.Writer, fmt.Sprintf("Profit: $%s", profit))
+		fmt.Fprintf(lta.Writer, "Profit: $%s\n", profit)
 	}
 
 	for _, trade := range record.Trades {

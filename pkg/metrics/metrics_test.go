@@ -1,9 +1,11 @@
 package metrics
 
 import (
-	"github.com/irfndi/goflux/pkg/decimal"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/irfndi/goflux/pkg/decimal"
 )
 
 func TestSharpeRatio(t *testing.T) {

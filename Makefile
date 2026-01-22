@@ -13,7 +13,7 @@ bootstrap:
 
 # Format code
 fmt:
-	goimports -w $(files)
+	goimports -local github.com/irfndi/goflux -w $(files)
 	go fmt ./...
 
 # Clean and format

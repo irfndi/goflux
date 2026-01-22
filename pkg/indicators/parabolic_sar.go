@@ -12,7 +12,6 @@ type parabolicSARIndicator struct {
 	low         Indicator
 	af          decimal.Decimal
 	maxAF       decimal.Decimal
-	ep          decimal.Decimal
 	prevSAR     decimal.Decimal
 	prevEP      decimal.Decimal
 	prevAF      decimal.Decimal
@@ -37,7 +36,7 @@ func (ps *parabolicSARIndicator) Calculate(index int) decimal.Decimal {
 	}
 
 	if !ps.initialized {
-		ps.initialize(index)
+		ps.initialize()
 		return ps.prevSAR
 	}
 
@@ -83,7 +82,7 @@ func (ps *parabolicSARIndicator) Calculate(index int) decimal.Decimal {
 	return ps.prevSAR
 }
 
-func (ps *parabolicSARIndicator) initialize(index int) {
+func (ps *parabolicSARIndicator) initialize() {
 	firstHigh := ps.high.Calculate(0)
 	firstLow := ps.low.Calculate(0)
 	secondHigh := ps.high.Calculate(1)

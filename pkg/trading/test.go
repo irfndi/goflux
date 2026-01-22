@@ -3,9 +3,10 @@ package trading
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/irfndi/goflux/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 type truthRule struct{}

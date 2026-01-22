@@ -188,7 +188,7 @@ func (pm *PerformanceMetrics) calculateRiskAdjustedMetrics(trades []Trade) {
 
 	annualizationFactor := decimal.New(252.0).Div(decimal.New(float64(pm.TradingDays)))
 
-	cagr := pm.calculateCAGR(annualizationFactor)
+	cagr := pm.calculateCAGR()
 	pm.CAGR = cagr
 
 	sharpe := pm.calculateSharpeRatio(trades, annualizationFactor)
@@ -209,7 +209,7 @@ func (pm *PerformanceMetrics) calculateRiskAdjustedMetrics(trades []Trade) {
 	pm.calculateHigherMoments(trades)
 }
 
-func (pm *PerformanceMetrics) calculateCAGR(annualizationFactor decimal.Decimal) decimal.Decimal {
+func (pm *PerformanceMetrics) calculateCAGR() decimal.Decimal {
 	if pm.InitialEquity.IsZero() || pm.FinalEquity.LTE(pm.InitialEquity) {
 		return decimal.ZERO
 	}

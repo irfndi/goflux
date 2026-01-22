@@ -1,4 +1,4 @@
-package series
+package series_test
 
 import (
 	"strings"
@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/irfndi/goflux/pkg/series"
 )
 
 func TestLoadCSV(t *testing.T) {
@@ -15,10 +17,10 @@ func TestLoadCSV(t *testing.T) {
 2023-01-01T00:02:00Z,105,110,104,108,1200`
 
 	reader := strings.NewReader(csvData)
-	config := NewCSVConfig()
+	config := series.NewCSVConfig()
 	config.TimeFormat = time.RFC3339
 
-	ts, err := LoadCSV(reader, config)
+	ts, err := series.LoadCSV(reader, config)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, ts.Length())
 
@@ -39,7 +41,7 @@ func TestLoadJSON(t *testing.T) {
 	]`
 
 	reader := strings.NewReader(jsonData)
-	ts, err := LoadJSON(reader, time.RFC3339)
+	ts, err := series.LoadJSON(reader, time.RFC3339)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, ts.Length())
 

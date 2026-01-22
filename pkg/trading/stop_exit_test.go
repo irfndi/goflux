@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
 	"github.com/irfndi/goflux/pkg/testutils"
 	"github.com/irfndi/goflux/pkg/trading"
-	"github.com/stretchr/testify/assert"
 )
 
 func testTime(seconds int) time.Time {

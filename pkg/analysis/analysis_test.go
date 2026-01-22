@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/analysis"
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/testutils"
 	"github.com/irfndi/goflux/pkg/trading"
-	"github.com/stretchr/testify/assert"
 )
 
 const example = "EXM"

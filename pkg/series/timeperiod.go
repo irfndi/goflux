@@ -83,19 +83,19 @@ func Parse(timerange string) (tr TimePeriod, err error) {
 	switch len(timerange) {
 	case len(SimpleDateTimeFormat)*2 + 1:
 		layout = SimpleDateTimeFormat
-		start = string(timerange[:len(SimpleDateTimeFormat)])
-		end = string(timerange[len(SimpleDateTimeFormat)+1:])
+		start = timerange[:len(SimpleDateTimeFormat)]
+		end = timerange[len(SimpleDateTimeFormat)+1:]
 	case len(SimpleDateTimeFormat) + 1:
 		layout = SimpleDateTimeFormat
-		start = string(timerange[:len(SimpleDateTimeFormat)])
+		start = timerange[:len(SimpleDateTimeFormat)]
 		end = ""
 	case len(SimpleDateFormat)*2 + 1:
 		layout = SimpleDateFormat
-		start = string(timerange[:len(SimpleDateFormat)])
-		end = string(timerange[len(SimpleDateFormat)+1:])
+		start = timerange[:len(SimpleDateFormat)]
+		end = timerange[len(SimpleDateFormat)+1:]
 	case len(SimpleDateFormat) + 1:
 		layout = SimpleDateFormat
-		start = string(timerange[:len(SimpleDateFormat)])
+		start = timerange[:len(SimpleDateFormat)]
 		end = ""
 	default:
 		err = fmt.Errorf("could not parse timerange string %s", timerange)

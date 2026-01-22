@@ -4,10 +4,11 @@ import (
 	"math"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/irfndi/goflux/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 var fastStochValues = []float64{

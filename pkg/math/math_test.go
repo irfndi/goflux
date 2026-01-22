@@ -186,10 +186,10 @@ func TestConcurrency(t *testing.T) {
 	done := make(chan bool)
 	for i := 0; i < 100; i++ {
 		go func() {
-			Min(1, 2)
-			Max(1, 2)
-			Pow(2, 10)
-			Abs(-5)
+			_ = Min(1, 2)
+			_ = Max(1, 2)
+			_ = Pow(2, 10)
+			_ = Abs(-5)
 			done <- true
 		}()
 	}

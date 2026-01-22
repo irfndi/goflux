@@ -6,9 +6,10 @@ import (
 
 	"github.com/irfndi/goflux/pkg/series"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/indicators"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewVolumeIndicator(t *testing.T) {

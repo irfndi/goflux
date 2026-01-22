@@ -207,7 +207,7 @@ func TestZero(t *testing.T) {
 
 func TestStringAndFormattedString(t *testing.T) {
 	d := NewFromString("123.456789")
-	
+
 	// Check that FormattedString starts with expected value
 	s := d.FormattedString(10)
 	if len(s) < len("123.456789") || s[:len("123.456789")] != "123.456789" {
@@ -226,7 +226,7 @@ func TestStringAndFormattedString(t *testing.T) {
 func TestAbs(t *testing.T) {
 	d1 := New(-100)
 	d2 := d1.Abs()
-	
+
 	if d2.Cmp(New(100)) != 0 {
 		t.Errorf("Abs(-100) = %v, want 100", d2)
 	}
@@ -241,7 +241,7 @@ func TestAbs(t *testing.T) {
 func TestNeg(t *testing.T) {
 	d := New(100)
 	result := d.Neg()
-	
+
 	if result.Cmp(New(-100)) != 0 {
 		t.Errorf("Neg(100) = %v, want -100", result)
 	}
@@ -256,7 +256,7 @@ func TestNeg(t *testing.T) {
 func TestMax(t *testing.T) {
 	d1 := New(100)
 	d2 := New(200)
-	
+
 	result := d1.Max(d2)
 	if result.Cmp(New(200)) != 0 {
 		t.Errorf("Max(100, 200) = %v, want 200", result)
@@ -271,7 +271,7 @@ func TestMax(t *testing.T) {
 func TestMin(t *testing.T) {
 	d1 := New(100)
 	d2 := New(200)
-	
+
 	result := d1.Min(d2)
 	if result.Cmp(New(100)) != 0 {
 		t.Errorf("Min(100, 200) = %v, want 100", result)
@@ -286,7 +286,7 @@ func TestMin(t *testing.T) {
 func TestSqrt(t *testing.T) {
 	d := New(16)
 	result := d.Sqrt()
-	
+
 	expected := New(4)
 	if result.Cmp(expected) != 0 {
 		t.Errorf("Sqrt(16) = %v, want %v", result, expected)

@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/irfndi/goflux/pkg/series"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/irfndi/goflux/pkg/series"
 )
 
 func ExampleParseTimePeriod() {

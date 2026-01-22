@@ -37,11 +37,9 @@ func (z *zigzagIndicator) Calculate(index int) decimal.Decimal {
 	// ZigZag is a global calculation that needs forward/backward passes or iterative state.
 	// For simplicity, we'll do an iterative calculation.
 
-	start := len(z.cache)
-	if start == 0 {
+	if len(z.cache) == 0 {
 		z.cache = append(z.cache, z.series.Candles[0].ClosePrice)
 		z.cachePeak = append(z.cachePeak, true)
-		start = 1
 	}
 
 	// This implementation is a bit complex for a real-time indicator because it can repaint.

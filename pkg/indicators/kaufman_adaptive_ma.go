@@ -97,11 +97,9 @@ func (k *kamaIndicator) calculateVolatility(index int, window int) decimal.Decim
 
 type demaIndicator struct {
 	Indicator
-	series    *series.TimeSeries
-	indicator Indicator
-	window    int
-	ema1      *emaAllIndicator
-	ema2      *emaAllIndicator
+	window int
+	ema1   *emaAllIndicator
+	ema2   *emaAllIndicator
 }
 
 func NewDEMAIndicator(s *series.TimeSeries, window int) Indicator {
@@ -109,11 +107,9 @@ func NewDEMAIndicator(s *series.TimeSeries, window int) Indicator {
 	ema1 := newEmaAllIndicator(base, window)
 	ema2 := newEmaAllIndicator(ema1, window)
 	return &demaIndicator{
-		series:    s,
-		indicator: base,
-		window:    window,
-		ema1:      ema1,
-		ema2:      ema2,
+		window: window,
+		ema1:   ema1,
+		ema2:   ema2,
 	}
 }
 
@@ -122,48 +118,6 @@ func (d *demaIndicator) Calculate(index int) decimal.Decimal {
 		return decimal.ZERO
 	}
 	return d.ema1.Calculate(index).Mul(decimal.New(2)).Sub(d.ema2.Calculate(index))
-}
-
-func (d *demaIndicator) calculateEMA(index int, window int) decimal.Decimal {
-	if index < window-1 {
-		return d.indicator.Calculate(index)
-	}
-
-	alpha := decimal.New(2).Div(decimal.New(float64(window + 1)))
-
-	ema := d.indicator.Calculate(index - window + 1)
-
-	for i := index - window + 2; i <= index; i++ {
-		ema = ema.Mul(decimal.ONE.Sub(alpha)).Add(d.indicator.Calculate(i).Mul(alpha))
-	}
-
-	return ema
-}
-
-func (d *demaIndicator) calculateEMAWithInput(index int, window int, input decimal.Decimal) decimal.Decimal {
-	if index < window-1 {
-		return input
-	}
-
-	alpha := decimal.New(2).Div(decimal.New(float64(window + 1)))
-
-	ema := input
-
-	for i := 0; i < window-1; i++ {
-		ema = ema.Mul(decimal.ONE.Sub(alpha)).Add(input.Mul(alpha))
-	}
-
-	return ema
-}
-
-type emaForDema struct {
-	Indicator
-	indicator Indicator
-	window    int
-}
-
-func (e *emaForDema) Calculate(index int) decimal.Decimal {
-	return e.indicator.Calculate(index)
 }
 
 type emaAllIndicator struct {
@@ -226,12 +180,10 @@ func (ema *emaAllIndicator) Calculate(index int) decimal.Decimal {
 
 type temaIndicator struct {
 	Indicator
-	series    *series.TimeSeries
-	indicator Indicator
-	window    int
-	ema1      *emaAllIndicator
-	ema2      *emaAllIndicator
-	ema3      *emaAllIndicator
+	window int
+	ema1   *emaAllIndicator
+	ema2   *emaAllIndicator
+	ema3   *emaAllIndicator
 }
 
 func NewTEMAIndicator(s *series.TimeSeries, window int) Indicator {
@@ -240,12 +192,10 @@ func NewTEMAIndicator(s *series.TimeSeries, window int) Indicator {
 	ema2 := newEmaAllIndicator(ema1, window)
 	ema3 := newEmaAllIndicator(ema2, window)
 	return &temaIndicator{
-		series:    s,
-		indicator: base,
-		window:    window,
-		ema1:      ema1,
-		ema2:      ema2,
-		ema3:      ema3,
+		window: window,
+		ema1:   ema1,
+		ema2:   ema2,
+		ema3:   ema3,
 	}
 }
 
@@ -257,57 +207,4 @@ func (t *temaIndicator) Calculate(index int) decimal.Decimal {
 		Mul(decimal.New(3)).
 		Sub(t.ema2.Calculate(index).Mul(decimal.New(3))).
 		Add(t.ema3.Calculate(index))
-}
-
-func (t *temaIndicator) calculateEMA(index int, window int) decimal.Decimal {
-	if index < window-1 {
-		return t.indicator.Calculate(index)
-	}
-
-	alpha := decimal.New(2).Div(decimal.New(float64(window + 1)))
-
-	ema := t.indicator.Calculate(index - window + 1)
-
-	for i := index - window + 2; i <= index; i++ {
-		ema = ema.Mul(decimal.ONE.Sub(alpha)).Add(t.indicator.Calculate(i).Mul(alpha))
-	}
-
-	return ema
-}
-
-func (t *temaIndicator) calculateEMAWithInput(index int, window int, input decimal.Decimal) decimal.Decimal {
-	if index < window-1 {
-		return input
-	}
-
-	alpha := decimal.New(2).Div(decimal.New(float64(window + 1)))
-
-	ema := input
-
-	for i := 0; i < window-1; i++ {
-		ema = ema.Mul(decimal.ONE.Sub(alpha)).Add(input.Mul(alpha))
-	}
-
-	return ema
-}
-
-type emaForTEMA struct {
-	Indicator
-	indicator Indicator
-	window    int
-}
-
-func (e *emaForTEMA) Calculate(index int) decimal.Decimal {
-	return e.indicator.Calculate(index)
-}
-
-type emaOfEmaForTEMA struct {
-	Indicator
-	indicator Indicator
-	window    int
-	emaOfEma  decimal.Decimal
-}
-
-func (e *emaOfEmaForTEMA) Calculate(index int) decimal.Decimal {
-	return e.emaOfEma
 }

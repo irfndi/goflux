@@ -229,14 +229,6 @@ func (c Candle) isInvertedHammer() bool {
 		bodyNearLow
 }
 
-func (c Candle) isHangingMan() bool {
-	return c.isHammer() && c.Close.LT(c.Open)
-}
-
-func (c Candle) isShootingStar() bool {
-	return c.isInvertedHammer() && c.Close.LT(c.Open)
-}
-
 func (c Candle) isSpinningTop() bool {
 	body := c.body()
 	rangeVal := c.candleRange()

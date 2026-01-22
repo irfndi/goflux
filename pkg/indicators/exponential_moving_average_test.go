@@ -3,8 +3,9 @@ package indicators
 import (
 	"testing"
 
-	"github.com/irfndi/goflux/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/irfndi/goflux/pkg/testutils"
 )
 
 func TestExponentialMovingAverage(t *testing.T) {

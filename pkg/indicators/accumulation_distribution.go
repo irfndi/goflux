@@ -59,30 +59,3 @@ func (adl *adLineIndicator) Calculate(index int) decimal.Decimal {
 
 	return adl.cache[index]
 }
-
-type mfvIndicator struct {
-	Indicator
-	series *series.TimeSeries
-}
-
-func newMFVIndicator(s *series.TimeSeries) Indicator {
-	return &mfvIndicator{series: s}
-}
-
-func (m *mfvIndicator) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(m.series.Candles) {
-		return decimal.ZERO
-	}
-	candle := m.series.Candles[index]
-	high := candle.MaxPrice
-	low := candle.MinPrice
-	close := candle.ClosePrice
-	volume := candle.Volume
-
-	highLow := high.Sub(low)
-	if highLow.IsZero() {
-		return decimal.ZERO
-	}
-	mfm := close.Sub(low).Sub(high.Sub(close)).Div(highLow)
-	return mfm.Mul(volume)
-}

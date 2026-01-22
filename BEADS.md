@@ -203,11 +203,11 @@ Ready for production use.
 - [x] Composite rules (AND/OR/NOT)
 
 ### Sprint 9: Data Management & Visualization (MEDIUM PRIORITY)
-- [ ] CSV/JSON data loaders
+- [x] CSV/JSON data loaders
 - [ ] Database integration (InfluxDB, TimescaleDB)
 - [x] Time series resampling (e.g., 1m to 5m, 1h)
 - [x] Heikin Ashi candle generation
-- [ ] Renko chart generation
+- [x] Renko chart generation
 
 ---
 

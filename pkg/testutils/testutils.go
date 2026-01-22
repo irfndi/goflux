@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
-	"github.com/stretchr/testify/assert"
 )
 
 var MockedTimeSeries = MockTimeSeriesFl(
@@ -25,9 +26,9 @@ type Indicator interface {
 
 func RandomTimeSeries(size int) *series.TimeSeries {
 	vals := make([]string, size)
-	rand.Seed(time.Now().Unix())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < size; i++ {
-		val := rand.Float64() * 100
+		val := rng.Float64() * 100
 		if i == 0 {
 			vals[i] = fmt.Sprint(val)
 		} else {
@@ -93,17 +94,25 @@ func Dump(indicator Indicator) (values []float64) {
 	precision := 4.0
 	m := math.Pow(10, precision)
 
-	defer func() {
-		recover()
-	}()
-
-	var index int
-	for {
-		values = append(values, math.Round(indicator.Calculate(index).Float()*m)/m)
-		index++
+	for index := 0; ; index++ {
+		val, ok := safeCalculate(indicator, index)
+		if !ok {
+			break
+		}
+		values = append(values, math.Round(val.Float()*m)/m)
 	}
 
 	return
+}
+
+func safeCalculate(indicator Indicator, index int) (value decimal.Decimal, ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
+		}
+	}()
+
+	return indicator.Calculate(index), true
 }
 
 func IndicatorEquals(t *testing.T, expected []float64, indicator Indicator) {
