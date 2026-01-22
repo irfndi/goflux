@@ -45,7 +45,8 @@ func (ps *parabolicSARIndicator) Calculate(index int) decimal.Decimal {
 	previousHigh := ps.high.Calculate(index - 1)
 	previousLow := ps.low.Calculate(index - 1)
 
-	if ps.trend == 1 {
+	switch ps.trend {
+	case 1:
 		if currentHigh.GT(ps.prevEP) {
 			ps.prevEP = currentHigh
 			ps.prevAF = ps.prevAF.Add(ps.af)
@@ -61,7 +62,7 @@ func (ps *parabolicSARIndicator) Calculate(index int) decimal.Decimal {
 			ps.prevEP = previousLow
 			ps.prevSAR = ps.prevEP
 		}
-	} else if ps.trend == -1 {
+	case -1:
 		if currentLow.LT(ps.prevEP) {
 			ps.prevEP = currentLow
 			ps.prevAF = ps.prevAF.Add(ps.af)

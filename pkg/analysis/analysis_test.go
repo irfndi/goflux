@@ -216,6 +216,7 @@ func TestLogTradesAnalysis(t *testing.T) {
 		now.AddDate(0, 0, 1),
 		now.AddDate(0, 0, 2),
 		now.AddDate(0, 0, 3),
+		now.AddDate(0, 0, 4),
 	}
 
 	orders := []trading.Order{

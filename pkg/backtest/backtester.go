@@ -101,14 +101,15 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 			pos := &positions[j]
 			shouldExit := false
 
-			if pos.Direction == "long" {
+			switch pos.Direction {
+			case "long":
 				if !pos.StopLoss.IsZero() && currentPrice.LTE(pos.StopLoss) {
 					shouldExit = true
 				}
 				if !pos.TakeProfit.IsZero() && currentPrice.GTE(pos.TakeProfit) {
 					shouldExit = true
 				}
-			} else if pos.Direction == "short" {
+			case "short":
 				if !pos.StopLoss.IsZero() && currentPrice.GTE(pos.StopLoss) {
 					shouldExit = true
 				}
@@ -119,9 +120,10 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 
 			if shouldExit {
 				var profit decimal.Decimal
-				if pos.Direction == "long" {
+				switch pos.Direction {
+				case "long":
 					profit = currentPrice.Sub(pos.EntryPrice).Mul(pos.Quantity)
-				} else {
+				default:
 					profit = pos.EntryPrice.Sub(currentPrice).Mul(pos.Quantity)
 				}
 
@@ -177,9 +179,10 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 			for j := len(positions) - 1; j >= 0; j-- {
 				pos := &positions[j]
 				var profit decimal.Decimal
-				if pos.Direction == "long" {
+				switch pos.Direction {
+				case "long":
 					profit = currentPrice.Sub(pos.EntryPrice).Mul(pos.Quantity)
-				} else {
+				default:
 					profit = pos.EntryPrice.Sub(currentPrice).Mul(pos.Quantity)
 				}
 
@@ -213,9 +216,10 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 		candle := b.series.Candles[len(b.series.Candles)-1]
 		currentPrice := candle.ClosePrice
 		var profit decimal.Decimal
-		if pos.Direction == "long" {
+		switch pos.Direction {
+		case "long":
 			profit = currentPrice.Sub(pos.EntryPrice).Mul(pos.Quantity)
-		} else {
+		default:
 			profit = pos.EntryPrice.Sub(currentPrice).Mul(pos.Quantity)
 		}
 

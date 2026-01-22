@@ -53,7 +53,12 @@ jobs:
         fi
       
     - name: Run tests with race detection
-      run: go test -v -race -parallel=4 -coverprofile=coverage.txt -covermode=atomic ./...
+      run: |
+        if [ "${{ matrix.go-version }}" = "1.25" ]; then
+          go test -v -race -parallel=4 -coverprofile=coverage.txt -covermode=atomic ./...
+        else
+          go test -v -race -parallel=4 ./...
+        fi
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

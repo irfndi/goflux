@@ -3,7 +3,7 @@ package testutils
 import (
 	"fmt"
 	"math"
-	"math/rand"
+	mrand "math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -26,7 +26,7 @@ type Indicator interface {
 
 func RandomTimeSeries(size int) *series.TimeSeries {
 	vals := make([]string, size)
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rng := mrand.New(mrand.NewSource(time.Now().UnixNano())) //nolint:gosec // Use of weak random is acceptable for test utilities
 	for i := 0; i < size; i++ {
 		val := rng.Float64() * 100
 		if i == 0 {

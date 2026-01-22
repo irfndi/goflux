@@ -10,7 +10,7 @@ This file tracks all development tasks for the GoFlux library (fork from techan)
 
 ## Current Status
 
-** ALL CORE TASKS COMPLETED**
+**ALL CORE TASKS COMPLETED (CI PASSING)**
 
 Completed:
 - Systematic code review and optimization for Go 1.23
@@ -25,6 +25,7 @@ Completed:
 - Created comprehensive pkg/metrics with performance functions
 - Fixed all import and build errors across all packages
 - Verified full test suite: 8 packages tested successfully
+- Limited CI coverage upload to latest Go (avoids covdata mismatch)
 
 Ready for production use.
 
@@ -54,7 +55,7 @@ Ready for production use.
 
 ## Phase 3: Dependency Updates (COMPLETED)
 
-- [x] Update Go version to 1.25 (latest stable as of 2026-01-15)
+- [x] Set go.mod language version to 1.21
 - [x] Update go.mod with new module path
 - [x] Update github.com/stretchr/testify to v1.9.0 (latest)
 - [x] Add golangci-lint configuration
