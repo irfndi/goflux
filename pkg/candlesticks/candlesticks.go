@@ -48,6 +48,16 @@ const (
 	DojiStar
 	PiercingLine
 	DarkCloudCover
+	BullishHaramiCross
+	BearishHaramiCross
+	BullishBeltHold
+	BearishBeltHold
+	BullishAbandonedBaby
+	BearishAbandonedBaby
+	BullishKicking
+	BearishKicking
+	TweezerBottom
+	TweezerTop
 )
 
 type PatternDetector struct {
@@ -80,7 +90,7 @@ func (pd *PatternDetector) Detect(index int) Pattern {
 
 	candle := pd.GetCandle(index)
 
-	if p := detectSingleCandlePattern(candle); p != None {
+	if p := pd.detectThreeCandlePattern(index, candle); p != None {
 		return p
 	}
 
@@ -88,7 +98,7 @@ func (pd *PatternDetector) Detect(index int) Pattern {
 		return p
 	}
 
-	if p := pd.detectThreeCandlePattern(index, candle); p != None {
+	if p := detectSingleCandlePattern(candle); p != None {
 		return p
 	}
 
@@ -117,6 +127,12 @@ func detectSingleCandlePattern(c Candle) Pattern {
 	if c.isSpinningTop() {
 		return SpinningTop
 	}
+	if c.isBullishBeltHold() {
+		return BullishBeltHold
+	}
+	if c.isBearishBeltHold() {
+		return BearishBeltHold
+	}
 	return None
 }
 
@@ -144,6 +160,24 @@ func (pd *PatternDetector) detectTwoCandlePattern(index int, current Candle) Pat
 	if current.isDarkCloudCover(prev) {
 		return DarkCloudCover
 	}
+	if current.isBullishHaramiCross(prev) {
+		return BullishHaramiCross
+	}
+	if current.isBearishHaramiCross(prev) {
+		return BearishHaramiCross
+	}
+	if current.isBullishKicking(prev) {
+		return BullishKicking
+	}
+	if current.isBearishKicking(prev) {
+		return BearishKicking
+	}
+	if current.isTweezerBottom(prev) {
+		return TweezerBottom
+	}
+	if current.isTweezerTop(prev) {
+		return TweezerTop
+	}
 	return None
 }
 
@@ -159,6 +193,12 @@ func (pd *PatternDetector) detectThreeCandlePattern(index int, current Candle) P
 	}
 	if current.isEveningStar(first, middle) {
 		return EveningStar
+	}
+	if current.isBullishAbandonedBaby(first, middle) {
+		return BullishAbandonedBaby
+	}
+	if current.isBearishAbandonedBaby(first, middle) {
+		return BearishAbandonedBaby
 	}
 	return None
 }
@@ -270,6 +310,30 @@ func (c Candle) isMarubozu() bool {
 	return bodyRatio.GT(decimal.New(0.95)) && upper.LT(body.Mul(decimal.New(0.05))) && lower.LT(body.Mul(decimal.New(0.05)))
 }
 
+func (c Candle) isBullishBeltHold() bool {
+	body := c.body()
+	rangeVal := c.candleRange()
+	if rangeVal.IsZero() {
+		return false
+	}
+	// Long white candle, no lower shadow
+	return c.Close.GT(c.Open) &&
+		c.lowerShadow().LT(rangeVal.Mul(decimal.New(0.05))) &&
+		body.GT(rangeVal.Mul(decimal.New(0.7)))
+}
+
+func (c Candle) isBearishBeltHold() bool {
+	body := c.body()
+	rangeVal := c.candleRange()
+	if rangeVal.IsZero() {
+		return false
+	}
+	// Long black candle, no upper shadow
+	return c.Close.LT(c.Open) &&
+		c.upperShadow().LT(rangeVal.Mul(decimal.New(0.05))) &&
+		body.GT(rangeVal.Mul(decimal.New(0.7)))
+}
+
 func (c Candle) isBullishEngulfing(prev Candle) bool {
 	if prev.isDoji() || c.isDoji() {
 		return false
@@ -328,6 +392,78 @@ func (c Candle) isBearishHarami(prev Candle) bool {
 	}
 
 	return c.Open.LT(prev.Close) && c.Close.GT(prev.Open) && c.body().LT(prev.body().Mul(decimal.New(0.3)))
+}
+
+func (c Candle) isTweezerTop(prev Candle) bool {
+	return c.High.EQ(prev.High) && c.candleRange().GT(decimal.ZERO)
+}
+
+func (c Candle) isTweezerBottom(prev Candle) bool {
+	return c.Low.EQ(prev.Low) && c.candleRange().GT(decimal.ZERO)
+}
+
+func (c Candle) isBearishKicking(prev Candle) bool {
+	return prev.isMarubozu() && prev.Close.GT(prev.Open) &&
+		c.isMarubozu() && c.Close.LT(c.Open) &&
+		c.Open.LT(prev.Open)
+}
+
+func (c Candle) isBullishKicking(prev Candle) bool {
+	return prev.isMarubozu() && prev.Close.LT(prev.Open) &&
+		c.isMarubozu() && c.Close.GT(c.Open) &&
+		c.Open.GT(prev.Open)
+}
+
+func (c Candle) isBearishHaramiCross(prev Candle) bool {
+	if !c.isDoji() {
+		return false
+	}
+
+	prevBullish := prev.Close.GT(prev.Open)
+	if !prevBullish {
+		return false
+	}
+
+	return c.Open.LT(prev.Close) && c.Open.GT(prev.Open)
+}
+
+func (c Candle) isBullishHaramiCross(prev Candle) bool {
+	if !c.isDoji() {
+		return false
+	}
+
+	prevBearish := prev.Close.LT(prev.Open)
+	if !prevBearish {
+		return false
+	}
+
+	return c.Open.GT(prev.Close) && c.Open.LT(prev.Open)
+}
+
+func (c Candle) isBearishAbandonedBaby(first, middle Candle) bool {
+	if !middle.isDoji() {
+		return false
+	}
+	firstBullish := first.Close.GT(first.Open)
+	currentBearish := c.Close.LT(c.Open)
+
+	gapUp := middle.Low.GT(first.High)
+	gapDown := c.High.LT(middle.Low)
+
+	return firstBullish && currentBearish && gapUp && gapDown
+}
+
+func (c Candle) isBullishAbandonedBaby(first, middle Candle) bool {
+	if !middle.isDoji() {
+		return false
+	}
+	firstBearish := first.Close.LT(first.Open)
+	currentBullish := c.Close.GT(c.Open)
+
+	gapDown := middle.High.LT(first.Low)
+	gapUp := c.Low.GT(middle.High)
+
+	return firstBearish && currentBullish && gapDown && gapUp
 }
 
 func (c Candle) isMorningStar(first, middle Candle) bool {
@@ -401,26 +537,36 @@ func (c Candle) isDarkCloudCover(prev Candle) bool {
 }
 
 var patternNames = map[Pattern]string{
-	Doji:               "Doji",
-	DragonflyDoji:      "Dragonfly Doji",
-	GravestoneDoji:     "Gravestone Doji",
-	Hammer:             "Hammer",
-	InvertedHammer:     "Inverted Hammer",
-	HangingMan:         "Hanging Man",
-	ShootingStar:       "Shooting Star",
-	BullishEngulfing:   "Bullish Engulfing",
-	BearishEngulfing:   "Bearish Engulfing",
-	BullishHarami:      "Bullish Harami",
-	BearishHarami:      "Bearish Harami",
-	MorningStar:        "Morning Star",
-	EveningStar:        "Evening Star",
-	ThreeWhiteSoldiers: "Three White Soldiers",
-	ThreeBlackCrows:    "Three Black Crows",
-	SpinningTop:        "Spinning Top",
-	Marubozu:           "Marubozu",
-	DojiStar:           "Doji Star",
-	PiercingLine:       "Piercing Line",
-	DarkCloudCover:     "Dark Cloud Cover",
+	Doji:                 "Doji",
+	DragonflyDoji:        "Dragonfly Doji",
+	GravestoneDoji:       "Gravestone Doji",
+	Hammer:               "Hammer",
+	InvertedHammer:       "Inverted Hammer",
+	HangingMan:           "Hanging Man",
+	ShootingStar:         "Shooting Star",
+	BullishEngulfing:     "Bullish Engulfing",
+	BearishEngulfing:     "Bearish Engulfing",
+	BullishHarami:        "Bullish Harami",
+	BearishHarami:        "Bearish Harami",
+	MorningStar:          "Morning Star",
+	EveningStar:          "Evening Star",
+	ThreeWhiteSoldiers:   "Three White Soldiers",
+	ThreeBlackCrows:      "Three Black Crows",
+	SpinningTop:          "Spinning Top",
+	Marubozu:             "Marubozu",
+	DojiStar:             "Doji Star",
+	PiercingLine:         "Piercing Line",
+	DarkCloudCover:       "Dark Cloud Cover",
+	BullishHaramiCross:   "Bullish Harami Cross",
+	BearishHaramiCross:   "Bearish Harami Cross",
+	BullishBeltHold:      "Bullish Belt-Hold",
+	BearishBeltHold:      "Bearish Belt-Hold",
+	BullishAbandonedBaby: "Bullish Abandoned Baby",
+	BearishAbandonedBaby: "Bearish Abandoned Baby",
+	BullishKicking:       "Bullish Kicking",
+	BearishKicking:       "Bearish Kicking",
+	TweezerBottom:        "Tweezer Bottom",
+	TweezerTop:           "Tweezer Top",
 }
 
 func (p Pattern) String() string {

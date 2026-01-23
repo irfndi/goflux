@@ -45,10 +45,26 @@ var (
 	NewCandle     = series.NewCandle
 	NewTimePeriod = series.NewTimePeriod
 
-	NewClosePriceIndicator = indicators.NewClosePriceIndicator
-	NewEMAIndicator        = indicators.NewEMAIndicator
-	NewSMAIndicator        = indicators.NewSimpleMovingAverage
-	NewConstantIndicator   = indicators.NewConstantIndicator
+	NewClosePriceIndicator         = indicators.NewClosePriceIndicator
+	NewAveragePriceIndicator       = indicators.NewAveragePriceIndicator
+	NewMedianPriceIndicator        = indicators.NewMedianPriceIndicator
+	NewWeightedCloseIndicator      = indicators.NewWeightedCloseIndicator
+	NewBollingerBandwidthIndicator = indicators.NewBollingerBandwidthIndicator
+	NewATRRatioIndicator           = indicators.NewATRRatioIndicator
+	NewATRRatioIndicatorFromSeries = indicators.NewATRRatioIndicatorFromSeries
+	NewEMAIndicator                = indicators.NewEMAIndicator
+	NewSMAIndicator                = indicators.NewSimpleMovingAverage
+	NewTRIMAIndicator              = indicators.NewTRIMAIndicator
+	NewRMAIndicator                = indicators.NewRMAIndicator
+	NewT3Indicator                 = indicators.NewT3Indicator
+	NewALMAIndicator               = indicators.NewALMAIndicator
+	NewVIDYAIndicator              = indicators.NewVIDYAIndicator
+	NewMAMAIndicator               = indicators.NewMAMAIndicator
+	NewFAMAIndicator               = indicators.NewFAMAIndicator
+	NewTimeSeriesIndicator         = indicators.NewTimeSeriesIndicator
+	NewVWMAIndicator               = indicators.NewVWMAIndicator
+	NewVWMAIndicatorFromSeries     = indicators.NewVWMAIndicatorFromSeries
+	NewConstantIndicator           = indicators.NewConstantIndicator
 
 	NewTradingRecord = trading.NewTradingRecord
 	NewPosition      = trading.NewPosition

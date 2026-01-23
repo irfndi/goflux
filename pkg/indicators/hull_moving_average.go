@@ -4,29 +4,23 @@ import (
 	"math"
 
 	"github.com/irfndi/goflux/pkg/decimal"
-	"github.com/irfndi/goflux/pkg/series"
 )
 
 type hmaIndicator struct {
-	Indicator
-	series      *series.TimeSeries
+	indicator   Indicator
 	window      int
 	rawHMACache []decimal.Decimal
 }
 
-func NewHMAIndicator(s *series.TimeSeries, window int) Indicator {
+func NewHMAIndicator(indicator Indicator, window int) Indicator {
 	return &hmaIndicator{
-		series:      s,
+		indicator:   indicator,
 		window:      window,
 		rawHMACache: make([]decimal.Decimal, 0),
 	}
 }
 
 func (h *hmaIndicator) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(h.series.Candles) {
-		return decimal.ZERO
-	}
-
 	if index < h.window-1 {
 		return decimal.ZERO
 	}
@@ -43,17 +37,14 @@ func (h *hmaIndicator) Calculate(index int) decimal.Decimal {
 	}
 
 	numerator := decimal.ZERO
-	denominator := decimal.New(float64(sqrtWindow * (sqrtWindow + 1) / 2))
-
+	// We need a WMA of the rawHMA.
+	// Since rawHMA is a slice, we'll implement it manually here or create a FixedIndicator
 	for i := 0; i < sqrtWindow; i++ {
 		idx := index - i
-		if idx < 0 {
-			break
-		}
 		weight := decimal.New(float64(sqrtWindow - i))
-		value := h.rawHMACache[idx]
-		numerator = numerator.Add(value.Mul(weight))
+		numerator = numerator.Add(h.rawHMACache[idx].Mul(weight))
 	}
+	denominator := decimal.New(float64(sqrtWindow * (sqrtWindow + 1) / 2))
 
 	return numerator.Div(denominator)
 }
@@ -64,8 +55,8 @@ func (h *hmaIndicator) fillRawHMACache(index int) {
 		halfWindow = 1
 	}
 
-	wmaHalf := NewWMAIndicator(h.series, halfWindow)
-	wmaFull := NewWMAIndicator(h.series, h.window)
+	wmaHalf := NewWMAIndicator(h.indicator, halfWindow)
+	wmaFull := NewWMAIndicator(h.indicator, h.window)
 
 	for i := len(h.rawHMACache); i <= index; i++ {
 		valHalf := wmaHalf.Calculate(i)
@@ -73,43 +64,4 @@ func (h *hmaIndicator) fillRawHMACache(index int) {
 		rawHMA := valHalf.Mul(decimal.New(2)).Sub(valFull)
 		h.rawHMACache = append(h.rawHMACache, rawHMA)
 	}
-}
-
-type wmaIndicator struct {
-	Indicator
-	series *series.TimeSeries
-	window int
-}
-
-func NewWMAIndicator(s *series.TimeSeries, window int) Indicator {
-	return &wmaIndicator{
-		series: s,
-		window: window,
-	}
-}
-
-func (w *wmaIndicator) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(w.series.Candles) {
-		return decimal.ZERO
-	}
-
-	if index < w.window-1 {
-		return decimal.ZERO
-	}
-
-	numerator := decimal.ZERO
-	denominator := decimal.New(float64(w.window * (w.window + 1) / 2))
-
-	close := NewClosePriceIndicator(w.series)
-	for i := 0; i < w.window; i++ {
-		idx := index - i
-		if idx < 0 {
-			break
-		}
-		weight := decimal.New(float64(w.window - i))
-		value := close.Calculate(idx)
-		numerator = numerator.Add(value.Mul(weight))
-	}
-
-	return numerator.Div(denominator)
 }

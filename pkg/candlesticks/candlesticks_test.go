@@ -210,3 +210,56 @@ func TestDetectOutOfBounds(t *testing.T) {
 		t.Errorf("Expected None for out of bounds index")
 	}
 }
+
+func TestBullishHaramiCross(t *testing.T) {
+	s := series.NewTimeSeries()
+	s.AddCandle(createCandle(100, 110, 80, 85)) // Large black
+	s.AddCandle(createCandle(92, 93, 91, 92))   // Doji inside first body
+
+	pd := NewPatternDetector(s)
+	result := pd.Detect(1)
+
+	if result != BullishHaramiCross {
+		t.Errorf("Expected BullishHaramiCross, got %v", result)
+	}
+}
+
+func TestBullishBeltHold(t *testing.T) {
+	s := series.NewTimeSeries()
+	// open at low, long body, close near high
+	s.AddCandle(createCandle(100, 110, 100, 109))
+
+	pd := NewPatternDetector(s)
+	result := pd.Detect(0)
+
+	if result != BullishBeltHold {
+		t.Errorf("Expected BullishBeltHold, got %v", result)
+	}
+}
+
+func TestTweezerBottom(t *testing.T) {
+	s := series.NewTimeSeries()
+	s.AddCandle(createCandle(100, 110, 95, 98))
+	s.AddCandle(createCandle(98, 105, 95, 102))
+
+	pd := NewPatternDetector(s)
+	result := pd.Detect(1)
+
+	if result != TweezerBottom {
+		t.Errorf("Expected TweezerBottom, got %v", result)
+	}
+}
+
+func TestBullishAbandonedBaby(t *testing.T) {
+	s := series.NewTimeSeries()
+	s.AddCandle(createCandle(100, 105, 90, 92)) // black
+	s.AddCandle(createCandle(85, 86, 84, 85))   // doji gap down
+	s.AddCandle(createCandle(95, 110, 95, 105)) // white gap up
+
+	pd := NewPatternDetector(s)
+	result := pd.Detect(2)
+
+	if result != BullishAbandonedBaby {
+		t.Errorf("Expected BullishAbandonedBaby, got %v", result)
+	}
+}

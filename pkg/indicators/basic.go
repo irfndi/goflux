@@ -90,3 +90,42 @@ func (tpi typicalPriceIndicator) Calculate(index int) decimal.Decimal {
 	numerator := tpi.series.Candles[index].MaxPrice.Add(tpi.series.Candles[index].MinPrice).Add(tpi.series.Candles[index].ClosePrice)
 	return numerator.Div(decimal.NewFromString("3"))
 }
+
+type averagePriceIndicator struct {
+	series *series.TimeSeries
+}
+
+func NewAveragePriceIndicator(series *series.TimeSeries) Indicator {
+	return averagePriceIndicator{series: series}
+}
+
+func (api averagePriceIndicator) Calculate(index int) decimal.Decimal {
+	candle := api.series.Candles[index]
+	return candle.OpenPrice.Add(candle.MaxPrice).Add(candle.MinPrice).Add(candle.ClosePrice).Div(decimal.New(4))
+}
+
+type medianPriceIndicator struct {
+	series *series.TimeSeries
+}
+
+func NewMedianPriceIndicator(series *series.TimeSeries) Indicator {
+	return medianPriceIndicator{series: series}
+}
+
+func (mpi medianPriceIndicator) Calculate(index int) decimal.Decimal {
+	candle := mpi.series.Candles[index]
+	return candle.MaxPrice.Add(candle.MinPrice).Div(decimal.New(2))
+}
+
+type weightedCloseIndicator struct {
+	series *series.TimeSeries
+}
+
+func NewWeightedCloseIndicator(series *series.TimeSeries) Indicator {
+	return weightedCloseIndicator{series: series}
+}
+
+func (wci weightedCloseIndicator) Calculate(index int) decimal.Decimal {
+	candle := wci.series.Candles[index]
+	return candle.MaxPrice.Add(candle.MinPrice).Add(candle.ClosePrice).Add(candle.ClosePrice).Div(decimal.New(4))
+}

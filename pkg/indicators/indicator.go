@@ -8,3 +8,15 @@ import "github.com/irfndi/goflux/pkg/decimal"
 type Indicator interface {
 	Calculate(int) decimal.Decimal
 }
+
+// GenericIndicator is a generic interface for indicators
+type GenericIndicator[T any] interface {
+	Calculate(int) T
+}
+
+// SelfDescribingIndicator is an Indicator that can describe its requirements and properties
+type SelfDescribingIndicator interface {
+	Indicator
+	Lookback() int
+	Metadata() IndicatorMetadata
+}

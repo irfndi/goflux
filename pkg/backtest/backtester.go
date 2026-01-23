@@ -2,6 +2,7 @@ package backtest
 
 import (
 	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/metrics"
 	"github.com/irfndi/goflux/pkg/series"
 	"github.com/irfndi/goflux/pkg/trading"
 )
@@ -54,6 +55,7 @@ type BacktestResult struct {
 	FinalEquity          decimal.Decimal
 	InitialCapital       decimal.Decimal
 	Trades               []Trade
+	Analysis             AnalysisResult
 }
 
 type BacktestConfig struct {
@@ -67,15 +69,22 @@ type BacktestConfig struct {
 }
 
 type Backtester struct {
-	series   *series.TimeSeries
-	strategy trading.Strategy
+	series    *series.TimeSeries
+	strategy  trading.Strategy
+	analyzers *AnalyzerRegistry
 }
 
 func NewBacktester(s *series.TimeSeries, strategy trading.Strategy) *Backtester {
 	return &Backtester{
-		series:   s,
-		strategy: strategy,
+		series:    s,
+		strategy:  strategy,
+		analyzers: NewAnalyzerRegistry(),
 	}
+}
+
+// AddAnalyzer adds an analyzer to the backtester.
+func (b *Backtester) AddAnalyzer(a Analyzer) {
+	b.analyzers.Add(a)
 }
 
 func (b *Backtester) Run(config BacktestConfig) BacktestResult {
@@ -92,7 +101,40 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 
 	b.finalizeOpenPositions(&positions, &trades, &equity)
 
-	return b.calculateResults(trades, equityCurve, config.InitialCapital, equity)
+	result := b.calculateResults(trades, equityCurve, config.InitialCapital, equity)
+
+	// Run analyzers
+	metricsTrades := make([]metrics.Trade, len(trades))
+	for i, t := range trades {
+		metricsTrades[i] = metrics.Trade{
+			Profit:    t.Profit,
+			ProfitPct: t.ProfitPercent,
+			Duration:  t.Duration,
+			IsWin:     t.Profit.IsPositive(),
+		}
+	}
+
+	metricsEquityCurve := make([]metrics.EquityPoint, len(equityCurve))
+	peak := config.InitialCapital
+	for i, eq := range equityCurve {
+		if eq.GT(peak) {
+			peak = eq
+		}
+		drawdown := peak.Sub(eq)
+		var drawdownPct decimal.Decimal
+		if !peak.IsZero() {
+			drawdownPct = drawdown.Div(peak)
+		}
+		metricsEquityCurve[i] = metrics.EquityPoint{
+			Equity:      eq,
+			Drawdown:    drawdown,
+			DrawdownPct: drawdownPct,
+		}
+	}
+
+	result.Analysis = b.analyzers.Run(metricsTrades, metricsEquityCurve)
+
+	return result
 }
 
 func (b *Backtester) step(

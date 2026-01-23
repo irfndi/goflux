@@ -167,3 +167,39 @@ func TestBacktesterWithStopLoss(t *testing.T) {
 
 	assert.True(t, result.TotalTrades > 0)
 }
+
+func TestBacktesterWithAnalyzers(t *testing.T) {
+	s := createTestSeries()
+	strategy := &simpleStrategy{}
+
+	backtester := NewBacktester(s, strategy)
+	backtester.AddAnalyzer(&TradeStatsAnalyzer{})
+	backtester.AddAnalyzer(&DrawdownAnalyzer{})
+	backtester.AddAnalyzer(&SharpeRatioAnalyzer{RiskFreeRate: decimal.New(0.02)})
+
+	config := BacktestConfig{
+		InitialCapital: decimal.New(10000),
+		PositionSize:   decimal.New(100),
+		AllowLong:      true,
+	}
+
+	result := backtester.Run(config)
+
+	assert.NotNil(t, result.Analysis)
+
+	stats := result.Analysis["TradeStats"].(TradeStats)
+	if result.TotalTrades == 0 {
+		t.Log("No trades were made")
+	} else {
+		t.Logf("Total Trades: %d, Win Rate: %s", stats.TotalTrades, stats.WinRate.String())
+	}
+	assert.Equal(t, result.TotalTrades, stats.TotalTrades)
+	assert.True(t, stats.WinRate.GT(decimal.ZERO))
+
+	dd := result.Analysis["Drawdown"].(DrawdownStats)
+	t.Logf("Max Drawdown: %s, Max Drawdown Pct: %s", dd.MaxDrawdown.String(), dd.MaxDrawdownPct.String())
+	assert.True(t, dd.MaxDrawdown.Float() >= 0)
+
+	sharpe := result.Analysis["SharpeRatio"].(decimal.Decimal)
+	assert.NotNil(t, sharpe)
+}

@@ -20,7 +20,7 @@ func TestHMA(t *testing.T) {
 		})
 	}
 
-	hma := NewHMAIndicator(s, 14)
+	hma := NewHMAIndicator(NewClosePriceIndicator(s), 14)
 	result := hma.Calculate(29)
 
 	if result.IsZero() {
@@ -41,7 +41,7 @@ func TestHMAInsufficientData(t *testing.T) {
 		})
 	}
 
-	hma := NewHMAIndicator(s, 14)
+	hma := NewHMAIndicator(NewClosePriceIndicator(s), 14)
 	result := hma.Calculate(9)
 
 	if !result.EQ(decimal.ZERO) {
@@ -63,7 +63,7 @@ func TestWMALinearUpward(t *testing.T) {
 		})
 	}
 
-	wma := NewWMAIndicator(s, 5)
+	wma := NewWMAIndicator(NewClosePriceIndicator(s), 5)
 	result := wma.Calculate(4)
 
 	if result.LT(decimal.New(105)) {
@@ -84,8 +84,8 @@ func TestWMAInsufficientData(t *testing.T) {
 		})
 	}
 
-	wma := NewWMAIndicator(s, 5)
-	result := wma.Calculate(4)
+	wma := NewWMAIndicator(NewClosePriceIndicator(s), 5)
+	result := wma.Calculate(2)
 
 	if !result.EQ(decimal.ZERO) {
 		t.Errorf("WMA() should return ZERO for insufficient data, got %v", result)
@@ -105,7 +105,7 @@ func TestHMAVsSMA(t *testing.T) {
 		})
 	}
 
-	hma := NewHMAIndicator(s, 14)
+	hma := NewHMAIndicator(NewClosePriceIndicator(s), 14)
 	sma := NewSimpleMovingAverage(NewClosePriceIndicator(s), 14)
 
 	hmaValue := hma.Calculate(49)

@@ -139,9 +139,17 @@ To contribute:
 
 ## Acknowledgments
 
-GoFlux is heavily influenced by the great [ta4j](https://github.com/ta4j/ta4j). Many of the ideas and frameworks in this library owe their genesis to the great work done over there.
+GoFlux builds on the pioneering work of the technical analysis community:
 
-Special thanks to **sdcoffey** for creating the original [techan](https://github.com/sdcoffey/techan) library, which serves as the foundation for this project.
+- **[techan](https://github.com/sdcoffey/techan)** (sdcoffey) – the original Go technical analysis library and direct foundation of this project.
+- **[ta4j](https://github.com/ta4j/ta4j)** – a mature Java TA framework whose strategy composition and indicator design patterns heavily influenced GoFlux's architecture.
+- **[TA‑Lib](https://www.ta-lib.org/)** – the long-standing C/C++ technical analysis library (200+ indicators and candlestick patterns) that serves as a reference standard for indicator behavior and naming.
+- **[Pandas TA (Python)](https://github.com/freqtrade/pandas-ta)** – for ideas around indicator catalogs, composition patterns, and declarative strategy definitions.
+- **[YATA (Rust)](https://github.com/yata-rs/yata)** – for performance-oriented designs and trait-based indicator patterns.
+- **[Backtrader](https://www.backtrader.com/)** – the Python backtesting framework that inspired GoFlux's analyzer and observer patterns.
+- **[VectorBT](https://vectorbt.dev/)** – for vectorized operations and portfolio simulation approaches.
+
+GoFlux aims to bring these proven ideas into a modern, idiomatic Go library focused on concurrent, cloud-native trading systems.
 
 ## License
 

@@ -29,3 +29,12 @@ func (sma smaIndicator) Calculate(index int) decimal.Decimal {
 
 	return result
 }
+
+func (sma smaIndicator) Lookback() int {
+	return sma.window - 1
+}
+
+func (sma smaIndicator) Metadata() IndicatorMetadata {
+	m, _ := GetMetadata("sma")
+	return m
+}

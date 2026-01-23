@@ -139,6 +139,9 @@ func (d Decimal) Zero() bool {
 
 // Float returns float64 representation of d
 func (d Decimal) Float() float64 {
+	if d.val == nil {
+		return 0
+	}
 	f, _ := d.val.Float64()
 	return f
 }
