@@ -3,8 +3,9 @@ package indicators_test
 import (
 	"testing"
 
-	"github.com/irfndi/goflux/pkg/indicators"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/irfndi/goflux/pkg/indicators"
 )
 
 func TestGenericSMA_Float64(t *testing.T) {

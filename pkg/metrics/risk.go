@@ -1,10 +1,10 @@
 package metrics
 
 import (
+	cryptorand "crypto/rand"
+	"encoding/binary"
 	"math"
-	"math/rand"
 	"sort"
-	"time"
 )
 
 // ValueAtRisk calculates the VaR for a given confidence level (e.g., 0.95) using historical method
@@ -90,10 +90,17 @@ func MonteCarloValueAtRisk(returns []float64, confidence float64, simulations in
 	}
 	stdDev := math.Sqrt(variance / float64(len(returns)-1))
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	simReturns := make([]float64, simulations)
 	for i := 0; i < simulations; i++ {
-		simReturns[i] = mean + stdDev*r.NormFloat64()
+		u1, ok1 := cryptoRandFloat64()
+		u2, ok2 := cryptoRandFloat64()
+		if !ok1 || !ok2 {
+			simReturns[i] = mean
+			continue
+		}
+
+		z := math.Sqrt(-2.0*math.Log(u1)) * math.Cos(2.0*math.Pi*u2)
+		simReturns[i] = mean + stdDev*z
 	}
 
 	sort.Float64s(simReturns)
@@ -105,6 +112,17 @@ func MonteCarloValueAtRisk(returns []float64, confidence float64, simulations in
 		index = simulations - 1
 	}
 	return -simReturns[index]
+}
+
+func cryptoRandFloat64() (float64, bool) {
+	var b [8]byte
+	if _, err := cryptorand.Read(b[:]); err != nil {
+		return 0, false
+	}
+
+	u := binary.LittleEndian.Uint64(b[:])
+	max := float64(^uint64(0))
+	return (float64(u) + 0.5) / (max + 1.0), true
 }
 
 func getZScore(confidence float64) float64 {

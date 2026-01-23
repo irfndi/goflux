@@ -65,6 +65,8 @@ var (
 	NewVWMAIndicator               = indicators.NewVWMAIndicator
 	NewVWMAIndicatorFromSeries     = indicators.NewVWMAIndicatorFromSeries
 	NewConstantIndicator           = indicators.NewConstantIndicator
+	Max                            = indicators.Max
+	Min                            = indicators.Min
 
 	NewTradingRecord = trading.NewTradingRecord
 	NewPosition      = trading.NewPosition

@@ -191,6 +191,6 @@ func (per PortfolioExposureRule) IsSatisfied(index int, record *TradingRecord) b
 	return exposurePct.GTE(per.MaxExposure)
 }
 
-func (mlr MaxLossRule) Reset() {
+func (mlr *MaxLossRule) Reset() {
 	mlr.InitialCapital = decimal.New(10000)
 }
