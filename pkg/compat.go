@@ -37,9 +37,9 @@ var (
 
 // Re-export functions
 var (
-	NewDecimal           = decimal.New
-	NewDecimalFromInt    = decimal.NewFromInt
-	NewDecimalFromString = decimal.NewFromString
+	NewDecimal                    = decimal.New
+	NewDecimalFromInt             = decimal.NewFromInt
+	NewDecimalFromString          = decimal.NewFromString
 	NewDecimalFromStringWithError = decimal.NewFromStringWithError
 
 	NewTimeSeries = series.NewTimeSeries
