@@ -205,7 +205,7 @@ func TestDecimalComparison(t *testing.T) {
 		if !positive.GT(zero) {
 			t.Error("10 should be greater than 0")
 		}
-		if zero.LT(positive) {
+		if !zero.LT(positive) {
 			t.Error("0 should be less than 10")
 		}
 		if !zero.EQ(ZERO) {
@@ -213,7 +213,7 @@ func TestDecimalComparison(t *testing.T) {
 		}
 
 		// Test with negative
-		if negative.LT(zero) {
+		if !negative.LT(zero) {
 			t.Error("-10 should be less than 0")
 		}
 		if !negative.Abs().EQ(positive) {
