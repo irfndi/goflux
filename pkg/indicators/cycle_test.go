@@ -43,7 +43,7 @@ func TestDominantCyclePeriod_Calculate(t *testing.T) {
 
 	// Test index less than 7 (returns ZERO)
 	val := dcp.Calculate(5)
-	assert.Equal(t, dcp.Calculate(5).String(), "0")
+	assert.Equal(t, val.String(), "0")
 
 	// Test index greater than 7 (returns default 20)
 	val = dcp.Calculate(8)
