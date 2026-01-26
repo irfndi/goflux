@@ -27,3 +27,26 @@ func TestHTTrendline(t *testing.T) {
 	assert.NotNil(t, val)
 	assert.True(t, val.GT(testutils.MockTimeSeriesFl(100).Candles[0].ClosePrice))
 }
+
+func TestNewDominantCyclePeriod(t *testing.T) {
+	ts := testutils.MockTimeSeriesFl(100, 101, 102, 103, 104, 105, 106, 107, 108)
+	closeInd := indicators.NewClosePriceIndicator(ts)
+	dcp := indicators.NewDominantCyclePeriod(closeInd)
+
+	assert.NotNil(t, dcp)
+}
+
+func TestDominantCyclePeriod_Calculate(t *testing.T) {
+	ts := testutils.MockTimeSeriesFl(100, 101, 102, 103, 104, 105, 106, 107, 108)
+	closeInd := indicators.NewClosePriceIndicator(ts)
+	dcp := indicators.NewDominantCyclePeriod(closeInd)
+
+	// Test index less than 7 (returns ZERO)
+	val := dcp.Calculate(5)
+	assert.Equal(t, dcp.Calculate(5).String(), "0")
+
+	// Test index greater than 7 (returns default 20)
+	val = dcp.Calculate(8)
+	assert.NotNil(t, val)
+	assert.Greater(t, val.Float(), 0.0)
+}

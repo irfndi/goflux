@@ -8,8 +8,8 @@ all: fmt test lint
 
 # Install development tools
 bootstrap:
-	GOTOOLCHAIN=go1.25.0 go install -v golang.org/x/tools/cmd/goimports@latest
-	GOTOOLCHAIN=go1.25.0 go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install -v golang.org/x/tools/cmd/goimports@latest
+	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 # Format code
 fmt:

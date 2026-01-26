@@ -12,6 +12,13 @@ type Decimal struct {
 	val *big.Float
 }
 
+func (d Decimal) bigFloatOrZero() *big.Float {
+	if d.val == nil {
+		return big.NewFloat(0)
+	}
+	return d.val
+}
+
 var (
 	// ZERO is a Decimal with value 0
 	ZERO = New(0)
@@ -129,12 +136,15 @@ func (d Decimal) LTE(d2 Decimal) bool {
 
 // EQ returns true if d == d2
 func (d Decimal) EQ(d2 Decimal) bool {
+	if d.val == nil || d2.val == nil {
+		return d.Sign() == d2.Sign()
+	}
 	return d.val.Cmp(d2.val) == 0
 }
 
 // Zero returns true if d == 0
 func (d Decimal) Zero() bool {
-	return d.val.Sign() == 0
+	return d.Sign() == 0
 }
 
 // Float returns float64 representation of d
@@ -164,11 +174,17 @@ func (d Decimal) FormattedString(precision int) string {
 
 // Abs returns absolute value of d
 func (d Decimal) Abs() Decimal {
+	if d.val == nil {
+		return ZERO
+	}
 	return Decimal{val: new(big.Float).Abs(d.val)}
 }
 
 // Neg returns -d
 func (d Decimal) Neg() Decimal {
+	if d.val == nil {
+		return ZERO
+	}
 	return Decimal{val: new(big.Float).Neg(d.val)}
 }
 
@@ -190,6 +206,9 @@ func (d Decimal) Min(d2 Decimal) Decimal {
 
 // Sqrt returns square root of d
 func (d Decimal) Sqrt() Decimal {
+	if d.val == nil {
+		return ZERO
+	}
 	return Decimal{val: new(big.Float).Sqrt(d.val)}
 }
 
@@ -234,7 +253,7 @@ func (d Decimal) PowFloat(y float64) Decimal {
 //	 0 if d == d2
 //	+1 if d >  d2
 func (d Decimal) Cmp(d2 Decimal) int {
-	return d.val.Cmp(d2.val)
+	return d.bigFloatOrZero().Cmp(d2.bigFloatOrZero())
 }
 
 // Sign returns -1 if d < 0, 0 if d == 0, +1 if d > 0
@@ -275,6 +294,9 @@ func (d Decimal) Round() Decimal {
 
 // Floor returns the greatest integer value less than or equal to d
 func (d Decimal) Floor() Decimal {
+	if d.val == nil {
+		return ZERO
+	}
 	z := new(big.Int)
 	d.val.Int(z)
 	result := new(big.Float).SetInt(z)
@@ -287,6 +309,9 @@ func (d Decimal) Floor() Decimal {
 
 // Ceil returns the least integer value greater than or equal to d
 func (d Decimal) Ceil() Decimal {
+	if d.val == nil {
+		return ZERO
+	}
 	z := new(big.Int)
 	d.val.Int(z)
 	result := new(big.Float).SetInt(z)
@@ -299,6 +324,9 @@ func (d Decimal) Ceil() Decimal {
 
 // Truncate returns the integer part of d, dropping any fractional part
 func (d Decimal) Truncate() Decimal {
+	if d.val == nil {
+		return ZERO
+	}
 	z := new(big.Int)
 	d.val.Int(z)
 	return Decimal{val: new(big.Float).SetInt(z)}
@@ -306,6 +334,9 @@ func (d Decimal) Truncate() Decimal {
 
 // Frac returns the fractional part of d
 func (d Decimal) Frac() Decimal {
+	if d.val == nil {
+		return ZERO
+	}
 	z := new(big.Int)
 	d.val.Int(z)
 	result := new(big.Float).SetInt(z)

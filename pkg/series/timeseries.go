@@ -24,7 +24,7 @@ func NewTimeSeries() (t *TimeSeries) {
 // Thread-safe: uses write lock.
 func (ts *TimeSeries) AddCandle(candle *Candle) bool {
 	if candle == nil {
-		panic(fmt.Errorf("error adding Candle: candle cannot be nil"))
+		return false
 	}
 
 	ts.mu.Lock()
@@ -37,6 +37,26 @@ func (ts *TimeSeries) AddCandle(candle *Candle) bool {
 	}
 
 	return false
+}
+
+// AddCandleErr adds given candle to this TimeSeries with error handling.
+// Returns error if candle is nil or if candle cannot be added.
+// Thread-safe: uses write lock.
+func (ts *TimeSeries) AddCandleErr(candle *Candle) error {
+	if candle == nil {
+		return fmt.Errorf("candle cannot be nil")
+	}
+
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
+	last := ts.lastCandleUnsafe()
+	if last == nil || candle.Period.Since(last.Period) >= 0 {
+		ts.Candles = append(ts.Candles, candle)
+		return nil
+	}
+
+	return fmt.Errorf("candle period (%v) is not after last candle period (%v)", candle.Period, last.Period)
 }
 
 // LastCandle will return the lastCandle in this series, or nil if this series is empty

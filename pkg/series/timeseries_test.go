@@ -11,11 +11,9 @@ import (
 )
 
 func TestTimeSeries_AddCandle(t *testing.T) {
-	t.Run("Throws if nil candle passed", func(t *testing.T) {
+	t.Run("Returns false if nil candle passed", func(t *testing.T) {
 		ts := series.NewTimeSeries()
-		assert.Panics(t, func() {
-			ts.AddCandle(nil)
-		})
+		assert.False(t, ts.AddCandle(nil))
 	})
 
 	t.Run("Adds candle if last is nil", func(t *testing.T) {
@@ -46,6 +44,49 @@ func TestTimeSeries_AddCandle(t *testing.T) {
 
 		assert.Len(t, ts.Candles, 1)
 		assert.EqualValues(t, now.UnixNano(), ts.Candles[0].Period.Start.UnixNano())
+	})
+}
+
+func TestTimeSeries_AddCandleErr(t *testing.T) {
+	t.Run("Returns error if nil candle passed", func(t *testing.T) {
+		ts := series.NewTimeSeries()
+		err := ts.AddCandleErr(nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot be nil")
+	})
+
+	t.Run("Adds candle if last is nil", func(t *testing.T) {
+		ts := series.NewTimeSeries()
+
+		candle := series.NewCandle(series.NewTimePeriod(time.Now(), time.Minute))
+		candle.ClosePrice = decimal.New(1)
+
+		err := ts.AddCandleErr(candle)
+
+		assert.NoError(t, err)
+		assert.Len(t, ts.Candles, 1)
+	})
+
+	t.Run("Returns error if candle is before last candle", func(t *testing.T) {
+		ts := series.NewTimeSeries()
+
+		now := time.Now()
+		candle := series.NewCandle(series.NewTimePeriod(now, time.Minute))
+		candle.ClosePrice = decimal.New(1)
+
+		err := ts.AddCandleErr(candle)
+
+		assert.NoError(t, err)
+
+		then := now.Add(-time.Minute * 10)
+		nextCandle := series.NewCandle(series.NewTimePeriod(then, time.Minute))
+		nextCandle.ClosePrice = decimal.New(2)
+
+		err = ts.AddCandleErr(nextCandle)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "not after last candle")
+		assert.Len(t, ts.Candles, 1)
 	})
 }
 

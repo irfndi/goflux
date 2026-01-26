@@ -1,7 +1,8 @@
-// Package analysis provides trading analysis and performance metrics.
+// Package goflux provides technical analysis indicators, strategy rules, and backtesting utilities.
 //
 // This package includes:
-//   - Profit/loss analysis
-//   - Trade statistics
-//   - Performance metrics
+//   - Indicators (trend, momentum, volume, moving averages)
+//   - Rule-based strategies (AND/OR/NOT composition, cross rules)
+//   - Trading records, positions, and analysis utilities
+//   - Time series and candle utilities
 package goflux

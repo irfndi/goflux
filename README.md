@@ -28,6 +28,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -35,6 +36,12 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	series := goflux.NewTimeSeries()
 
 	// fetch this from your preferred exchange
@@ -48,11 +55,32 @@ func main() {
 		period := goflux.NewTimePeriod(time.Unix(start, 0), time.Hour*24)
 
 		candle := goflux.NewCandle(period)
-		candle.OpenPrice = goflux.NewDecimalFromString(datum[1])
-		candle.ClosePrice = goflux.NewDecimalFromString(datum[2])
-		candle.MaxPrice = goflux.NewDecimalFromString(datum[3])
-		candle.MinPrice = goflux.NewDecimalFromString(datum[4])
-		candle.Volume = goflux.NewDecimalFromString(datum[5])
+		open, err := goflux.NewDecimalFromStringWithError(datum[1])
+		if err != nil {
+			return err
+		}
+		closePrice, err := goflux.NewDecimalFromStringWithError(datum[2])
+		if err != nil {
+			return err
+		}
+		maxPrice, err := goflux.NewDecimalFromStringWithError(datum[3])
+		if err != nil {
+			return err
+		}
+		minPrice, err := goflux.NewDecimalFromStringWithError(datum[4])
+		if err != nil {
+			return err
+		}
+		volume, err := goflux.NewDecimalFromStringWithError(datum[5])
+		if err != nil {
+			return err
+		}
+
+		candle.OpenPrice = open
+		candle.ClosePrice = closePrice
+		candle.MaxPrice = maxPrice
+		candle.MinPrice = minPrice
+		candle.Volume = volume
 
 		series.AddCandle(candle)
 	}
@@ -61,6 +89,7 @@ func main() {
 	movingAverage := goflux.NewEMAIndicator(closePrices, 10)
 
 	fmt.Println(movingAverage.Calculate(0).FormattedString(2))
+	return nil
 }
 ```
 
@@ -86,7 +115,7 @@ exitRule := goflux.And(
 	goflux.PositionOpenRule{})
 
 strategy := goflux.RuleStrategy{
-	UnstablePeriod: 10, // Period before which ShouldEnter and ShouldExit always return false
+	UnstablePeriod: 10, // Index at or below which ShouldEnter and ShouldExit return false
 	EntryRule:      entryRule,
 	ExitRule:       exitRule,
 }

@@ -195,6 +195,31 @@ func TestDecimalComparison(t *testing.T) {
 			t.Error("100 should not equal 200")
 		}
 	})
+
+	t.Run("Nil edge cases", func(t *testing.T) {
+		zero := New(0)
+		positive := New(10)
+		negative := New(-10)
+
+		// Test with zero
+		if !positive.GT(zero) {
+			t.Error("10 should be greater than 0")
+		}
+		if zero.LT(positive) {
+			t.Error("0 should be less than 10")
+		}
+		if !zero.EQ(ZERO) {
+			t.Error("0 should equal ZERO")
+		}
+
+		// Test with negative
+		if negative.LT(zero) {
+			t.Error("-10 should be less than 0")
+		}
+		if !negative.Abs().EQ(positive) {
+			t.Error("abs(-10) should equal 10")
+		}
+	})
 }
 
 func TestZero(t *testing.T) {
@@ -520,5 +545,93 @@ func TestDecimal_Concurrency(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		<-done
+	}
+}
+
+func TestNewFromStringWithError(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expectError bool
+		expectedStr string
+	}{
+		{"valid integer", "123", false, "123"},
+		{"valid decimal", "123.456", false, "123.456"},
+		{"valid negative", "-123.456", false, "-123.456"},
+		{"invalid string", "abc", true, ""},
+		{"empty string", "", true, ""},
+		{"partial string", "12.34.56", true, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d, err := NewFromStringWithError(tt.input)
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("NewFromStringWithError(%q) expected error, got nil", tt.input)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("NewFromStringWithError(%q) unexpected error: %v", tt.input, err)
+				}
+				got := d.String()
+				if len(got) < len(tt.expectedStr) || got[:len(tt.expectedStr)] != tt.expectedStr {
+					t.Errorf("NewFromStringWithError(%q).String() = %s, want to contain %s", tt.input, got, tt.expectedStr)
+				}
+			}
+		})
+	}
+}
+
+func TestDecimal_PowFloat(t *testing.T) {
+	tests := []struct {
+		name     string
+		base     float64
+		exp      float64
+		expected float64
+	}{
+		{"square", 2, 2, 4},
+		{"cube", 2, 3, 8},
+		{"sqrt", 4, 0.5, 2},
+		{"negative base", -2, 2, 4},
+		{"negative exponent", 2, -1, 0.5},
+		{"zero base", 0, 2, 0},
+		{"zero exponent", 2, 0, 1},
+		{"fractional", 2, 1.5, 2.8284271247461903},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := New(tt.base)
+			result := d.PowFloat(tt.exp)
+			if math.Abs(result.Float()-tt.expected) > 1e-6 {
+				t.Errorf("New(%v).PowFloat(%v) = %v, want %v", tt.base, tt.exp, result.Float(), tt.expected)
+			}
+		})
+	}
+}
+
+func TestDecimal_Frac(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    float64
+		expected float64
+	}{
+		{"integer", 5, 0},
+		{"positive decimal", 5.75, 0.75},
+		{"negative decimal", -5.75, -0.75},
+		{"small decimal", 0.123, 0.123},
+		{"zero", 0, 0},
+		{"large decimal", 100.999, 0.999},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := New(tt.input)
+			result := d.Frac()
+			if math.Abs(result.Float()-tt.expected) > 1e-6 {
+				t.Errorf("New(%v).Frac() = %v, want %v", tt.input, result.Float(), tt.expected)
+			}
+		})
 	}
 }

@@ -21,11 +21,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25'
           cache: true
 
       - name: Run tests
         run: go test -v ./...
+
+      - name: Run quality checks
+        run: make check
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

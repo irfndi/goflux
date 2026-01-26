@@ -56,9 +56,8 @@ We welcome feature suggestions! Please:
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.21 or later
 - Make
-- Docker (recommended / used by Make targets)
 
 ### Getting Started
 
@@ -163,7 +162,7 @@ When adding a new indicator:
 ```go
 package goflux
 
-import "github.com/sdcoffey/big"
+import "github.com/irfndi/goflux/pkg/decimal"
 
 // MyIndicator is a description of what this indicator does.
 type myIndicator struct {
@@ -180,7 +179,7 @@ func NewMyIndicator(indicator Indicator, window int) Indicator {
 }
 
 // Calculate returns the indicator value at the given index.
-func (mi *myIndicator) Calculate(index int) big.Decimal {
+func (mi *myIndicator) Calculate(index int) decimal.Decimal {
     // Implementation
 }
 ```
