@@ -24,9 +24,9 @@ Before submitting a bug report:
 
 We welcome feature suggestions! Please:
 
-1. Check existing issues and the [BEADS.md](./BEADS.md) roadmap
-2. Open a new issue with the `enhancement` label
-3. Describe the feature and its use case
+1. Run `bd list` or `bd ready` to see existing tasks and roadmap
+2. Open a new issue with `enhancement` label
+3. Describe your feature and its use case
 4. Include code examples if helpful
 
 ### Pull Requests
@@ -69,12 +69,39 @@ cd goflux
 # Install development tools
 make bootstrap
 
+# Setup Beads issue tracker (if not already configured)
+bd init --branch beads-sync
+
 # Run tests
 make test
 
 # Run linting
 make lint
 ```
+
+### Issue Tracker Setup
+
+This project uses **Beads** for issue tracking. For new contributors:
+
+```sh
+# Initialize Beads (run once)
+cd goflux
+bd init --branch beads-sync
+
+# Verify configuration
+bd config get sync.branch  # Should show: beads-sync
+
+# Find available work
+bd ready
+```
+
+**Multi-developer sync:**
+- This project uses Protected Branch Mode with `beads-sync` branch
+- Issues are automatically committed to `beads-sync` by the daemon
+- Periodically merge `beads-sync` to `main` via Pull Request
+- After merging, run `git checkout main && git pull && bd import` to sync
+
+See [`README.md`](README.md#issue-tracking) for more details on Beads workflow.
 
 ## Coding Standards
 
@@ -155,7 +182,7 @@ When adding a new indicator:
 4. Implement the `Indicator` interface
 5. Add comprehensive tests
 6. Update documentation in README.md
-7. Add to BEADS.md if it's a planned indicator
+7. Add to issue tracker: `bd create "Add X indicator" -t enhancement -p 1`
 
 ### Indicator Template
 

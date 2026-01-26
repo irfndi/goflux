@@ -7,3 +7,7 @@ bin/*
 *.test
 coverage.txt
 /basic_example
+
+# Beads issue tracker
+# beads-sync branch is managed by Beads daemon in .git/worktrees/
+# No need to ignore in working directory (it's a separate branch)

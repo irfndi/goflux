@@ -123,10 +123,54 @@ strategy := goflux.RuleStrategy{
 strategy.ShouldEnter(0, record) // returns false
 ```
 
+## Issue Tracking
+
+This project uses **Beads** for issue tracking - a modern, AI-native tool designed for live directly in your codebase alongside your code.
+
+**Learn more:** [github.com/steveyegge/beads](https://github.com/steveyegge/beads)
+
+### For Developers
+
+```bash
+# Find available work
+bd ready
+
+# View issue details
+bd show <issue-id>
+
+# Claim work
+bd update <issue-id> --status in_progress
+
+# Complete work
+bd close <issue-id>
+
+# Sync with git
+bd sync
+```
+
+### Multi-Developer Collaboration
+
+This project uses **Protected Branch Mode** for team collaboration:
+- Issues are automatically committed to `beads-sync` branch
+- `main` branch stays protected
+- Team members review and merge metadata via PR
+- See [`CONTRIBUTING.md`](CONTRIBUTING.md#development-setup) for setup instructions
+
+### Installation
+
+```bash
+# Install Beads
+curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+
+# Initialize in this repo (already configured)
+bd ready
+```
+
 ## Roadmap
 
-See [BEADS.md](BEADS.md) for a detailed roadmap of planned improvements including:
+Run `bd ready` or `bd list` to see current planned improvements and tasks in progress.
 
+Past work includes:
 - Modern project structure
 - Additional indicators and utilities
 - Expanded trading and risk-management rules
@@ -157,7 +201,7 @@ series := goflux.NewTimeSeries()
 
 ## Contributing
 
-Contributions are welcome! Please see [BEADS.md](BEADS.md) for planned improvements and areas where help is needed.
+Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines on how to contribute.
 
 To contribute:
 
