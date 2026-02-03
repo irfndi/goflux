@@ -54,7 +54,7 @@ jobs:
 
       - name: Run current benchmarks
         run: |
-          cd $GITHUB_WORKSPACE/goflux
+          cd $GITHUB_WORKSPACE
           go test -bench=. -benchmem ./pkg/indicators/... > current_results.txt
 
       - name: Run baseline benchmarks
