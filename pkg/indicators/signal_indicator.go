@@ -201,9 +201,10 @@ func (ms *multiSignal) CalculateSignal(index int) int {
 
 	for _, signal := range ms.signals {
 		sig := signal.CalculateSignal(index)
-		if sig == SignalBuy {
+		switch sig {
+		case SignalBuy:
 			buyVotes++
-		} else if sig == SignalSell {
+		case SignalSell:
 			sellVotes++
 		}
 	}

@@ -63,11 +63,10 @@ func ParametricValueAtRisk(returns []float64, confidence float64) float64 {
 
 	variance := 0.0
 	for _, r := range returns {
-		variance += math.Pow(r-mean, 2)
+		variance += (r - mean) * (r - mean)
 	}
 	stdDev := math.Sqrt(variance / float64(len(returns)-1))
 
-	// Get Z-score for confidence
 	zScore := getZScore(confidence)
 	return -(mean - zScore*stdDev)
 }
@@ -86,7 +85,7 @@ func MonteCarloValueAtRisk(returns []float64, confidence float64, simulations in
 
 	variance := 0.0
 	for _, r := range returns {
-		variance += math.Pow(r-mean, 2)
+		variance += (r - mean) * (r - mean)
 	}
 	stdDev := math.Sqrt(variance / float64(len(returns)-1))
 

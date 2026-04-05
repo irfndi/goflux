@@ -246,7 +246,7 @@ func (alma *almaIndicator) Calculate(index int) decimal.Decimal {
 	norm := 0.0
 
 	for i := 0; i < alma.window; i++ {
-		weight := math.Exp(-math.Pow(float64(i)-m, 2) / (2 * math.Pow(s, 2)))
+		weight := math.Exp(-((float64(i) - m) * (float64(i) - m)) / (2 * (s * s)))
 		sum = sum.Add(alma.indicator.Calculate(index - (alma.window - 1 - i)).Mul(decimal.New(weight)))
 		norm += weight
 	}
