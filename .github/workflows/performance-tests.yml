@@ -1,8 +1,5 @@
 name: Performance Tests
 
-env:
-  LATEST_GO_VERSION: '1.26'
-
 on:
   push:
     branches: [ main, develop ]
@@ -20,7 +17,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
-          go-version: ${{ env.LATEST_GO_VERSION }}
+          go-version: '1.26'
 
       - name: Run benchmarks
         run: |
@@ -53,7 +50,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
-          go-version: ${{ env.LATEST_GO_VERSION }}
+          go-version: '1.26'
 
       - name: Run current benchmarks
         run: |
