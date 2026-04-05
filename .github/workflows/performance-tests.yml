@@ -67,8 +67,9 @@ jobs:
           python3 scripts/compare_benchmarks.py current_results.txt baseline_results.txt
 
       - name: Fail on regression
+        # 10% threshold
         run: |
-          python3 scripts/check_regression.py current_results.txt baseline_results.txt 1.1  # 10% threshold
+          python3 scripts/check_regression.py current_results.txt baseline_results.txt 1.1
 
       - name: Comment on PR
         if: failure()
