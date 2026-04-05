@@ -56,7 +56,8 @@ formatters:
 
   settings:
     goimports:
-      local-prefixes: github.com/irfndi/goflux
+      local-prefixes:
+        - github.com/irfndi/goflux
 
 output:
   formats:
