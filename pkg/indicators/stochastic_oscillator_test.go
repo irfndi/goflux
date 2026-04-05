@@ -1,7 +1,6 @@
 package indicators_test
 
 import (
-	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -84,5 +83,5 @@ func TestFastStochasticIndicatorNoPriceChange(t *testing.T) {
 	)
 
 	k := indicators.NewFastStochasticIndicator(ts, 2)
-	assert.Equal(t, decimal.New(math.Inf(1)).FormattedString(2), k.Calculate(1).FormattedString(2))
+	assert.Equal(t, decimal.New(50).FormattedString(2), k.Calculate(1).FormattedString(2))
 }

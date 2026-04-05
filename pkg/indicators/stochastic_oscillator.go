@@ -1,8 +1,6 @@
 package indicators
 
 import (
-	"math"
-
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
 )
@@ -32,7 +30,7 @@ func (k kIndicator) Calculate(index int) decimal.Decimal {
 	maxVal := k.maxValue.Calculate(index)
 
 	if minVal.EQ(maxVal) {
-		return decimal.New(math.Inf(1))
+		return decimal.New(50)
 	}
 
 	return closeVal.Sub(minVal).Div(maxVal.Sub(minVal)).Mul(decimal.New(100))

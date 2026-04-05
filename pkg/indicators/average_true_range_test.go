@@ -13,7 +13,7 @@ func TestAverageTrueRangeIndicator(t *testing.T) {
 	expectedValues := []float64{
 		0,
 		0,
-		0,
+		1.3333,
 		2,
 		2,
 		2,

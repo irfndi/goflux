@@ -21,7 +21,7 @@ func NewAverageTrueRangeIndicator(series *series.TimeSeries, window int) Indicat
 }
 
 func (atr averageTrueRangeIndicator) Calculate(index int) decimal.Decimal {
-	if index < atr.window {
+	if index < atr.window-1 {
 		return decimal.ZERO
 	}
 

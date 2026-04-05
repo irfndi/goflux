@@ -22,7 +22,7 @@ func NewEMAIndicator(indicator Indicator, window int) Indicator {
 		indicator:   indicator,
 		window:      window,
 		alpha:       decimal.New(2).Div(decimal.NewFromInt(int64(window + 1))),
-		resultCache: make([]*decimal.Decimal, 1000),
+		resultCache: make([]*decimal.Decimal, 0, 1000),
 	}
 }
 
