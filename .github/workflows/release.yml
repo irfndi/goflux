@@ -1,5 +1,8 @@
 name: Release
 
+env:
+  LATEST_GO_VERSION: '1.26'
+
 on:
   push:
     tags:
@@ -14,14 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
-          go-version: '1.26'
+          go-version: ${{ env.LATEST_GO_VERSION }}
           cache: true
 
       - name: Run tests
@@ -31,7 +34,7 @@ jobs:
         run: make check
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
           generate_release_notes: true
           draft: false

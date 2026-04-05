@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  LATEST_GO_VERSION: '1.26'
+
 on:
   push:
     branches: [ main, develop ]
@@ -16,15 +19,15 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
-        go-version: '1.26'
+        go-version: ${{ env.LATEST_GO_VERSION }}
 
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6
       with:
         version: latest
 
@@ -34,20 +37,20 @@ jobs:
     strategy:
       max-parallel: 4  # Run up to 4 jobs in parallel
       matrix:
-        go-version: ['1.21', '1.22', '1.23', '1.24', '1.25', '1.26']
+        go-version: ['1.21', '1.22', '1.23', '1.24', '1.25', '${{ env.LATEST_GO_VERSION }}']
       fail-fast: false  # Don't cancel all jobs if one fails
-        
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
-      
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version: ${{ matrix.go-version }}
-        
+
     - name: Cache Go modules
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
       with:
         path: |
           ~/.cache/go-build
@@ -55,13 +58,13 @@ jobs:
         key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-${{ matrix.go-version }}-
-          
+
     - name: Download dependencies
       run: go mod download
-      
+
     - name: Run go vet
       run: go vet ./...
-      
+
     - name: Run go fmt check
       run: |
         if [ -n "$(gofmt -l .)" ]; then
@@ -69,32 +72,32 @@ jobs:
           gofmt -d .
           exit 1
         fi
-      
+
     - name: Run tests with race detection
       run: |
-        if [ "${{ matrix.go-version }}" = "1.26" ]; then
+        if [ "${{ matrix.go-version }}" = "${{ env.LATEST_GO_VERSION }}" ]; then
           go test -v -race -parallel=4 -coverprofile=coverage.txt -covermode=atomic ./...
         else
           go test -v -race -parallel=4 ./...
         fi
 
     - name: Enforce coverage threshold
-      if: matrix.go-version == '1.26'
+      if: matrix.go-version == env.LATEST_GO_VERSION
       env:
         MIN_COVERAGE: '70.0'
       run: |
         total="$(go tool cover -func=coverage.txt | tail -n 1 | awk '{print substr($3, 1, length($3)-1)}')"
         echo "Total coverage: ${total}% (min ${MIN_COVERAGE}%)"
         awk -v total="${total}" -v min="${MIN_COVERAGE}" 'BEGIN { if (total+0 < min+0) exit 1 }'
-      
+
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v6
-      if: matrix.go-version == '1.26'  # Only upload coverage for latest Go
+      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
+      if: matrix.go-version == env.LATEST_GO_VERSION
       with:
         files: ./coverage.txt
         flags: unittests
         name: codecov-umbrella-${{ matrix.go-version }}
-        
+
   bench:
     name: Bench (smoke)
     runs-on: ubuntu-latest
@@ -102,12 +105,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
-        go-version: '1.26'
+        go-version: ${{ env.LATEST_GO_VERSION }}
 
     - name: Download dependencies
       run: go mod download
@@ -119,28 +122,28 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
-      
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
-        go-version: '1.26'
-        
+        go-version: ${{ env.LATEST_GO_VERSION }}
+
     - name: Cache Go modules
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
       with:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-1.26-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ env.LATEST_GO_VERSION }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-1.26-
-          
+          ${{ runner.os }}-go-${{ env.LATEST_GO_VERSION }}-
+
     - name: Download dependencies
       run: go mod download
-      
+
     - name: Build
       run: go build -v ./...

@@ -77,7 +77,7 @@ func NewRMAIndicator(indicator Indicator, window int) Indicator {
 		indicator:   indicator,
 		window:      window,
 		alpha:       decimal.ONE.Div(decimal.New(float64(window))),
-		resultCache: make([]*decimal.Decimal, 1000),
+		resultCache: make([]*decimal.Decimal, 0, defaultCacheSize),
 	}
 }
 

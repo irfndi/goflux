@@ -5,6 +5,14 @@ import (
 	"github.com/irfndi/goflux/pkg/series"
 )
 
+// flatStochasticValue is returned when the price range is zero (min == max),
+// meaning the candle is flat. The midpoint (50) is used because a flat candle
+// provides no directional information, so the neutral midpoint of the 0–100
+// stochastic range is the least misleading assumption. This was changed from
+// +Inf to prevent propagation of non-finite values through downstream SMA/EMA
+// calculations. Note: this is a behavioral change from the previous +Inf return.
+const flatStochasticValue = 50
+
 type kIndicator struct {
 	closePrice Indicator
 	minValue   Indicator
@@ -30,7 +38,7 @@ func (k kIndicator) Calculate(index int) decimal.Decimal {
 	maxVal := k.maxValue.Calculate(index)
 
 	if minVal.EQ(maxVal) {
-		return decimal.New(50)
+		return decimal.New(flatStochasticValue)
 	}
 
 	return closeVal.Sub(minVal).Div(maxVal.Sub(minVal)).Mul(decimal.New(100))

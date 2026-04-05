@@ -20,7 +20,7 @@ func NewMMAIndicator(indicator Indicator, window int) Indicator {
 	return &modifiedMovingAverageIndicator{
 		indicator:   indicator,
 		window:      window,
-		resultCache: make([]*decimal.Decimal, 0, 10000),
+		resultCache: make([]*decimal.Decimal, 0, defaultCacheSize),
 	}
 }
 

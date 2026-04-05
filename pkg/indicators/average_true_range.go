@@ -11,9 +11,12 @@ type averageTrueRangeIndicator struct {
 }
 
 // NewAverageTrueRangeIndicator returns a base indicator that calculates the average true range of the
-// underlying over a window
+// underlying over a window. Panics if window < 2 (requires at least one true range value to average).
 // https://www.investopedia.com/terms/a/atr.asp
 func NewAverageTrueRangeIndicator(series *series.TimeSeries, window int) Indicator {
+	if window < 2 {
+		panic("goflux: ATR window must be >= 2")
+	}
 	return averageTrueRangeIndicator{
 		series: series,
 		window: window,
