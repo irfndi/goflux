@@ -12,19 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
-          go-version: '1.21'
+          go-version: '1.26'
 
       - name: Run benchmarks
         run: |
           go test -bench=. -benchmem ./pkg/indicators/... | tee benchmark_results.txt
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: benchmark-results
           path: benchmark_results.txt
@@ -36,21 +36,21 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Checkout baseline
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: 'irfndi/goflux'
           ref: 'main'
           path: 'baseline'
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
-          go-version: '1.21'
+          go-version: '1.26'
 
       - name: Run current benchmarks
         run: |
@@ -60,19 +60,20 @@ jobs:
       - name: Run baseline benchmarks
         run: |
           cd $GITHUB_WORKSPACE/baseline
-          go test -bench=. -benchmem ./pkg/indicators/... > baseline_results.txt
+          go test -bench=. -benchmem ./pkg/indicators/... > $GITHUB_WORKSPACE/baseline_results.txt
 
       - name: Compare results
         run: |
           python3 scripts/compare_benchmarks.py current_results.txt baseline_results.txt
 
       - name: Fail on regression
+        # 10% threshold
         run: |
-          python3 scripts/check_regression.py current_results.txt baseline_results.txt 1.1  # 10% threshold
+          python3 scripts/check_regression.py current_results.txt baseline_results.txt 1.1
 
       - name: Comment on PR
         if: failure()
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             github.rest.issues.createComment({

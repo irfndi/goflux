@@ -5,7 +5,7 @@ import sys
 from compare_benchmarks import compare_benchmarks
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print(
             "Usage: python check_regression.py <current_results.txt> <baseline_results.txt> [threshold]"
         )
