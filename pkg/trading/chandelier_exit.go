@@ -36,7 +36,12 @@ func (ce chandelierExitLongRule) IsSatisfied(index int, record *TradingRecord) b
 		return false
 	}
 
-	return ce.closePrice.Calculate(index).LTE(ce.exitLevel.Calculate(index))
+	exitLevel := ce.exitLevel.Calculate(index)
+	if exitLevel.IsZero() {
+		return false
+	}
+
+	return ce.closePrice.Calculate(index).LTE(exitLevel)
 }
 
 // chandelierExitShortRule is satisfied when the close price rises above
@@ -70,5 +75,10 @@ func (ce chandelierExitShortRule) IsSatisfied(index int, record *TradingRecord) 
 		return false
 	}
 
-	return ce.closePrice.Calculate(index).GTE(ce.exitLevel.Calculate(index))
+	exitLevel := ce.exitLevel.Calculate(index)
+	if exitLevel.IsZero() {
+		return false
+	}
+
+	return ce.closePrice.Calculate(index).GTE(exitLevel)
 }

@@ -18,8 +18,9 @@ func TestChandelierExitLongInsufficientData(t *testing.T) {
 	}
 
 	ce := NewChandelierExitLong(s, 22, 22, 3.0)
-	if !ce.Calculate(9).EQ(decimal.ZERO) {
-		t.Errorf("ChandelierExitLong with insufficient data should return ZERO, got %v", ce.Calculate(9))
+	got := ce.Calculate(9)
+	if !got.EQ(decimal.ZERO) {
+		t.Errorf("ChandelierExitLong with insufficient data should return ZERO, got %v", got)
 	}
 }
 
@@ -34,8 +35,9 @@ func TestChandelierExitShortInsufficientData(t *testing.T) {
 	}
 
 	ce := NewChandelierExitShort(s, 22, 22, 3.0)
-	if !ce.Calculate(9).EQ(decimal.ZERO) {
-		t.Errorf("ChandelierExitShort with insufficient data should return ZERO, got %v", ce.Calculate(9))
+	got := ce.Calculate(9)
+	if !got.EQ(decimal.ZERO) {
+		t.Errorf("ChandelierExitShort with insufficient data should return ZERO, got %v", got)
 	}
 }
 

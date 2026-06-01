@@ -164,9 +164,10 @@ func TestChandelierExitLongRuleWithCustomParams(t *testing.T) {
 	record := NewTradingRecord()
 	enterLong(record, decimal.New(100))
 
-	// With period=10, atrWindow=10, we need at least 10 candles for validity
+	// With period=10, atrWindow=10, index 9 is the first valid data point.
+	// Close (100) is above the exit level (~85), so rule should not trigger.
 	if rule.IsSatisfied(9, record) {
-		t.Errorf("ChandelierExitLongRule should not be satisfied at boundary index")
+		t.Errorf("ChandelierExitLongRule should not be satisfied when close is above exit level")
 	}
 }
 

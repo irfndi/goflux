@@ -14,6 +14,7 @@ type chandelierExitLongIndicator struct {
 	series     *series.TimeSeries
 	period     int
 	atrWindow  int
+	atr        Indicator
 	multiplier decimal.Decimal
 }
 
@@ -36,6 +37,7 @@ func NewChandelierExitLong(s *series.TimeSeries, period int, atrWindow int, mult
 		series:     s,
 		period:     period,
 		atrWindow:  atrWindow,
+		atr:        NewAverageTrueRangeIndicator(s, atrWindow),
 		multiplier: decimal.New(multiplier),
 	}
 }
@@ -52,7 +54,7 @@ func (ce chandelierExitLongIndicator) Calculate(index int) decimal.Decimal {
 	}
 
 	highestHigh := highestHigh(ce.series, index, ce.period)
-	atr := NewAverageTrueRangeIndicator(ce.series, ce.atrWindow).Calculate(index)
+	atr := ce.atr.Calculate(index)
 
 	return highestHigh.Sub(atr.Mul(ce.multiplier))
 }
@@ -63,6 +65,7 @@ type chandelierExitShortIndicator struct {
 	series     *series.TimeSeries
 	period     int
 	atrWindow  int
+	atr        Indicator
 	multiplier decimal.Decimal
 }
 
@@ -85,6 +88,7 @@ func NewChandelierExitShort(s *series.TimeSeries, period int, atrWindow int, mul
 		series:     s,
 		period:     period,
 		atrWindow:  atrWindow,
+		atr:        NewAverageTrueRangeIndicator(s, atrWindow),
 		multiplier: decimal.New(multiplier),
 	}
 }
@@ -101,7 +105,7 @@ func (ce chandelierExitShortIndicator) Calculate(index int) decimal.Decimal {
 	}
 
 	lowestLow := lowestLow(ce.series, index, ce.period)
-	atr := NewAverageTrueRangeIndicator(ce.series, ce.atrWindow).Calculate(index)
+	atr := ce.atr.Calculate(index)
 
 	return lowestLow.Add(atr.Mul(ce.multiplier))
 }
