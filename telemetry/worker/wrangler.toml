@@ -2,10 +2,9 @@ name = "goflux-telemetry"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
 
-# Optional: bind Analytics Engine dataset for telemetry storage
-# [[analytics_engine_datasets]]
-# binding = "ANALYTICS"
-# dataset = "goflux_telemetry"
+[[d1_databases]]
+binding = "DB"
+database_name = "goflux_telemetry"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
 
 # Set TELEMETRY_TOKEN in Cloudflare dashboard Secrets for basic auth
-# Set ANALYTICS_DATASET env var if using Analytics Engine

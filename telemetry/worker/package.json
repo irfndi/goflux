@@ -2,10 +2,14 @@
   "name": "goflux-telemetry-worker",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@11.5.0",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:create": "wrangler d1 create goflux_telemetry",
+    "db:migrate": "wrangler d1 migrations apply goflux_telemetry",
+    "db:migrate:local": "wrangler d1 migrations apply goflux_telemetry --local"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250129.0",
