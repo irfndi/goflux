@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-18b266b4bb-bbbf_f3d70eaa30",
+  "featureId": "feat_library_18b266b4bb",
+  "title": "Function re-exports are mutable globals",
+  "category": "api-contract",
+  "severity": "low",
+  "confidence": "high",
+  "triage": "contract-mismatch",
+  "evidence": [
+    {
+      "path": "pkg/compat.go",
+      "startLine": 38,
+      "endLine": 43,
+      "symbol": "decimal function re-exports",
+      "quote": "NewDecimal                    = decimal.New"
+    },
+    {
+      "path": "pkg/compat.go",
+      "startLine": 45,
+      "endLine": 80,
+      "symbol": "constructor and rule re-exports",
+      "quote": "NewTradingRecord = trading.NewTradingRecord"
+    }
+  ],
+  "reasoning": "The facade documents these names as re-exported functions, but implements them as exported package variables of function type. Any downstream package can assign to names such as goflux.NewDecimal, goflux.NewTradingRecord, And, or NewCrossUpIndicatorRule, changing behavior globally for all code using this facade in the same process. Wrapper functions would preserve call syntax while preventing accidental or malicious reassignment.",
+  "reproduction": "From another package, assign goflux.NewDecimal = func(float64) goflux.Decimal { return goflux.ONE }; subsequent calls to goflux.NewDecimal through the facade return the replacement result.",
+  "recommendation": "Replace function-typed var aliases in pkg/compat.go with real wrapper functions. If mutable hooks are intentionally supported, document that contract explicitly and avoid using it for constructors and rule combinators.",
+  "whyTestsDoNotAlreadyCoverThis": "Normal call-through tests would still pass; the gap is that no external API test verifies these names are immutable functions rather than assignable variables.",
+  "suggestedRegressionTest": "Add an API-shape test or compile-time check that the facade exposes wrapper functions for constructors and rule combinators, then verify a representative wrapper delegates to the underlying package.",
+  "minimumFixScope": "Change the function re-export block in pkg/compat.go to wrapper function declarations and add a small facade API test.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-18b266b4bb_bbbf8703a5",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:15:11.135Z",
+  "updatedAt": "2026-06-01T23:15:11.135Z"
+}

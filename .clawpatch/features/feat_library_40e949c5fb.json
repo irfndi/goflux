@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_library_40e949c5fb",
+  "title": "Go package metrics",
+  "summary": "Go package pkg/metrics with 3 source file(s).",
+  "kind": "library",
+  "source": "go-package",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "pkg/metrics/metrics.go",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "pkg/metrics/metrics.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/metrics/performance_metrics.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/metrics/risk.go",
+      "reason": "go package source"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "pkg/metrics/metrics_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/metrics/performance_metrics_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/metrics/risk_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/decimal/decimal.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/decimal"
+    }
+  ],
+  "tests": [
+    {
+      "path": "pkg/metrics/metrics_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/metrics/performance_metrics_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/metrics/risk_test.go",
+      "command": "go test ./..."
+    }
+  ],
+  "tags": [
+    "go",
+    "package"
+  ],
+  "trustBoundaries": [],
+  "status": "needs-fix",
+  "lock": null,
+  "findingIds": [
+    "fnd_sig-feat-library-40e949c5fb-5783_761bc33afa",
+    "fnd_sig-feat-library-40e949c5fb-ffce_a33aa9ba6b",
+    "fnd_sig-feat-library-40e949c5fb-b137_4779ae2334",
+    "fnd_sig-feat-library-40e949c5fb-ef2e_fafd5402c4",
+    "fnd_sig-feat-library-40e949c5fb-7ffd_80e0b57d04"
+  ],
+  "patchAttemptIds": [],
+  "analysisHistory": [
+    {
+      "runId": "20260601T230850-8db0c3",
+      "kind": "review",
+      "summary": "5 finding(s)",
+      "provider": "codex",
+      "model": null,
+      "createdAt": "2026-06-01T23:12:23.717Z"
+    }
+  ],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:12:23.717Z"
+}

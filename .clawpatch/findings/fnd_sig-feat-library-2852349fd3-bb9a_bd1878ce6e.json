@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-2852349fd3-bb9a_bd1878ce6e",
+  "featureId": "feat_library_2852349fd3",
+  "title": "Default threshold misses ordinary 10 percent regressions",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "medium",
+  "triage": "risk",
+  "evidence": [
+    {
+      "path": "scripts/check_regression.py",
+      "startLine": 16,
+      "endLine": 16,
+      "symbol": "__main__",
+      "quote": "threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 1.1"
+    },
+    {
+      "path": "scripts/compare_benchmarks.py",
+      "startLine": 32,
+      "endLine": 32,
+      "symbol": "compare_benchmarks",
+      "quote": "def compare_benchmarks(current_file, baseline_file, threshold=1.1):"
+    },
+    {
+      "path": "scripts/compare_benchmarks.py",
+      "startLine": 53,
+      "endLine": 60,
+      "symbol": "compare_benchmarks",
+      "quote": "change_percent = (current_ns - baseline_ns) / baseline_ns\n\nif change_percent > threshold:"
+    }
+  ],
+  "reasoning": "The default threshold value is 1.1, which reads as a 1.1x tolerance, but the code compares it to a fractional percent change. A 20% slowdown produces change_percent=0.20 and passes because 0.20 is not greater than 1.1; only slowdowns above 110% are flagged.",
+  "reproduction": null,
+  "recommendation": "Either treat threshold as a ratio and compare current_ns > baseline_ns * threshold, or change the default/API to use fractional deltas such as 0.10 for 10%. Clarify the printed threshold text to match the chosen contract.",
+  "whyTestsDoNotAlreadyCoverThis": "No linked tests exercise boundary cases around the default threshold or a user-supplied threshold.",
+  "suggestedRegressionTest": "Compare a baseline of 100 ns/op with current 120 ns/op using the default threshold and assert the script reports a regression if the intended default is 10%.",
+  "minimumFixScope": "Threshold comparison logic and CLI/help text in both scripts.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-2852349fd3_bb9a908869",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:11:18.100Z",
+  "updatedAt": "2026-06-01T23:11:18.100Z"
+}

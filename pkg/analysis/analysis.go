@@ -113,7 +113,18 @@ func (ppa PeriodProfitAnalysis) Analyze(record *trading.TradingRecord) float64 {
 	var tp TotalProfitAnalysis
 	totalProfit := tp.Analyze(record)
 
-	span := record.Trades[len(record.Trades)-1].ExitOrder().ExecutionTime.Sub(record.Trades[0].EntranceOrder().ExecutionTime)
+	var lastClosed *trading.Position
+	for i := len(record.Trades) - 1; i >= 0; i-- {
+		if record.Trades[i].IsClosed() {
+			lastClosed = record.Trades[i]
+			break
+		}
+	}
+	if lastClosed == nil {
+		return 0
+	}
+
+	span := lastClosed.ExitOrder().ExecutionTime.Sub(record.Trades[0].EntranceOrder().ExecutionTime)
 	periods := span / ppa.Period
 	if periods <= 0 {
 		return 0

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-06fb0c4cfe-29e9_e4b6860a9d",
+  "featureId": "feat_library_06fb0c4cfe",
+  "title": "Empty or invalid-period records can panic or return NaN/Inf",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/analysis/analysis.go",
+      "startLine": 98,
+      "endLine": 99,
+      "symbol": "PeriodProfitAnalysis.Analyze",
+      "quote": "record.Trades[len(record.Trades)-1] ... / ppa.Period"
+    },
+    {
+      "path": "pkg/analysis/analysis.go",
+      "startLine": 125,
+      "endLine": 129,
+      "symbol": "AverageProfitAnalysis.Analyze",
+      "quote": "return totalProft / float64(len(record.Trades))"
+    },
+    {
+      "path": "pkg/analysis/analysis_test.go",
+      "startLine": 287,
+      "endLine": 331,
+      "symbol": "TestPeriodProfitAnalysis",
+      "quote": null
+    },
+    {
+      "path": "pkg/analysis/analysis_test.go",
+      "startLine": 377,
+      "endLine": 417,
+      "symbol": "TestAverageProfitAnalysis",
+      "quote": null
+    }
+  ],
+  "reasoning": "PeriodProfitAnalysis indexes the first and last trade without checking that any trades exist, so an empty TradingRecord panics. It also divides a Duration by ppa.Period without validating ppa.Period, which panics when Period is zero and can produce zero periods for short spans, yielding Inf. AverageProfitAnalysis divides zero total profit by len(record.Trades), which is NaN for an empty record. Peer tests cover empty records for other analyses, but these two tests only cover non-empty inputs.",
+  "reproduction": null,
+  "recommendation": "Return 0 or a documented sentinel when there are no trades, when Period <= 0, or when the computed period count is <= 0. Consider averaging over closed trades consistently with TotalProfitAnalysis.",
+  "whyTestsDoNotAlreadyCoverThis": "The included PeriodProfitAnalysis and AverageProfitAnalysis tests build records with trades only; they do not call Analyze on a fresh TradingRecord or with a zero/too-large Period.",
+  "suggestedRegressionTest": "Add tests that PeriodProfitAnalysis and AverageProfitAnalysis return 0 for an empty TradingRecord, and that PeriodProfitAnalysis handles zero Period and spans shorter than Period without panic or Inf.",
+  "minimumFixScope": "Add input guards in PeriodProfitAnalysis.Analyze and AverageProfitAnalysis.Analyze, then add focused edge-case tests in pkg/analysis/analysis_test.go.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-06fb0c4cfe_29e9fc59de",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:12:33.998Z",
+  "updatedAt": "2026-06-01T23:12:33.998Z"
+}

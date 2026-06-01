@@ -236,7 +236,7 @@ func (pm *PerformanceMetrics) calculateRiskAdjustedMetrics(trades []Trade) {
 }
 
 func (pm *PerformanceMetrics) calculateCAGR() decimal.Decimal {
-	if pm.InitialEquity.IsZero() {
+	if pm.InitialEquity.IsZero() || pm.FinalEquity.LT(decimal.ZERO) {
 		return decimal.ZERO
 	}
 

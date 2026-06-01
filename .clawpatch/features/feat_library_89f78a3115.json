@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_library_89f78a3115",
+  "title": "Go package decimal",
+  "summary": "Go package pkg/decimal with 1 source file(s).",
+  "kind": "library",
+  "source": "go-package",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "pkg/decimal/decimal.go",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "pkg/decimal/decimal.go",
+      "reason": "go package source"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "pkg/decimal/decimal_test.go",
+      "reason": "go package test"
+    }
+  ],
+  "tests": [
+    {
+      "path": "pkg/decimal/decimal_test.go",
+      "command": "go test ./..."
+    }
+  ],
+  "tags": [
+    "go",
+    "package"
+  ],
+  "trustBoundaries": [],
+  "status": "pending",
+  "lock": null,
+  "findingIds": [],
+  "patchAttemptIds": [],
+  "analysisHistory": [],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:08:40.273Z"
+}

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_config_0902ad7be8",
+  "title": "Project config Makefile",
+  "summary": "Build, release, or quality configuration in Makefile.",
+  "kind": "config",
+  "source": "shared-infra-heuristic",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "Makefile",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "Makefile",
+      "reason": "entrypoint"
+    }
+  ],
+  "contextFiles": [],
+  "tests": [],
+  "tags": [
+    "config"
+  ],
+  "trustBoundaries": [
+    "process-exec",
+    "filesystem"
+  ],
+  "status": "needs-fix",
+  "lock": null,
+  "findingIds": [
+    "fnd_sig-feat-config-0902ad7be8-24994_20da3ff139"
+  ],
+  "patchAttemptIds": [],
+  "analysisHistory": [
+    {
+      "runId": "20260601T230850-8db0c3",
+      "kind": "review",
+      "summary": "1 finding(s)",
+      "provider": "codex",
+      "model": null,
+      "createdAt": "2026-06-01T23:12:32.055Z"
+    }
+  ],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:12:32.055Z"
+}

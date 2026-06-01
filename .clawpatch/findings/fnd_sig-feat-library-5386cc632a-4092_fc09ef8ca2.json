@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-5386cc632a-4092_fc09ef8ca2",
+  "featureId": "feat_library_5386cc632a",
+  "title": "Position PnL ignores filled execution prices",
+  "category": "bug",
+  "severity": "high",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/trading/order.go",
+      "startLine": 81,
+      "endLine": 85,
+      "symbol": "Order.Fill",
+      "quote": "Fill writes FilledPrice and FilledAmount but leaves Price unchanged."
+    },
+    {
+      "path": "pkg/trading/position.go",
+      "startLine": 44,
+      "endLine": 55,
+      "symbol": "Position.CostBasis/ExitValue",
+      "quote": "CostBasis and ExitValue multiply Amount by Price."
+    },
+    {
+      "path": "pkg/trading/chandelier_exit_test.go",
+      "startLine": 11,
+      "endLine": 20,
+      "symbol": "enterLong/enterShort",
+      "quote": "Tests create a NewOrderDetail market order, call Fill, then pass it to record.Operate."
+    }
+  ],
+  "reasoning": "NewOrderDetail creates market orders with Price left at zero, while Fill records the actual execution in FilledPrice. Any Position created from a normally filled market order therefore has zero cost basis and zero exit value, corrupting PnL, drawdown, exposure, and stop calculations.",
+  "reproduction": "order := NewOrderDetail(BUY, MarketOrder, \"TEST\", decimal.New(10)); order.Fill(decimal.New(100), decimal.New(10)); position := NewPosition(*order); position.CostBasis() returns 0 instead of 1000.",
+  "recommendation": "Make Position valuation use FilledPrice/FilledAmount when an order is filled, or make Fill synchronize the execution price/amount fields used by Position. Preserve limit price semantics separately if Price is intended to remain the submitted limit.",
+  "whyTestsDoNotAlreadyCoverThis": "orders_test.go asserts FilledPrice/FilledAmount after Fill, while position_test.go builds positions from literal Orders with Price populated. No test combines Fill with Position.CostBasis or ExitValue.",
+  "suggestedRegressionTest": "Create filled market entry and exit orders via NewOrderDetail + Fill, operate them through TradingRecord, and assert CostBasis, ExitValue, and realized PnL use the filled prices.",
+  "minimumFixScope": "pkg/trading/order.go and/or pkg/trading/position.go valuation semantics, with TradingRecord/Position regression coverage.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-5386cc632a_4092a81e5c",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:15:11.788Z",
+  "updatedAt": "2026-06-01T23:15:11.788Z"
+}

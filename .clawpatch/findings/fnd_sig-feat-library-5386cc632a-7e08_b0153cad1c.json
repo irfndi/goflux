@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-5386cc632a-7e08_b0153cad1c",
+  "featureId": "feat_library_5386cc632a",
+  "title": "Default bullish crossover strategies pass CrossUp operands backwards",
+  "category": "bug",
+  "severity": "high",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/trading/cross.go",
+      "startLine": 5,
+      "endLine": 11,
+      "symbol": "NewCrossUpIndicatorRule",
+      "quote": "NewCrossUpIndicatorRule stores the first argument as upper, the second as lower, and checks lower > upper."
+    },
+    {
+      "path": "pkg/trading/cross_test.go",
+      "startLine": 12,
+      "endLine": 25,
+      "symbol": "TestCrossUpIndicatorRule",
+      "quote": "The test calls NewCrossUpIndicatorRule(dnInd, upInd) and expects the rising upInd to cross above dnInd."
+    },
+    {
+      "path": "pkg/trading/strategy_registry.go",
+      "startLine": 79,
+      "endLine": 85,
+      "symbol": "createSMACrossFastStrategy",
+      "quote": "entryRule := And(NewCrossUpIndicatorRule(fastMA, slowMA), ...)"
+    },
+    {
+      "path": "pkg/trading/strategy_registry.go",
+      "startLine": 103,
+      "endLine": 104,
+      "symbol": "createEMACrossFastStrategy",
+      "quote": "entryRule := NewCrossUpIndicatorRule(fastEMA, slowEMA)"
+    },
+    {
+      "path": "pkg/trading/strategy_registry.go",
+      "startLine": 140,
+      "endLine": 141,
+      "symbol": "createMACDStrategy",
+      "quote": "entryRule := NewCrossUpIndicatorRule(macd, signal)"
+    },
+    {
+      "path": "pkg/trading/strategy_registry.go",
+      "startLine": 158,
+      "endLine": 159,
+      "symbol": "createBollingerStrategy",
+      "quote": "entryRule := NewCrossUpIndicatorRule(closeInd, bbLower)"
+    }
+  ],
+  "reasoning": "The primitive CrossUp rule expects the indicator that should cross upward to be the second argument. The registry passes fast/signal/close as the first argument, so default bullish entries are inverted and can trigger on bearish relationships instead of the advertised bullish crosses.",
+  "reproduction": "Instantiate ema_cross_fast or macd_cross and evaluate it across a known bullish fast-above-slow or MACD-above-signal crossover; the entry rule is wired to the opposite operand relationship.",
+  "recommendation": "Swap only the CrossUp operands in the affected strategy factories: slowMA/fastMA, slowEMA/fastEMA, signal/macd, and bbLower/closeInd. Keep CrossDown calls as-is where they already model the downward crossing operand order.",
+  "whyTestsDoNotAlreadyCoverThis": "strategy_registry_test.go only checks listing, instantiation, serialization, and unstable periods. cross_test.go verifies the primitive rule, but no registry test asserts ShouldEnter/ShouldExit behavior on a crossover series.",
+  "suggestedRegressionTest": "Add table tests for each default crossover strategy using fixed indicators or a crafted series where the fast/MACD/price line crosses upward, asserting ShouldEnter is true only for the bullish crossing.",
+  "minimumFixScope": "pkg/trading/strategy_registry.go operand order plus behavioral registry tests.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-5386cc632a_7e0847f39a",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:15:11.788Z",
+  "updatedAt": "2026-06-01T23:15:11.788Z"
+}

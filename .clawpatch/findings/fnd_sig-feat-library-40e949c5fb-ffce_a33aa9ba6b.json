@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-40e949c5fb-ffce_a33aa9ba6b",
+  "featureId": "feat_library_40e949c5fb",
+  "title": "Performance CAGR suppresses losing periods as zero return",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/metrics/performance_metrics.go",
+      "startLine": 212,
+      "endLine": 226,
+      "symbol": "PerformanceMetrics.calculateCAGR",
+      "quote": "func (pm *PerformanceMetrics) calculateCAGR() decimal.Decimal {\n\tif pm.InitialEquity.IsZero() || pm.FinalEquity.LTE(pm.InitialEquity) {\n\t\treturn decimal.ZERO\n\t}\n...\n\treturn cagr.Sub(decimal.New(1))"
+    },
+    {
+      "path": "pkg/metrics/metrics.go",
+      "startLine": 53,
+      "endLine": 61,
+      "symbol": "CAGR",
+      "quote": "func CAGR(initialEquity, finalEquity decimal.Decimal, years int) decimal.Decimal {\n\tif initialEquity.IsZero() || years <= 0 {\n\t\treturn decimal.ZERO\n\t}\n\n\tequityRatio := finalEquity.Div(initialEquity)\n\texponent := 1.0 / float64(years)\n\treturn decimal.New(math.Pow(equityRatio.Float(), exponent)).Sub(decimal.New(1))"
+    }
+  ],
+  "reasoning": "The standalone CAGR helper computes the formula for any positive initial equity, so 100 to 90 over one year yields -0.10. The PerformanceMetrics version returns zero whenever final equity is less than or equal to initial equity, causing losing strategies to report no CAGR loss and propagating that wrong value into Calmar and Sterling ratios.",
+  "reproduction": null,
+  "recommendation": "Only guard invalid inputs such as zero initial equity and non-positive elapsed time. For positive final equity below initial equity, compute the formula and return the negative CAGR.",
+  "whyTestsDoNotAlreadyCoverThis": "The performance CAGR test only uses a profitable period and logs the result instead of asserting the expected value for losing or flat equity.",
+  "suggestedRegressionTest": "Calculate metrics with initialEquity=10000, finalEquity=9000, and a one-year trading period, then assert pm.CAGR is approximately -0.10.",
+  "minimumFixScope": "PerformanceMetrics.calculateCAGR guard condition and tests for negative returns.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-40e949c5fb_ffcefc20f9",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:12:23.712Z",
+  "updatedAt": "2026-06-01T23:12:23.712Z"
+}

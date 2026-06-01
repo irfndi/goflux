@@ -36,7 +36,7 @@ func cacheResult(indicator cachedIndicator, index int, val decimal.Decimal) {
 		}
 		indicator.setCache(append(c, &val))
 	} else {
-		if len(c) >= indicator.maxCacheSize() {
+		if index >= indicator.maxCacheSize() {
 			return
 		}
 		expandResultCache(indicator, index+1)

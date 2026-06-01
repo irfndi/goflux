@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_library_52a80588d3",
+  "title": "Go package testutils",
+  "summary": "Go package pkg/testutils with 1 source file(s).",
+  "kind": "library",
+  "source": "go-package",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "pkg/testutils/testutils.go",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "pkg/testutils/testutils.go",
+      "reason": "go package source"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "pkg/decimal/decimal.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/decimal"
+    },
+    {
+      "path": "pkg/series/candle.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/heikin_ashi.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/loader.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/renko.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/resample.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/timeperiod.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/timeseries.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    }
+  ],
+  "tests": [],
+  "tags": [
+    "go",
+    "package"
+  ],
+  "trustBoundaries": [],
+  "status": "needs-fix",
+  "lock": null,
+  "findingIds": [
+    "fnd_sig-feat-library-52a80588d3-fae3_03383759ad"
+  ],
+  "patchAttemptIds": [],
+  "analysisHistory": [
+    {
+      "runId": "20260601T230850-8db0c3",
+      "kind": "review",
+      "summary": "1 finding(s)",
+      "provider": "codex",
+      "model": null,
+      "createdAt": "2026-06-01T23:11:26.949Z"
+    }
+  ],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:11:26.949Z"
+}

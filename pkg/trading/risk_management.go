@@ -138,25 +138,31 @@ func (clr *ConsecutiveLossRule) IsSatisfied(index int, record *TradingRecord) bo
 		return false
 	}
 
-	lastTrade := record.LastTrade()
-	if lastTrade == nil || !lastTrade.IsClosed() {
-		return false
+	consecutive := 0
+	for i := len(record.Trades) - 1; i >= 0; i-- {
+		trade := record.Trades[i]
+		if !trade.IsClosed() {
+			continue
+		}
+
+		var pnl decimal.Decimal
+		if trade.IsLong() {
+			pnl = trade.ExitValue().Sub(trade.CostBasis())
+		} else {
+			pnl = trade.CostBasis().Sub(trade.ExitValue())
+		}
+
+		if pnl.LT(decimal.ZERO) {
+			consecutive++
+			if consecutive >= clr.MaxConsecutiveLosses {
+				return true
+			}
+		} else {
+			break
+		}
 	}
 
-	// Avoid recounting the same trade on repeated calls
-	if lastTrade.ExitOrder().ExecutionTime.Equal(clr.lastProcessedTime) {
-		return clr.currentConsecutive >= clr.MaxConsecutiveLosses
-	}
-	clr.lastProcessedTime = lastTrade.ExitOrder().ExecutionTime
-
-	lastPnL := lastTrade.ExitValue().Sub(lastTrade.CostBasis())
-	if lastPnL.LT(decimal.ZERO) {
-		clr.currentConsecutive++
-	} else {
-		clr.currentConsecutive = 0
-	}
-
-	return clr.currentConsecutive >= clr.MaxConsecutiveLosses
+	return false
 }
 
 type PositionSizeRiskRule struct {

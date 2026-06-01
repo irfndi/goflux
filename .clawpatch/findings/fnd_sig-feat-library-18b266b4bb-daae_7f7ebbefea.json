@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-18b266b4bb-daae_7f7ebbefea",
+  "featureId": "feat_library_18b266b4bb",
+  "title": "EMA cache panics after the max cache size",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/compat.go",
+      "startLine": 56,
+      "endLine": 56,
+      "symbol": "NewEMAIndicator",
+      "quote": "NewEMAIndicator                = indicators.NewEMAIndicator"
+    },
+    {
+      "path": "pkg/indicators/exponential_moving_average.go",
+      "startLine": 32,
+      "endLine": 42,
+      "symbol": "emaIndicator.Calculate",
+      "quote": "cacheResult(ema, index, result)"
+    },
+    {
+      "path": "pkg/indicators/cached_indicator.go",
+      "startLine": 38,
+      "endLine": 40,
+      "symbol": "cacheResult",
+      "quote": "indicator.cache()[index] = &val"
+    },
+    {
+      "path": "pkg/indicators/cached_indicator.go",
+      "startLine": 51,
+      "endLine": 55,
+      "symbol": "expandResultCache",
+      "quote": "newSize = indicator.maxCacheSize()"
+    }
+  ],
+  "reasoning": "The root package exposes NewEMAIndicator. EMA.Calculate writes every computed value through cacheResult. When the cache has reached defaultMaxCacheSize and Calculate is called for an index greater than that size, cacheResult takes the index > len(c) branch, expandResultCache caps the cache length at maxCacheSize, and cacheResult then writes indicator.cache()[index]. For index 10001 with a max size of 10000, this is an out-of-range panic instead of a valid EMA result for longer time series.",
+  "reproduction": "Create an EMA for a time series with at least 10002 candles and call Calculate(10001); the recursive calculation fills the cache to 10000, skips caching index 10000, then panics while caching index 10001.",
+  "recommendation": "Guard cacheResult before writing: if index >= maxCacheSize, either return without caching or allow the cache to grow to the requested index. Apply the same bounds rule to the analogous cache.Set path if that API is kept.",
+  "whyTestsDoNotAlreadyCoverThis": "The feature lists no linked tests, and the existing inspected cache path is only exercised below defaultMaxCacheSize; it does not cover indexes at or above the cache cap.",
+  "suggestedRegressionTest": "Add an EMA test with a series longer than defaultMaxCacheSize+1 that calls Calculate(defaultMaxCacheSize+1) and asserts it does not panic and returns a deterministic value. Add a direct cacheResult or NewCache.Set boundary test for index == maxCacheSize and index > maxCacheSize.",
+  "minimumFixScope": "Update pkg/indicators/cached_indicator.go bounds handling and add boundary regression tests for cached indicators.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-18b266b4bb_daae8cc20f",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:15:11.135Z",
+  "updatedAt": "2026-06-01T23:15:11.135Z"
+}

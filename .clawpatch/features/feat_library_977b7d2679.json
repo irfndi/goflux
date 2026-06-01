@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_library_977b7d2679",
+  "title": "Go package candlesticks",
+  "summary": "Go package pkg/candlesticks with 1 source file(s).",
+  "kind": "library",
+  "source": "go-package",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "pkg/candlesticks/candlesticks.go",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "pkg/candlesticks/candlesticks.go",
+      "reason": "go package source"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "pkg/candlesticks/candlesticks_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/decimal/decimal.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/decimal"
+    },
+    {
+      "path": "pkg/series/candle.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/heikin_ashi.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/loader.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/renko.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/resample.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/timeperiod.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    },
+    {
+      "path": "pkg/series/timeseries.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/series"
+    }
+  ],
+  "tests": [
+    {
+      "path": "pkg/candlesticks/candlesticks_test.go",
+      "command": "go test ./..."
+    }
+  ],
+  "tags": [
+    "go",
+    "package"
+  ],
+  "trustBoundaries": [],
+  "status": "pending",
+  "lock": null,
+  "findingIds": [],
+  "patchAttemptIds": [],
+  "analysisHistory": [],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:08:40.273Z"
+}

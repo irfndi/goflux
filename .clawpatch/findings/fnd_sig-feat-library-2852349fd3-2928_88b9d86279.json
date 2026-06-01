@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-2852349fd3-2928_88b9d86279",
+  "featureId": "feat_library_2852349fd3",
+  "title": "Standalone compare CLI rejects the advertised threshold argument",
+  "category": "api-contract",
+  "severity": "low",
+  "confidence": "high",
+  "triage": "contract-mismatch",
+  "evidence": [
+    {
+      "path": "scripts/compare_benchmarks.py",
+      "startLine": 89,
+      "endLine": 97,
+      "symbol": "__main__",
+      "quote": "if len(sys.argv) != 3:\n    print(\n        \"Usage: python compare_benchmarks.py <current_results.txt> <baseline_results.txt> [threshold]\"\n    )\n    sys.exit(1)\n\nthreshold = float(sys.argv[3]) if len(sys.argv) > 3 else 1.1"
+    }
+  ],
+  "reasoning": "The usage string advertises an optional threshold, and the code below tries to read sys.argv[3], but the argument count guard requires exactly three argv entries. Running compare_benchmarks.py with current, baseline, and threshold exits with usage instead of honoring the argument.",
+  "reproduction": null,
+  "recommendation": "Change the guard to accept either two or three user arguments, for example len(sys.argv) not in (3, 4), then parse sys.argv[3] only when present.",
+  "whyTestsDoNotAlreadyCoverThis": "No linked CLI tests cover the optional threshold path.",
+  "suggestedRegressionTest": "Invoke the script entrypoint with current file, baseline file, and a threshold argument and assert it reaches compare_benchmarks instead of exiting with usage.",
+  "minimumFixScope": "scripts/compare_benchmarks.py __main__ argument validation.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-2852349fd3_292800258d",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:11:18.100Z",
+  "updatedAt": "2026-06-01T23:11:18.100Z"
+}

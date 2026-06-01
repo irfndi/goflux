@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-40e949c5fb-ef2e_fafd5402c4",
+  "featureId": "feat_library_40e949c5fb",
+  "title": "MonteCarloValueAtRisk panics for non-positive simulation counts",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/metrics/risk.go",
+      "startLine": 75,
+      "endLine": 92,
+      "symbol": "MonteCarloValueAtRisk",
+      "quote": "func MonteCarloValueAtRisk(returns []float64, confidence float64, simulations int) float64 {\n\tif len(returns) < 2 {\n\t\treturn 0\n\t}\n...\n\tsimReturns := make([]float64, simulations)"
+    },
+    {
+      "path": "pkg/metrics/risk.go",
+      "startLine": 105,
+      "endLine": 113,
+      "symbol": "MonteCarloValueAtRisk",
+      "quote": "sort.Float64s(simReturns)\n\tindex := int(math.Floor((1 - confidence) * float64(simulations)))\n...\n\tif index >= simulations {\n\t\tindex = simulations - 1\n\t}\n\treturn -simReturns[index]"
+    },
+    {
+      "path": "pkg/metrics/risk_test.go",
+      "startLine": 113,
+      "endLine": 122,
+      "symbol": "TestMonteCarloValueAtRisk",
+      "quote": "varr := metrics.MonteCarloValueAtRisk(returns, 0.95, 1000)\n\t\tassert.Greater(t, varr, 0.0)\n...\n\t\tvarr := metrics.MonteCarloValueAtRisk(returns, 0.99, 1000)\n\t\tassert.Greater(t, varr, 0.0)"
+    }
+  ],
+  "reasoning": "With simulations == 0, simReturns is empty, the upper-bound clamp sets index to -1, and simReturns[-1] panics. With simulations < 0, make([]float64, simulations) panics immediately. This public library function should not crash on an invalid count without documenting that precondition.",
+  "reproduction": null,
+  "recommendation": "Validate simulations before allocating, returning 0 or an error-capable API result when simulations <= 0. Add the same style of bounds validation used for insufficient return data.",
+  "whyTestsDoNotAlreadyCoverThis": "The Monte Carlo tests only pass simulations=1000 and do not cover zero or negative simulation counts.",
+  "suggestedRegressionTest": "Assert MonteCarloValueAtRisk(validReturns, 0.95, 0) and MonteCarloValueAtRisk(validReturns, 0.95, -1) do not panic and return the chosen invalid-input value.",
+  "minimumFixScope": "MonteCarloValueAtRisk input validation and risk tests.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-40e949c5fb_ef2e6e8fd4",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:12:23.712Z",
+  "updatedAt": "2026-06-01T23:12:23.712Z"
+}
