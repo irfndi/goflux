@@ -287,3 +287,11 @@ func BenchmarkDonchianMiddleBand(b *testing.B) {
 		return NewDonchianMiddleBandIndicator(sharedTimeSeries, 20)
 	})
 }
+
+// --- Fibonacci ---
+
+func BenchmarkFibonacciRetracementIndicator(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewFibonacciRetracementIndicator(sharedTimeSeries, 20, 0.618)
+	})
+}
