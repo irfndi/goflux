@@ -11,7 +11,7 @@ func TestTRIXOverZeroRule(t *testing.T) {
 	s := testutils.MockTimeSeriesFl(100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120)
 
 	trix := indicators.NewTRIXIndicatorFromSeries(s, 5)
-	rule := NewTRIXOverZeroRule(trix)
+	rule := NewTRIXOverLevelRule(trix, 0)
 	record := NewTradingRecord()
 
 	if !rule.IsSatisfied(20, record) {

@@ -14,6 +14,7 @@ import (
 // negative indicates downward momentum.
 type trixIndicator struct {
 	tripleEMA Indicator
+	window    int
 }
 
 // NewTRIXIndicator returns a TRIX indicator.
@@ -30,21 +31,17 @@ func NewTRIXIndicator(indicator Indicator, window int) Indicator {
 	ema1 := NewEMAIndicator(indicator, window)
 	ema2 := NewEMAIndicator(ema1, window)
 	ema3 := NewEMAIndicator(ema2, window)
-	return trixIndicator{tripleEMA: ema3}
+	return trixIndicator{tripleEMA: ema3, window: window}
 }
 
 // NewTRIXIndicatorFromSeries returns a TRIX built from a time series.
 // Panics if window < 1.
 func NewTRIXIndicatorFromSeries(s *series.TimeSeries, window int) Indicator {
-	if window < 1 {
-		panic("goflux: TRIX window must be >= 1")
-	}
-	telemetry.ReportUsage("TRIX", map[string]string{"window": strconv.Itoa(window)})
 	return NewTRIXIndicator(NewClosePriceIndicator(s), window)
 }
 
 func (t trixIndicator) Calculate(index int) decimal.Decimal {
-	if index < 1 {
+	if index < 3*t.window {
 		return decimal.ZERO
 	}
 

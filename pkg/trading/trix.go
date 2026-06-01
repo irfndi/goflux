@@ -6,23 +6,6 @@ import (
 	"github.com/irfndi/goflux/pkg/series"
 )
 
-// trixOverZeroRule is satisfied when TRIX is above zero (bullish signal).
-type trixOverZeroRule struct {
-	trix indicators.Indicator
-}
-
-// NewTRIXOverZeroRule returns a rule that is satisfied when TRIX is above zero.
-func NewTRIXOverZeroRule(trix indicators.Indicator) Rule {
-	if trix == nil {
-		panic("goflux: TRIXOverZeroRule requires non-nil indicator")
-	}
-	return trixOverZeroRule{trix: trix}
-}
-
-func (r trixOverZeroRule) IsSatisfied(index int, record *TradingRecord) bool {
-	return r.trix.Calculate(index).GT(decimal.ZERO)
-}
-
 // trixOverLevelRule is satisfied when TRIX exceeds a given level.
 type trixOverLevelRule struct {
 	trix  indicators.Indicator
@@ -68,7 +51,7 @@ func (r trixUnderLevelRule) IsSatisfied(index int, record *TradingRecord) bool {
 // NewTRIXBullishRule returns a convenience rule using a TRIX
 // constructed from the given time series. It triggers when TRIX is above zero.
 func NewTRIXBullishRule(s *series.TimeSeries, window int) Rule {
-	return NewTRIXOverZeroRule(indicators.NewTRIXIndicatorFromSeries(s, window))
+	return NewTRIXOverLevelRule(indicators.NewTRIXIndicatorFromSeries(s, window), 0)
 }
 
 // NewTRIXBearishRule returns a convenience rule using a TRIX
