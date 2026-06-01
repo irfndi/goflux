@@ -21,6 +21,9 @@ type aroonOscillator struct {
 // Callers must supply pre-constructed Aroon Up and Aroon Down indicators
 // (typically built from high-price and low-price sources respectively).
 func NewAroonOscillator(aroonUp, aroonDown Indicator) Indicator {
+	if aroonUp == nil || aroonDown == nil {
+		panic("goflux: Aroon Oscillator requires non-nil Aroon Up and Aroon Down indicators")
+	}
 	telemetry.ReportUsage("AroonOscillator", nil)
 	return aroonOscillator{
 		aroonUp:   aroonUp,

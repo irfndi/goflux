@@ -100,3 +100,85 @@ func TestAroonOscillatorBearishRule(t *testing.T) {
 		t.Errorf("AroonOscillatorBearishRule should be satisfied in downtrend")
 	}
 }
+
+func TestAroonOscillatorAtThreshold(t *testing.T) {
+	// Flat trend: oscillator == 0 at index 9.
+	s := series.NewTimeSeries()
+	for i := 0; i < 10; i++ {
+		s.AddCandle(&series.Candle{
+			MaxPrice:   decimal.New(6),
+			MinPrice:   decimal.New(4),
+			ClosePrice: decimal.New(5),
+		})
+	}
+
+	osc := indicators.NewAroonOscillatorFromSeries(s, 5)
+	record := NewTradingRecord()
+
+	over := NewAroonOscillatorOverLevelRule(osc, 0)
+	if over.IsSatisfied(9, record) {
+		t.Errorf("AroonOscillatorOverLevelRule(level=0) should not be satisfied when oscillator == 0")
+	}
+
+	under := NewAroonOscillatorUnderLevelRule(osc, 0)
+	if under.IsSatisfied(9, record) {
+		t.Errorf("AroonOscillatorUnderLevelRule(level=0) should not be satisfied when oscillator == 0")
+	}
+}
+
+func TestAroonOscillatorInsufficientData(t *testing.T) {
+	s := series.NewTimeSeries()
+	for i := 0; i < 3; i++ {
+		s.AddCandle(&series.Candle{
+			MaxPrice:   decimal.New(float64(10 + i)),
+			MinPrice:   decimal.New(float64(5 + i)),
+			ClosePrice: decimal.New(float64(7 + i)),
+		})
+	}
+
+	record := NewTradingRecord()
+
+	bullish := NewAroonOscillatorBullishRule(s, 5)
+	if bullish.IsSatisfied(2, record) {
+		t.Errorf("AroonOscillatorBullishRule should not be satisfied with insufficient data")
+	}
+
+	bearish := NewAroonOscillatorBearishRule(s, 5)
+	if bearish.IsSatisfied(2, record) {
+		t.Errorf("AroonOscillatorBearishRule should not be satisfied with insufficient data")
+	}
+}
+
+func TestAroonOscillatorFlatTrend(t *testing.T) {
+	// Flat trend yields oscillator ≈ 0.
+	s := series.NewTimeSeries()
+	for i := 0; i < 10; i++ {
+		s.AddCandle(&series.Candle{
+			MaxPrice:   decimal.New(6),
+			MinPrice:   decimal.New(4),
+			ClosePrice: decimal.New(5),
+		})
+	}
+
+	record := NewTradingRecord()
+
+	bullish := NewAroonOscillatorBullishRule(s, 5)
+	if bullish.IsSatisfied(9, record) {
+		t.Errorf("AroonOscillatorBullishRule should not be satisfied in flat trend")
+	}
+
+	bearish := NewAroonOscillatorBearishRule(s, 5)
+	if bearish.IsSatisfied(9, record) {
+		t.Errorf("AroonOscillatorBearishRule should not be satisfied in flat trend")
+	}
+
+	over := NewAroonOscillatorOverLevelRule(indicators.NewAroonOscillatorFromSeries(s, 5), 50)
+	if over.IsSatisfied(9, record) {
+		t.Errorf("AroonOscillatorOverLevelRule(level=50) should not be satisfied in flat trend")
+	}
+
+	under := NewAroonOscillatorUnderLevelRule(indicators.NewAroonOscillatorFromSeries(s, 5), -50)
+	if under.IsSatisfied(9, record) {
+		t.Errorf("AroonOscillatorUnderLevelRule(level=-50) should not be satisfied in flat trend")
+	}
+}

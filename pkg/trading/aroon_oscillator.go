@@ -16,6 +16,9 @@ type aroonOscillatorOverLevelRule struct {
 // NewAroonOscillatorOverLevelRule returns a rule that is satisfied when
 // the Aroon Oscillator exceeds the given level.
 func NewAroonOscillatorOverLevelRule(aroonOsc indicators.Indicator, level float64) Rule {
+	if aroonOsc == nil {
+		panic("goflux: AroonOscillatorOverLevelRule requires non-nil indicator")
+	}
 	return aroonOscillatorOverLevelRule{
 		aroonOsc: aroonOsc,
 		level:    decimal.New(level),
@@ -36,6 +39,9 @@ type aroonOscillatorUnderLevelRule struct {
 // NewAroonOscillatorUnderLevelRule returns a rule that is satisfied when
 // the Aroon Oscillator falls below the given level.
 func NewAroonOscillatorUnderLevelRule(aroonOsc indicators.Indicator, level float64) Rule {
+	if aroonOsc == nil {
+		panic("goflux: AroonOscillatorUnderLevelRule requires non-nil indicator")
+	}
 	return aroonOscillatorUnderLevelRule{
 		aroonOsc: aroonOsc,
 		level:    decimal.New(level),

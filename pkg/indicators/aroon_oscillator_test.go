@@ -55,8 +55,8 @@ func TestAroonOscillatorStrongDowntrend(t *testing.T) {
 }
 
 func TestAroonOscillatorFlatTrend(t *testing.T) {
-	// Constant prices: Aroon Up and Down will both decrease from 100
-	// After window periods, both are 0, so oscillator is 0
+	// Constant prices: MaxPrice=6 and MinPrice=4 for every candle.
+	// Both Aroon Up and Down are 100 (current index is highest Max and lowest Min),
 	s := testutils.MockTimeSeriesFl(5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
 
 	osc := NewAroonOscillatorFromSeries(s, 5)
