@@ -311,3 +311,19 @@ func BenchmarkLinearRegressionChannel(b *testing.B) {
 		return upper
 	})
 }
+
+// --- Alligator ---
+
+func BenchmarkAlligatorJaw(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		jaw, _, _ := NewAlligatorIndicators(sharedTimeSeries)
+		return jaw
+	})
+}
+
+func BenchmarkGatorOscillatorUpper(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		upper, _ := NewGatorOscillatorIndicators(sharedTimeSeries)
+		return upper
+	})
+}
