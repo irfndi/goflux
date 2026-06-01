@@ -41,7 +41,7 @@ func NewTRIXIndicatorFromSeries(s *series.TimeSeries, window int) Indicator {
 }
 
 func (t trixIndicator) Calculate(index int) decimal.Decimal {
-	if index < 3*t.window {
+	if index < 6*t.window {
 		return decimal.ZERO
 	}
 
