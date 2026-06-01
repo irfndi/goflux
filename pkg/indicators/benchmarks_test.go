@@ -263,3 +263,9 @@ func BenchmarkChaikinMoneyFlow(b *testing.B) {
 		return NewChaikinMoneyFlowIndicator(sharedTimeSeries, 20)
 	})
 }
+
+func BenchmarkTRIX(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewTRIXIndicatorFromSeries(sharedTimeSeries, 14)
+	})
+}
