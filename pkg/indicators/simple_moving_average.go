@@ -1,7 +1,10 @@
 package indicators
 
 import (
+	"strconv"
+
 	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 type smaIndicator struct {
@@ -12,6 +15,7 @@ type smaIndicator struct {
 // NewSimpleMovingAverage returns a derivative Indicator which returns the average of the current value and preceding
 // values in the given windowSize.
 func NewSimpleMovingAverage(indicator Indicator, window int) Indicator {
+	telemetry.ReportUsage("SMA", map[string]string{"window": strconv.Itoa(window)})
 	return smaIndicator{indicator, window}
 }
 

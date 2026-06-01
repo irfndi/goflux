@@ -1,8 +1,11 @@
 package indicators
 
 import (
+	"strconv"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 type adxIndicator struct {
@@ -22,6 +25,7 @@ type adxIndicator struct {
 }
 
 func NewADXIndicator(s *series.TimeSeries, period int) Indicator {
+	telemetry.ReportUsage("ADX", map[string]string{"period": strconv.Itoa(period)})
 	return &adxIndicator{
 		series:       s,
 		high:         NewHighPriceIndicator(s),

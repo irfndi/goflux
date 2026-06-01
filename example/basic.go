@@ -12,6 +12,9 @@ import (
 // BasicEma is an example of how to create a basic Exponential moving average indicator
 // based on close prices of a timeseries from your exchange of choice.
 func BasicEma() indicators.Indicator {
+	// Optional: enable anonymized telemetry to help improve the library
+	// telemetry.Enable("https://goflux-telemetry.irfndi.workers.dev/v1/telemetry", "")
+
 	ts := series.NewTimeSeries()
 
 	// fetch this from your preferred exchange

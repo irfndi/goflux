@@ -1,9 +1,11 @@
 package indicators
 
 import (
+	"strconv"
 	"sync"
 
 	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 type emaIndicator struct {
@@ -18,6 +20,7 @@ type emaIndicator struct {
 // the given windowSize, with values closer to current index given more weight. A more in-depth explanation can be found here:
 // http://www.investopedia.com/terms/e/ema.asp
 func NewEMAIndicator(indicator Indicator, window int) Indicator {
+	telemetry.ReportUsage("EMA", map[string]string{"window": strconv.Itoa(window)})
 	return &emaIndicator{
 		indicator:   indicator,
 		window:      window,

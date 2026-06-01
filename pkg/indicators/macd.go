@@ -1,9 +1,16 @@
 package indicators
 
+import (
+	"strconv"
+
+	"github.com/irfndi/goflux/pkg/telemetry"
+)
+
 // NewMACDIndicator returns a derivative Indicator which returns the difference between two EMAIndicators with long and
 // short windows. It's useful for gauging the strength of price movements. A more in-depth explanation can be found here:
 // http://www.investopedia.com/terms/m/macd.asp
 func NewMACDIndicator(baseIndicator Indicator, shortwindow, longwindow int) Indicator {
+	telemetry.ReportUsage("MACD", map[string]string{"short_window": strconv.Itoa(shortwindow), "long_window": strconv.Itoa(longwindow)})
 	return NewDifferenceIndicator(NewEMAIndicator(baseIndicator, shortwindow), NewEMAIndicator(baseIndicator, longwindow))
 }
 

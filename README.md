@@ -225,6 +225,41 @@ GoFlux builds on the pioneering work of the technical analysis community:
 
 GoFlux aims to bring these proven ideas into a modern, idiomatic Go library focused on concurrent, cloud-native trading systems.
 
+## Telemetry (Opt-In)
+
+GoFlux includes an optional telemetry system to help us understand which indicators and features are most used, so we can prioritize improvements. **Telemetry is completely disabled by default.**
+
+### Enabling telemetry
+
+Add one line to your application initialization:
+
+```go
+import "github.com/irfndi/goflux/pkg/telemetry"
+
+func main() {
+    telemetry.Enable("https://goflux-telemetry.irfndi.workers.dev/v1/telemetry", "")
+    // ... rest of your application
+}
+```
+
+### What is collected
+
+- Library version and Go version (e.g., `go1.21`, `0.0.6`)
+- Operating system and architecture (e.g., `linux/amd64`)
+- Indicator names and parameter sizes (e.g., `EMA` with `window=10`)
+- Error types and hashed error messages (no stack traces or raw errors)
+- **No IP addresses, no personal data, no financial data**
+
+### Disabling telemetry
+
+If you previously enabled it, call:
+
+```go
+telemetry.Disable()
+```
+
+Or simply remove the `telemetry.Enable()` call.
+
 ## License
 
 GoFlux is released under the MIT license. See [LICENSE](./LICENSE) for details.

@@ -2,8 +2,10 @@ package indicators
 
 import (
 	"math"
+	"strconv"
 
 	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 type relativeStrengthIndexIndicator struct {
@@ -15,6 +17,7 @@ type relativeStrengthIndexIndicator struct {
 // in a given time frame. A more in-depth explanation of relative strength index can be found here:
 // https://www.investopedia.com/terms/r/rsi.asp
 func NewRelativeStrengthIndexIndicator(indicator Indicator, timeframe int) Indicator {
+	telemetry.ReportUsage("RSI", map[string]string{"timeframe": strconv.Itoa(timeframe)})
 	return relativeStrengthIndexIndicator{
 		rsIndicator: NewRelativeStrengthIndicator(indicator, timeframe),
 		oneHundred:  decimal.NewFromString("100"),

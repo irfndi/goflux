@@ -1,8 +1,11 @@
 package indicators
 
 import (
+	"strconv"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 type awesomeOscillatorIndicator struct {
@@ -13,6 +16,7 @@ type awesomeOscillatorIndicator struct {
 }
 
 func NewAwesomeOscillatorIndicator(s *series.TimeSeries, windowFast, windowSlow int) Indicator {
+	telemetry.ReportUsage("AwesomeOscillator", map[string]string{"window_fast": strconv.Itoa(windowFast), "window_slow": strconv.Itoa(windowSlow)})
 	return &awesomeOscillatorIndicator{
 		series:     s,
 		windowFast: windowFast,

@@ -1,6 +1,11 @@
 package indicators
 
-import "github.com/irfndi/goflux/pkg/decimal"
+import (
+	"strconv"
+
+	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/telemetry"
+)
 
 type bbandIndicator struct {
 	ma     Indicator
@@ -11,6 +16,7 @@ type bbandIndicator struct {
 // NewBollingerUpperBandIndicator a a derivative indicator which returns the upper bound of a bollinger band
 // on the underlying indicator
 func NewBollingerUpperBandIndicator(indicator Indicator, window int, sigma float64) Indicator {
+	telemetry.ReportUsage("BollingerBands", map[string]string{"window": strconv.Itoa(window), "band": "upper"})
 	return bbandIndicator{
 		ma:     NewSimpleMovingAverage(indicator, window),
 		stdev:  NewWindowedStandardDeviationIndicator(indicator, window),
@@ -21,6 +27,7 @@ func NewBollingerUpperBandIndicator(indicator Indicator, window int, sigma float
 // NewBollingerLowerBandIndicator returns a a derivative indicator which returns the lower bound of a bollinger band
 // on the underlying indicator
 func NewBollingerLowerBandIndicator(indicator Indicator, window int, sigma float64) Indicator {
+	telemetry.ReportUsage("BollingerBands", map[string]string{"window": strconv.Itoa(window), "band": "lower"})
 	return bbandIndicator{
 		ma:     NewSimpleMovingAverage(indicator, window),
 		stdev:  NewWindowedStandardDeviationIndicator(indicator, window),

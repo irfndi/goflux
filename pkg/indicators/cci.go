@@ -1,8 +1,11 @@
 package indicators
 
 import (
+	"strconv"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 type commidityChannelIndexIndicator struct {
@@ -13,6 +16,7 @@ type commidityChannelIndexIndicator struct {
 // NewCCIIndicator Returns a new Commodity Channel Index Indicator
 // http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:commodity_channel_index_cci
 func NewCCIIndicator(ts *series.TimeSeries, window int) Indicator {
+	telemetry.ReportUsage("CCI", map[string]string{"window": strconv.Itoa(window)})
 	return commidityChannelIndexIndicator{
 		series: ts,
 		window: window,

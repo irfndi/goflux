@@ -1,8 +1,11 @@
 package indicators
 
 import (
+	"strconv"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 // flatStochasticValue is returned when the price range is zero (min == max),
@@ -24,6 +27,7 @@ type kIndicator struct {
 // given window.
 // https://www.investopedia.com/terms/s/stochasticoscillator.asp
 func NewFastStochasticIndicator(series *series.TimeSeries, timeframe int) Indicator {
+	telemetry.ReportUsage("Stochastic", map[string]string{"timeframe": strconv.Itoa(timeframe), "type": "fast"})
 	return kIndicator{
 		closePrice: NewClosePriceIndicator(series),
 		minValue:   NewMinimumValueIndicator(NewLowPriceIndicator(series), timeframe),

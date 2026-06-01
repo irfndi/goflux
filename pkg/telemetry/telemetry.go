@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	libVersion = "0.1.0" // TODO: sync with actual release version
+	libVersion = "0.0.6"
 	schemaVer  = 1
 )
 

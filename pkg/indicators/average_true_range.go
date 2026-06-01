@@ -1,8 +1,11 @@
 package indicators
 
 import (
+	"strconv"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
+	"github.com/irfndi/goflux/pkg/telemetry"
 )
 
 type averageTrueRangeIndicator struct {
@@ -17,6 +20,7 @@ func NewAverageTrueRangeIndicator(series *series.TimeSeries, window int) Indicat
 	if window < 2 {
 		panic("goflux: ATR window must be >= 2")
 	}
+	telemetry.ReportUsage("ATR", map[string]string{"window": strconv.Itoa(window)})
 	return averageTrueRangeIndicator{
 		series: series,
 		window: window,
