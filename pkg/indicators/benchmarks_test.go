@@ -251,3 +251,9 @@ func BenchmarkChandelierExitShort(b *testing.B) {
 		return NewChandelierExitShort(sharedTimeSeries, 22, 22, 3.0)
 	})
 }
+
+func BenchmarkAroonOscillator(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewAroonOscillatorFromSeries(sharedTimeSeries, 14)
+	})
+}
