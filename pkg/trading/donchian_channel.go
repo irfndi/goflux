@@ -7,43 +7,53 @@ import (
 )
 
 // donchianBreakoutUpperRule is satisfied when the close price breaks
-// above the Donchian Channel upper band.
+// above the previous period's Donchian Channel upper band.
 type donchianBreakoutUpperRule struct {
 	closePrice indicators.Indicator
 	upperBand  indicators.Indicator
+	window     int
 }
 
 // NewDonchianBreakoutUpperRule returns a rule that triggers when close
-// price exceeds the Donchian upper band.
+// price exceeds the previous period's Donchian upper band.
 func NewDonchianBreakoutUpperRule(s *series.TimeSeries, window int) Rule {
 	return donchianBreakoutUpperRule{
 		closePrice: indicators.NewClosePriceIndicator(s),
 		upperBand:  indicators.NewDonchianUpperBandIndicator(s, window),
+		window:     window,
 	}
 }
 
 func (r donchianBreakoutUpperRule) IsSatisfied(index int, record *TradingRecord) bool {
-	return r.closePrice.Calculate(index).GTE(r.upperBand.Calculate(index))
+	if index < r.window {
+		return false
+	}
+	return r.closePrice.Calculate(index).GT(r.upperBand.Calculate(index - 1))
 }
 
 // donchianBreakoutLowerRule is satisfied when the close price breaks
-// below the Donchian Channel lower band.
+// below the previous period's Donchian Channel lower band.
 type donchianBreakoutLowerRule struct {
 	closePrice indicators.Indicator
 	lowerBand  indicators.Indicator
+	window     int
 }
 
 // NewDonchianBreakoutLowerRule returns a rule that triggers when close
-// price falls below the Donchian lower band.
+// price falls below the previous period's Donchian lower band.
 func NewDonchianBreakoutLowerRule(s *series.TimeSeries, window int) Rule {
 	return donchianBreakoutLowerRule{
 		closePrice: indicators.NewClosePriceIndicator(s),
 		lowerBand:  indicators.NewDonchianLowerBandIndicator(s, window),
+		window:     window,
 	}
 }
 
 func (r donchianBreakoutLowerRule) IsSatisfied(index int, record *TradingRecord) bool {
-	return r.closePrice.Calculate(index).LTE(r.lowerBand.Calculate(index))
+	if index < r.window {
+		return false
+	}
+	return r.closePrice.Calculate(index).LT(r.lowerBand.Calculate(index - 1))
 }
 
 // donchianChannelWidthRule is satisfied when the channel width

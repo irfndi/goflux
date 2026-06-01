@@ -13,13 +13,13 @@ func TestDonchianUpperBand(t *testing.T) {
 
 	upper := NewDonchianUpperBandIndicator(s, 5)
 
-	// At index 4, highest high in window [0..4] is 15 (index 3)
+	// At index 4, highest high in window [0..4] is 16 (index 3)
 	val := upper.Calculate(4)
 	if !val.EQ(decimal.New(16)) {
 		t.Errorf("DonchianUpperBand(4) = %v, want 16", val)
 	}
 
-	// At index 9, highest high in window [5..9] is 17 (index 9)
+	// At index 9, highest high in window [5..9] is 18 (index 9)
 	val = upper.Calculate(9)
 	if !val.EQ(decimal.New(18)) {
 		t.Errorf("DonchianUpperBand(9) = %v, want 18", val)
