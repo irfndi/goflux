@@ -22,7 +22,7 @@ goflux/
 │   ├── metrics/           # Performance and risk metrics
 │   ├── series/            # Time series data management
 │   ├── trading/           # Trading execution and position management
-│   ├── database/          # Database integration (scaffold)
+│   ├── database/          # Storage interface (backends not yet implemented)
 │   └── reftest/          # Reference validation tests
 ├── example/               # Example applications
 └── doc/                   # Documentation (to be created)
