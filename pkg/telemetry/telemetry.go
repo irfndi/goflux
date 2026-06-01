@@ -22,17 +22,17 @@ const (
 
 // Payload represents a single telemetry event.
 type Payload struct {
-	V           int               `json:"v"`
-	Ts          int64             `json:"ts"`
-	LibVersion  string            `json:"lib_version"`
-	GoVersion   string            `json:"go_version"`
-	OS          string            `json:"os"`
-	Arch        string            `json:"arch"`
-	Type        string            `json:"type"`
-	Feature     string            `json:"feature,omitempty"`
-	ErrorType   string            `json:"error_type,omitempty"`
-	ErrorHash   string            `json:"error_hash,omitempty"`
-	Context     map[string]string `json:"context,omitempty"`
+	V          int               `json:"v"`
+	Ts         int64             `json:"ts"`
+	LibVersion string            `json:"lib_version"`
+	GoVersion  string            `json:"go_version"`
+	OS         string            `json:"os"`
+	Arch       string            `json:"arch"`
+	Type       string            `json:"type"`
+	Feature    string            `json:"feature,omitempty"`
+	ErrorType  string            `json:"error_type,omitempty"`
+	ErrorHash  string            `json:"error_hash,omitempty"`
+	Context    map[string]string `json:"context,omitempty"`
 }
 
 // Reporter handles telemetry reporting. A nil Reporter is safe to use
