@@ -237,3 +237,17 @@ func BenchmarkAverageTrueRange_Cached(b *testing.B) {
 	atr := NewAverageTrueRangeIndicator(sharedTimeSeries, 14)
 	benchmarkIndicator(b, atr)
 }
+
+// --- Exit / Risk Management ---
+
+func BenchmarkChandelierExitLong(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewChandelierExitLong(sharedTimeSeries, 22, 22, 3.0)
+	})
+}
+
+func BenchmarkChandelierExitShort(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewChandelierExitShort(sharedTimeSeries, 22, 22, 3.0)
+	})
+}
