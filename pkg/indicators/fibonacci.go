@@ -27,31 +27,40 @@ type FibonacciRetracementResult struct {
 }
 
 // NewFibonacciRetracement creates a retracement calculator from explicit
-// swing high and low values.
+// swing high and low values. If high < low, the values are swapped.
 func NewFibonacciRetracement(high, low decimal.Decimal) *FibonacciRetracement {
+	if high.LT(low) {
+		high, low = low, high
+	}
 	return &FibonacciRetracement{High: high, Low: low}
+}
+
+// fibonacciSwingFromSeries is a helper that validates inputs and extracts
+// the swing high and low from a time series window.
+func fibonacciSwingFromSeries(s *series.TimeSeries, lookback int, index int) (high decimal.Decimal, low decimal.Decimal, ok bool) {
+	if s == nil || lookback < 1 {
+		return decimal.ZERO, decimal.ZERO, false
+	}
+	length := s.Length()
+	if index < 0 || index >= length || index < lookback-1 {
+		return decimal.ZERO, decimal.ZERO, false
+	}
+	return highestHigh(s, index, lookback), lowestLow(s, index, lookback), true
 }
 
 // NewFibonacciRetracementFromSeries auto-detects the swing high and low
 // over the lookback window ending at index.
 func NewFibonacciRetracementFromSeries(s *series.TimeSeries, lookback int, index int) *FibonacciRetracement {
-	if s == nil || lookback < 1 {
+	high, low, ok := fibonacciSwingFromSeries(s, lookback, index)
+	if !ok {
 		return &FibonacciRetracement{}
 	}
-	length := s.Length()
-	if index < 0 || index >= length {
-		return &FibonacciRetracement{}
-	}
-	if index < lookback-1 {
-		return &FibonacciRetracement{}
-	}
-	return &FibonacciRetracement{
-		High: highestHigh(s, index, lookback),
-		Low:  lowestLow(s, index, lookback),
-	}
+	return &FibonacciRetracement{High: high, Low: low}
 }
 
 // Levels computes all standard Fibonacci retracement levels.
+// Level0 corresponds to the swing low and Level100 to the swing high
+// (low-anchored convention).
 func (f *FibonacciRetracement) Levels() FibonacciRetracementResult {
 	range_ := f.High.Sub(f.Low)
 	return FibonacciRetracementResult{
@@ -118,28 +127,22 @@ type FibonacciExtensionResult struct {
 }
 
 // NewFibonacciExtension creates an extension calculator from explicit
-// swing high and low values.
+// swing high and low values. If high < low, the values are swapped.
 func NewFibonacciExtension(high, low decimal.Decimal) *FibonacciExtension {
+	if high.LT(low) {
+		high, low = low, high
+	}
 	return &FibonacciExtension{High: high, Low: low}
 }
 
 // NewFibonacciExtensionFromSeries auto-detects the swing high and low
 // over the lookback window ending at index.
 func NewFibonacciExtensionFromSeries(s *series.TimeSeries, lookback int, index int) *FibonacciExtension {
-	if s == nil || lookback < 1 {
+	high, low, ok := fibonacciSwingFromSeries(s, lookback, index)
+	if !ok {
 		return &FibonacciExtension{}
 	}
-	length := s.Length()
-	if index < 0 || index >= length {
-		return &FibonacciExtension{}
-	}
-	if index < lookback-1 {
-		return &FibonacciExtension{}
-	}
-	return &FibonacciExtension{
-		High: highestHigh(s, index, lookback),
-		Low:  lowestLow(s, index, lookback),
-	}
+	return &FibonacciExtension{High: high, Low: low}
 }
 
 // LevelsUp computes extension levels above the swing high.

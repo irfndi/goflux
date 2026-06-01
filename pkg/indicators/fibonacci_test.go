@@ -191,3 +191,35 @@ func TestFibonacciExtensionFromSeriesInsufficientData(t *testing.T) {
 		t.Errorf("Extension Level1272 with insufficient data should be ZERO")
 	}
 }
+
+func TestFibonacciExtensionFromSeriesNil(t *testing.T) {
+	f := NewFibonacciExtensionFromSeries(nil, 5, 0)
+	levels := f.LevelsUp()
+	if !levels.Level1272.EQ(decimal.ZERO) {
+		t.Errorf("Extension Level1272 with nil series should be ZERO")
+	}
+}
+
+func TestFibonacciRetracementInvertedHighLow(t *testing.T) {
+	// When high < low, values should be swapped
+	f := NewFibonacciRetracement(decimal.New(50), decimal.New(100))
+	levels := f.Levels()
+
+	if !levels.Level0.EQ(decimal.New(50)) {
+		t.Errorf("Level0 after swap = %v, want 50", levels.Level0)
+	}
+	if !levels.Level100.EQ(decimal.New(100)) {
+		t.Errorf("Level100 after swap = %v, want 100", levels.Level100)
+	}
+}
+
+func TestFibonacciExtensionInvertedHighLow(t *testing.T) {
+	// When high < low, values should be swapped
+	f := NewFibonacciExtension(decimal.New(50), decimal.New(100))
+	levels := f.LevelsUp()
+
+	expected2000 := decimal.New(150)
+	if !levels.Level2000.EQ(expected2000) {
+		t.Errorf("Extension Level2000 after swap = %v, want 150", levels.Level2000)
+	}
+}
