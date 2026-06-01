@@ -248,6 +248,9 @@ func NewT3IndicatorFromSeries(s *series.TimeSeries, window int, vFactor float64)
 }
 
 func (t3 *t3Indicator) Calculate(index int) decimal.Decimal {
+	if index < 0 {
+		return decimal.ZERO
+	}
 	return t3.c1.Mul(t3.e6.Calculate(index)).
 		Add(t3.c2.Mul(t3.e5.Calculate(index))).
 		Add(t3.c3.Mul(t3.e4.Calculate(index))).
@@ -271,6 +274,9 @@ func NewALMAIndicator(indicator Indicator, window int, offset, sigma float64) In
 	}
 	if window <= 0 {
 		panic("goflux: ALMA window must be > 0")
+	}
+	if sigma <= 0 {
+		panic("goflux: ALMA sigma must be > 0")
 	}
 	telemetry.ReportUsage("ALMA", map[string]string{
 		"window": strconv.Itoa(window),
@@ -383,33 +389,50 @@ func (vidya *vidyaIndicator) Calculate(index int) decimal.Decimal {
 		vidya.cacheMu.RUnlock()
 		return val
 	}
+	currLen := len(vidya.cache)
+	var prev decimal.Decimal
+	if currLen > 0 {
+		prev = vidya.cache[currLen-1]
+	}
 	vidya.cacheMu.RUnlock()
 
-	vidya.cacheMu.Lock()
-	defer vidya.cacheMu.Unlock()
-
-	// Double-check after acquiring write lock
-	if index < len(vidya.cache) {
-		return vidya.cache[index]
-	}
-
-	start := len(vidya.cache)
+	// Compute new values locally without holding the lock
+	localNew := make([]decimal.Decimal, 0, index-currLen+1)
+	start := currLen
 	if start == 0 {
-		vidya.cache = append(vidya.cache, vidya.indicator.Calculate(0))
+		firstVal := vidya.indicator.Calculate(0)
+		localNew = append(localNew, firstVal)
+		prev = firstVal
 		start = 1
 	}
 
 	for i := start; i <= index; i++ {
 		if i < vidya.window {
-			vidya.cache = append(vidya.cache, vidya.indicator.Calculate(i))
+			val := vidya.indicator.Calculate(i)
+			localNew = append(localNew, val)
+			prev = val
 			continue
 		}
 
 		k := vidya.cmo.Calculate(i).Abs().Div(decimal.New(100))
 		ak := vidya.alpha.Mul(k)
 		val := vidya.indicator.Calculate(i)
-		prev := vidya.cache[i-1]
-		vidya.cache = append(vidya.cache, ak.Mul(val).Add(decimal.ONE.Sub(ak).Mul(prev)))
+		nextVal := ak.Mul(val).Add(decimal.ONE.Sub(ak).Mul(prev))
+		localNew = append(localNew, nextVal)
+		prev = nextVal
+	}
+
+	// Acquire write lock only to update the cache
+	vidya.cacheMu.Lock()
+	defer vidya.cacheMu.Unlock()
+
+	if index < len(vidya.cache) {
+		return vidya.cache[index]
+	}
+
+	alreadyComputed := len(vidya.cache) - currLen
+	if alreadyComputed < len(localNew) {
+		vidya.cache = append(vidya.cache, localNew[alreadyComputed:]...)
 	}
 
 	return vidya.cache[index]
