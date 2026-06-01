@@ -8,4 +8,9 @@ binding = "DB"
 database_name = "goflux_telemetry"
 database_id = "3c7026bc-3099-434a-a811-90cd404f9585"
 
+# Enable Workers Observability for logs, traces, and metrics
+[observability]
+enabled = true
+head_sampling_rate = 1.0
+
 # Set TELEMETRY_TOKEN in Cloudflare dashboard Secrets for basic auth
