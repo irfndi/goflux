@@ -18,15 +18,13 @@ type aroonOscillator struct {
 
 // NewAroonOscillator returns an Aroon Oscillator indicator.
 // The oscillator is calculated as: AroonUp - AroonDown.
-// Panics if window < 1.
-func NewAroonOscillator(indicator Indicator, window int) Indicator {
-	if window < 1 {
-		panic("goflux: Aroon Oscillator window must be >= 1")
-	}
-	telemetry.ReportUsage("AroonOscillator", map[string]string{"window": strconv.Itoa(window)})
+// Callers must supply pre-constructed Aroon Up and Aroon Down indicators
+// (typically built from high-price and low-price sources respectively).
+func NewAroonOscillator(aroonUp, aroonDown Indicator) Indicator {
+	telemetry.ReportUsage("AroonOscillator", nil)
 	return aroonOscillator{
-		aroonUp:   NewAroonUpIndicator(indicator, window),
-		aroonDown: NewAroonDownIndicator(indicator, window),
+		aroonUp:   aroonUp,
+		aroonDown: aroonDown,
 	}
 }
 
@@ -45,12 +43,5 @@ func NewAroonOscillatorFromSeries(s *series.TimeSeries, window int) Indicator {
 }
 
 func (ao aroonOscillator) Calculate(index int) decimal.Decimal {
-	up := ao.aroonUp.Calculate(index)
-	down := ao.aroonDown.Calculate(index)
-
-	if up.IsZero() && down.IsZero() {
-		return decimal.ZERO
-	}
-
-	return up.Sub(down)
+	return ao.aroonUp.Calculate(index).Sub(ao.aroonDown.Calculate(index))
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/irfndi/goflux/pkg/series"
 )
 
-func TestAroonOscillatorCrossZeroRule(t *testing.T) {
+func TestAroonOscillatorOverZeroRule(t *testing.T) {
 	s := series.NewTimeSeries()
 	for i := 0; i < 20; i++ {
 		s.AddCandle(&series.Candle{
@@ -19,11 +19,11 @@ func TestAroonOscillatorCrossZeroRule(t *testing.T) {
 	}
 
 	osc := indicators.NewAroonOscillatorFromSeries(s, 5)
-	rule := NewAroonOscillatorCrossZeroRule(osc)
+	rule := NewAroonOscillatorOverLevelRule(osc, 0)
 	record := NewTradingRecord()
 
 	if !rule.IsSatisfied(19, record) {
-		t.Errorf("AroonOscillatorCrossZeroRule should be satisfied in uptrend")
+		t.Errorf("AroonOscillatorOverLevelRule with level=0 should be satisfied in uptrend")
 	}
 }
 

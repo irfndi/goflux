@@ -6,22 +6,6 @@ import (
 	"github.com/irfndi/goflux/pkg/series"
 )
 
-// aroonOscillatorCrossZeroRule is satisfied when the Aroon Oscillator
-// crosses above zero (bullish signal).
-type aroonOscillatorCrossZeroRule struct {
-	aroonOsc indicators.Indicator
-}
-
-// NewAroonOscillatorCrossZeroRule returns a rule that is satisfied when
-// the Aroon Oscillator is above zero, indicating bullish momentum.
-func NewAroonOscillatorCrossZeroRule(aroonOsc indicators.Indicator) Rule {
-	return aroonOscillatorCrossZeroRule{aroonOsc: aroonOsc}
-}
-
-func (ar aroonOscillatorCrossZeroRule) IsSatisfied(index int, record *TradingRecord) bool {
-	return ar.aroonOsc.Calculate(index).GT(decimal.ZERO)
-}
-
 // aroonOscillatorOverLevelRule is satisfied when the Aroon Oscillator
 // is above a given level (e.g., +50 for strong uptrend confirmation).
 type aroonOscillatorOverLevelRule struct {
@@ -65,7 +49,7 @@ func (ar aroonOscillatorUnderLevelRule) IsSatisfied(index int, record *TradingRe
 // NewAroonOscillatorBullishRule returns a convenience rule using an Aroon Oscillator
 // constructed from the given time series. It triggers when the oscillator is above zero.
 func NewAroonOscillatorBullishRule(s *series.TimeSeries, window int) Rule {
-	return NewAroonOscillatorCrossZeroRule(indicators.NewAroonOscillatorFromSeries(s, window))
+	return NewAroonOscillatorOverLevelRule(indicators.NewAroonOscillatorFromSeries(s, window), 0)
 }
 
 // NewAroonOscillatorBearishRule returns a convenience rule using an Aroon Oscillator

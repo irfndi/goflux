@@ -75,7 +75,7 @@ func TestAroonOscillatorEqualsUpMinusDown(t *testing.T) {
 
 	up := NewAroonUpIndicator(high, 4)
 	down := NewAroonDownIndicator(low, 4)
-	osc := NewAroonOscillator(high, 4)
+	osc := NewAroonOscillator(up, down)
 
 	for i := 3; i < 7; i++ {
 		expected := up.Calculate(i).Sub(down.Calculate(i))
