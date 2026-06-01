@@ -1,8 +1,6 @@
 package trading
 
 import (
-	"time"
-
 	"github.com/irfndi/goflux/pkg/decimal"
 )
 
@@ -122,14 +120,11 @@ func (dllr DailyLossLimitRule) IsSatisfied(index int, record *TradingRecord) boo
 
 type ConsecutiveLossRule struct {
 	MaxConsecutiveLosses int
-	currentConsecutive   int
-	lastProcessedTime    time.Time
 }
 
 func NewConsecutiveLossRule(maxConsecutiveLosses int) Rule {
 	return &ConsecutiveLossRule{
 		MaxConsecutiveLosses: maxConsecutiveLosses,
-		currentConsecutive:   0,
 	}
 }
 
