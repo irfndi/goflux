@@ -29,7 +29,12 @@ func NewChaikinMoneyFlowIndicator(s *series.TimeSeries, window int) Indicator {
 }
 
 func (cmf chaikinMoneyFlow) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(cmf.series.Candles) {
+	if cmf.series == nil {
+		return decimal.ZERO
+	}
+
+	length := cmf.series.Length()
+	if index < 0 || index >= length {
 		return decimal.ZERO
 	}
 
@@ -41,12 +46,12 @@ func (cmf chaikinMoneyFlow) Calculate(index int) decimal.Decimal {
 	sumVolume := decimal.ZERO
 
 	start := index - cmf.window + 1
-	if start < 0 {
-		start = 0
-	}
 
 	for i := start; i <= index; i++ {
-		candle := cmf.series.Candles[i]
+		candle := cmf.series.GetCandle(i)
+		if candle == nil {
+			continue
+		}
 		high := candle.MaxPrice
 		low := candle.MinPrice
 		close := candle.ClosePrice
