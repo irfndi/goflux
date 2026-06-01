@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_library_18b266b4bb",
+  "title": "Go package pkg",
+  "summary": "Go package pkg with 2 source file(s).",
+  "kind": "library",
+  "source": "go-package",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "pkg/compat.go",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "pkg/compat.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/doc.go",
+      "reason": "go package source"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "pkg/analysis/analysis.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/analysis"
+    },
+    {
+      "path": "pkg/decimal/decimal.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/decimal"
+    },
+    {
+      "path": "pkg/indicators/accumulation_distribution.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/adx.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/alligator.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/aroon.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/aroon_oscillator.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/average.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/average_true_range.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/awesome_oscillator.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/basic.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/bollinger_band.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/builder.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/cached_indicator.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/cci.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/chaikin_money_flow.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/chandelier_exit.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/constant.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/cycle.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/derivative.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/difference.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/donchian_channel.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/eom_force_index.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    },
+    {
+      "path": "pkg/indicators/exponential_moving_average.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/indicators"
+    }
+  ],
+  "tests": [],
+  "tags": [
+    "go",
+    "package"
+  ],
+  "trustBoundaries": [],
+  "status": "needs-fix",
+  "lock": null,
+  "findingIds": [
+    "fnd_sig-feat-library-18b266b4bb-daae_7f7ebbefea",
+    "fnd_sig-feat-library-18b266b4bb-bbbf_f3d70eaa30"
+  ],
+  "patchAttemptIds": [],
+  "analysisHistory": [
+    {
+      "runId": "20260601T230850-8db0c3",
+      "kind": "review",
+      "summary": "2 finding(s)",
+      "provider": "codex",
+      "model": null,
+      "createdAt": "2026-06-01T23:15:11.139Z"
+    }
+  ],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:15:11.139Z"
+}

@@ -68,10 +68,24 @@ type LogTradesAnalysis struct {
 // Analyze logs trades to provided io.Writer
 func (lta LogTradesAnalysis) Analyze(record *trading.TradingRecord) float64 {
 	logOrder := func(trade *trading.Position) {
-		_, _ = fmt.Fprintf(lta.Writer, "%s - enter with buy %s (%s @ $%s)\n", trade.EntranceOrder().ExecutionTime.UTC().Format(time.RFC822), trade.EntranceOrder().Security, trade.EntranceOrder().Amount, trade.EntranceOrder().Price)
-		_, _ = fmt.Fprintf(lta.Writer, "%s - exit with sell %s (%s @ $%s)\n", trade.ExitOrder().ExecutionTime.UTC().Format(time.RFC822), trade.ExitOrder().Security, trade.ExitOrder().Amount, trade.ExitOrder().Price)
+		entrySide := "buy"
+		if trade.EntranceOrder().Side == trading.SELL {
+			entrySide = "sell"
+		}
+		exitSide := "sell"
+		if trade.ExitOrder().Side == trading.BUY {
+			exitSide = "buy"
+		}
 
-		profit := trade.ExitValue().Sub(trade.CostBasis())
+		_, _ = fmt.Fprintf(lta.Writer, "%s - enter with %s %s (%s @ $%s)\n", trade.EntranceOrder().ExecutionTime.UTC().Format(time.RFC822), entrySide, trade.EntranceOrder().Security, trade.EntranceOrder().Amount, trade.EntranceOrder().Price)
+		_, _ = fmt.Fprintf(lta.Writer, "%s - exit with %s %s (%s @ $%s)\n", trade.ExitOrder().ExecutionTime.UTC().Format(time.RFC822), exitSide, trade.ExitOrder().Security, trade.ExitOrder().Amount, trade.ExitOrder().Price)
+
+		var profit decimal.Decimal
+		if trade.IsLong() {
+			profit = trade.ExitValue().Sub(trade.CostBasis())
+		} else if trade.IsShort() {
+			profit = trade.CostBasis().Sub(trade.ExitValue())
+		}
 		_, _ = fmt.Fprintf(lta.Writer, "Profit: $%s\n", profit)
 	}
 
@@ -92,10 +106,29 @@ type PeriodProfitAnalysis struct {
 
 // Analyze returns the average profit for the trading record based on the given duration
 func (ppa PeriodProfitAnalysis) Analyze(record *trading.TradingRecord) float64 {
+	if len(record.Trades) == 0 || ppa.Period <= 0 {
+		return 0
+	}
+
 	var tp TotalProfitAnalysis
 	totalProfit := tp.Analyze(record)
 
-	periods := record.Trades[len(record.Trades)-1].ExitOrder().ExecutionTime.Sub(record.Trades[0].EntranceOrder().ExecutionTime) / ppa.Period
+	var lastClosed *trading.Position
+	for i := len(record.Trades) - 1; i >= 0; i-- {
+		if record.Trades[i].IsClosed() {
+			lastClosed = record.Trades[i]
+			break
+		}
+	}
+	if lastClosed == nil {
+		return 0
+	}
+
+	span := lastClosed.ExitOrder().ExecutionTime.Sub(record.Trades[0].EntranceOrder().ExecutionTime)
+	periods := span / ppa.Period
+	if periods <= 0 {
+		return 0
+	}
 	return totalProfit / float64(periods)
 }
 
@@ -106,11 +139,20 @@ type ProfitableTradesAnalysis struct{}
 func (pta ProfitableTradesAnalysis) Analyze(record *trading.TradingRecord) float64 {
 	var profitableTrades int
 	for _, trade := range record.Trades {
-		costBasis := trade.EntranceOrder().Amount.Mul(trade.EntranceOrder().Price)
-		sellPrice := trade.ExitOrder().Amount.Mul(trade.ExitOrder().Price)
+		if trade.IsClosed() {
+			costBasis := trade.CostBasis()
+			exitValue := trade.ExitValue()
 
-		if sellPrice.GT(costBasis) {
-			profitableTrades++
+			var profit decimal.Decimal
+			if trade.IsLong() {
+				profit = exitValue.Sub(costBasis)
+			} else if trade.IsShort() {
+				profit = costBasis.Sub(exitValue)
+			}
+
+			if profit.GT(decimal.ZERO) {
+				profitableTrades++
+			}
 		}
 	}
 
@@ -123,6 +165,10 @@ type AverageProfitAnalysis struct{}
 
 // Analyze returns the average profit of the trading record
 func (apa AverageProfitAnalysis) Analyze(record *trading.TradingRecord) float64 {
+	if len(record.Trades) == 0 {
+		return 0
+	}
+
 	var tp TotalProfitAnalysis
 	totalProft := tp.Analyze(record)
 

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-5386cc632a-038e_6ad1db10b4",
+  "featureId": "feat_library_5386cc632a",
+  "title": "DrawdownProtectionRule treats realized PnL as account balance",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/trading/risk_management.go",
+      "startLine": 22,
+      "endLine": 46,
+      "symbol": "DrawdownProtectionRule.IsSatisfied",
+      "quote": "peakBalance is hard-coded to 10000 while currentBalance starts at zero and accumulates only closed-trade PnL."
+    },
+    {
+      "path": "pkg/trading/risk_management.go",
+      "startLine": 32,
+      "endLine": 34,
+      "symbol": "DrawdownProtectionRule.IsSatisfied",
+      "quote": "For an open position, currentBalance is replaced by CostBasis rather than equity including cash and unrealized PnL."
+    },
+    {
+      "path": "pkg/trading/risk_management_test.go",
+      "startLine": 25,
+      "endLine": 42,
+      "symbol": "TestDrawdownProtectionRule",
+      "quote": "The covered positive case only asserts that a losing trade triggers the rule."
+    }
+  ],
+  "reasoning": "Because currentBalance is PnL rather than initial capital plus PnL, a break-even closed trade leaves currentBalance at zero and produces a 100% drawdown from the hard-coded 10000 peak. The rule can halt trading when there has been no drawdown, and it cannot track true peak equity over a sequence.",
+  "reproduction": "Record a BUY at 100 and SELL at 100, then evaluate NewDrawdownProtectionRule(0.1); the rule reports a 100% drawdown even though realized PnL is zero.",
+  "recommendation": "Track equity as initial capital plus realized and unrealized PnL, update peak over the equity path, and make initial capital configurable or shared with the record/account model.",
+  "whyTestsDoNotAlreadyCoverThis": "The tests cover no-trade false and one losing-trade true only. They do not cover break-even trades, profitable trades, or drawdown below threshold.",
+  "suggestedRegressionTest": "Add cases for break-even and profitable closed trades that must not trigger, plus a controlled equity path with a drawdown just below and just above the threshold.",
+  "minimumFixScope": "pkg/trading/risk_management.go and drawdown rule tests.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-5386cc632a_038e21f58c",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:15:11.788Z",
+  "updatedAt": "2026-06-01T23:15:11.788Z"
+}

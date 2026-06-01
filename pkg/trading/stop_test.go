@@ -26,7 +26,7 @@ func TestStopLossRule(t *testing.T) {
 		record.Operate(trading.Order{
 			Side:   trading.BUY,
 			Amount: decimal.NewFromString("10"),
-			Price:  decimal.ONE,
+			Price:  decimal.New(10),
 		})
 
 		ts := testutils.MockTimeSeriesFl(10, 9) // Lose 10%
@@ -42,7 +42,7 @@ func TestStopLossRule(t *testing.T) {
 		record.Operate(trading.Order{
 			Side:   trading.BUY,
 			Amount: decimal.NewFromString("10"),
-			Price:  decimal.ONE,
+			Price:  decimal.New(10),
 		})
 
 		ts := testutils.MockTimeSeriesFl(10, 10.1) // Gain 1%

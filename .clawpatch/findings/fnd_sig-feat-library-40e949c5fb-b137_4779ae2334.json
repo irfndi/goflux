@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-40e949c5fb-b137_4779ae2334",
+  "featureId": "feat_library_40e949c5fb",
+  "title": "Sortino downside deviation mixes two different downside thresholds",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "pkg/metrics/performance_metrics.go",
+      "startLine": 333,
+      "endLine": 353,
+      "symbol": "PerformanceMetrics.calculateDownsideDeviation",
+      "quote": "for _, trade := range trades {\n\t\tif trade.ProfitPct.LT(mean) {\n\t\t\tdiff := mean.Sub(trade.ProfitPct)\n\t\t\tsumSquares = sumSquares.Add(diff.Mul(diff))\n\t\t}\n\t}\n\n\ttargetReturn := decimal.New(0)\n\tnDownside := 0\n\tfor _, trade := range trades {\n\t\tif trade.ProfitPct.LT(targetReturn) {\n\t\t\tnDownside++\n\t\t}\n\t}\n...\n\tvariance := sumSquares.Div(decimal.New(float64(nDownside - 1)))"
+    },
+    {
+      "path": "pkg/metrics/performance_metrics_test.go",
+      "startLine": 47,
+      "endLine": 50,
+      "symbol": "TestSortinoRatio_PerformanceMetrics",
+      "quote": "pm := NewPerformanceMetrics()\n\tpm.Calculate(trades, equityCurve, decimal.New(10000), decimal.New(10150), 252)\n\n\tt.Logf(\"Sortino Ratio: %v\", pm.SortinoRatio)"
+    }
+  ],
+  "reasoning": "The numerator sums squared deviations for trades below the sample mean, but the denominator counts trades below zero. When those sets differ, variance is divided by a count that does not match the observations included in the sum, and it may return the 0.0001 fallback even though sumSquares contains below-mean observations. This materially misstates SortinoRatio for common positive-return samples.",
+  "reproduction": null,
+  "recommendation": "Use one threshold consistently. Prefer a target/minimum acceptable return for both selecting downside observations and computing deviations, or consistently use mean if that is the intended contract.",
+  "whyTestsDoNotAlreadyCoverThis": "The Sortino performance test only logs the ratio and uses data where the below-mean losing trades are also below zero, so the mismatched-count path is not asserted.",
+  "suggestedRegressionTest": "Use trades with positive returns below the mean but no negative returns, and assert the downside deviation/Sortino behavior matches the chosen target-return contract.",
+  "minimumFixScope": "PerformanceMetrics.calculateDownsideDeviation and Sortino ratio tests.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-40e949c5fb_b137c47c0d",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:12:23.712Z",
+  "updatedAt": "2026-06-01T23:12:23.712Z"
+}

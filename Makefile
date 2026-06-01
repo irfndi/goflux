@@ -1,4 +1,4 @@
-.PHONY: bootstrap clean test lint bench commit release test-with-coverage view-coverage fmt check
+.PHONY: bootstrap clean test lint bench test-with-coverage view-coverage fmt check
 
 # Find all Go files
 files := $(shell find . -name "*.go" | grep -v vendor)

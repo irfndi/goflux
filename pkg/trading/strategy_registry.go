@@ -77,7 +77,7 @@ func createSMACrossFastStrategy(ts *series.TimeSeries, params map[string]interfa
 	rsi := indicators.NewRelativeStrengthIndexIndicator(closeInd, 14)
 
 	entryRule := And(
-		NewCrossUpIndicatorRule(fastMA, slowMA),
+		NewCrossUpIndicatorRule(slowMA, fastMA),
 		NewUnderIndicatorRule(rsi, indicators.NewConstantIndicator(oversold)),
 	)
 	exitRule := Or(
@@ -100,7 +100,7 @@ func createEMACrossFastStrategy(ts *series.TimeSeries, params map[string]interfa
 	fastEMA := indicators.NewEMAIndicator(closeInd, fastPeriod)
 	slowEMA := indicators.NewEMAIndicator(closeInd, slowPeriod)
 
-	entryRule := NewCrossUpIndicatorRule(fastEMA, slowEMA)
+	entryRule := NewCrossUpIndicatorRule(slowEMA, fastEMA)
 	exitRule := NewCrossDownIndicatorRule(fastEMA, slowEMA)
 
 	return RuleStrategy{
@@ -137,7 +137,7 @@ func createMACDStrategy(ts *series.TimeSeries, params map[string]interface{}) St
 	macd := indicators.NewMACDIndicator(closeInd, fastPeriod, slowPeriod)
 	signal := indicators.NewEMAIndicator(macd, signalPeriod)
 
-	entryRule := NewCrossUpIndicatorRule(macd, signal)
+	entryRule := NewCrossUpIndicatorRule(signal, macd)
 	exitRule := NewCrossDownIndicatorRule(macd, signal)
 
 	return RuleStrategy{
@@ -155,7 +155,7 @@ func createBollingerStrategy(ts *series.TimeSeries, params map[string]interface{
 	bbUpper := indicators.NewBollingerUpperBandIndicator(closeInd, period, stdDev)
 	bbLower := indicators.NewBollingerLowerBandIndicator(closeInd, period, stdDev)
 
-	entryRule := NewCrossUpIndicatorRule(closeInd, bbLower)
+	entryRule := NewCrossUpIndicatorRule(bbLower, closeInd)
 	exitRule := NewCrossDownIndicatorRule(closeInd, bbUpper)
 
 	return RuleStrategy{

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-2852349fd3-d3ef_50d8df5014",
+  "featureId": "feat_library_2852349fd3",
+  "title": "Benchmark parser ignores normal Go benchmem output",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "scripts/compare_benchmarks.py",
+      "startLine": 13,
+      "endLine": 21,
+      "symbol": "parse_benchmark_file",
+      "quote": "r\"Benchmark(\\w+)-\\d+\\s+(\\d+)\\s+(\\d+)\\s+ns/op\\s+(\\d+\\.\\d+)\\s+B/op\\s+(\\d+)\\s+allocs/op\""
+    },
+    {
+      "path": "scripts/compare_benchmarks.py",
+      "startLine": 83,
+      "endLine": 85,
+      "symbol": "compare_benchmarks",
+      "quote": "print(f\"\\n{'=' * 60}✅ No performance regressions detected\")\nsys.exit(0)"
+    }
+  ],
+  "reasoning": "The regex expects integer ns/op and decimal B/op, then casts the B/op capture to int. Standard Go -benchmem output commonly has decimal ns/op and integer B/op, for example 3.5 ns/op and 2 B/op. Those lines are skipped entirely, leaving empty result dictionaries; compare_benchmarks then reports no regressions and exits 0, so the regression check can silently pass without comparing anything.",
+  "reproduction": null,
+  "recommendation": "Update the parser to accept both integer and decimal numeric fields using the actual Go benchmark format, parse B/op consistently, and make comparison fail when no benchmarks or no common benchmark names are parsed.",
+  "whyTestsDoNotAlreadyCoverThis": "No linked tests are included, and there is no fixture asserting that real go test -bench -benchmem output is parsed.",
+  "suggestedRegressionTest": "Add fixtures with standard Go benchmark lines using decimal ns/op and integer B/op, then assert parse_benchmark_file returns metrics and compare_benchmarks exits nonzero for a slower current result.",
+  "minimumFixScope": "scripts/compare_benchmarks.py parser and empty/no-overlap validation.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-2852349fd3_d3ef7b6617",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:11:18.097Z",
+  "updatedAt": "2026-06-01T23:11:18.097Z"
+}

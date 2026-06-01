@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-4f43278360-e735_c4798ed0bb",
+  "featureId": "feat_library_4f43278360",
+  "title": "StrategyExample documents different thresholds than it implements",
+  "category": "docs-gap",
+  "severity": "low",
+  "confidence": "high",
+  "triage": "docs-gap",
+  "evidence": [
+    {
+      "path": "example/strategy.go",
+      "startLine": 8,
+      "endLine": 9,
+      "symbol": "StrategyExample",
+      "quote": "a position should be opened if the price moves above 70, and the position should be closed if a position moves below 30."
+    },
+    {
+      "path": "example/strategy.go",
+      "startLine": 16,
+      "endLine": 17,
+      "symbol": "StrategyExample",
+      "quote": "entryConstant := indicators.NewConstantIndicator(30)\nexitConstant := indicators.NewConstantIndicator(10)"
+    },
+    {
+      "path": "example/strategy.go",
+      "startLine": 19,
+      "endLine": 25,
+      "symbol": "StrategyExample",
+      "quote": "NewCrossUpIndicatorRule(entryConstant, indicator) ... moves above 30 ... NewCrossDownIndicatorRule(indicator, exitConstant) ... moves below 10"
+    }
+  ],
+  "reasoning": "The function-level documentation promises 70/30 thresholds, while the actual rules and inline comments use 30/10. Readers cannot tell which strategy is intended, and copy-pasted code will not match the documented behavior.",
+  "reproduction": null,
+  "recommendation": "Align the function comment, constants, and inline comments on one set of thresholds.",
+  "whyTestsDoNotAlreadyCoverThis": "No linked tests assert the documented StrategyExample thresholds or exercise the example strategy behavior.",
+  "suggestedRegressionTest": "Add an example test that constructs the strategy with named threshold constants and verifies the documented entry and exit thresholds are the ones used by the rules.",
+  "minimumFixScope": "Update example/strategy.go comments or constants so the public example is internally consistent.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-4f43278360_e735fb5d45",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:13:21.960Z",
+  "updatedAt": "2026-06-01T23:13:21.960Z"
+}

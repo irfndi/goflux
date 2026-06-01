@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-5386cc632a-a7b6_ca9fa08c28",
+  "featureId": "feat_library_5386cc632a",
+  "title": "CalculatePortfolioVaR ignores portfolio weights",
+  "category": "api-contract",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "contract-mismatch",
+  "evidence": [
+    {
+      "path": "pkg/trading/risk_analytics.go",
+      "startLine": 259,
+      "endLine": 265,
+      "symbol": "CalculatePortfolioVaR",
+      "quote": "The function accepts returns and weights, validates both non-empty, then calculates VaR from returns only."
+    }
+  ],
+  "reasoning": "Changing weights has no effect on the returned VaR, so the public API cannot calculate a weighted portfolio VaR. This is an API contract mismatch because weights are an explicit parameter and are only used as a non-empty gate.",
+  "reproduction": "Call CalculatePortfolioVaR with the same returns and two very different non-empty weight slices; the results are identical.",
+  "recommendation": "Either compute weighted portfolio returns before passing them to VaRCalculator, or remove/rename the weights parameter if the function is only intended to calculate unweighted VaR.",
+  "whyTestsDoNotAlreadyCoverThis": "risk_analytics_test.go covers HistoricalVaR, ParametricVaR, MonteCarloVaR, returns, rolling VaR, beta, and correlation, but includes no test for CalculatePortfolioVaR or for weight sensitivity.",
+  "suggestedRegressionTest": "Add a CalculatePortfolioVaR test where two different weight sets produce different weighted portfolio return series and therefore different VaR results.",
+  "minimumFixScope": "pkg/trading/risk_analytics.go and risk_analytics_test.go.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-5386cc632a_a7b6a6912a",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:15:11.788Z",
+  "updatedAt": "2026-06-01T23:15:11.788Z"
+}

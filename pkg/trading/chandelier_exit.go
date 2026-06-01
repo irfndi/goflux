@@ -32,7 +32,7 @@ func NewDefaultChandelierExitLongRule(s *series.TimeSeries) Rule {
 }
 
 func (ce chandelierExitLongRule) IsSatisfied(index int, record *TradingRecord) bool {
-	if !record.CurrentPosition().IsOpen() {
+	if !record.CurrentPosition().IsOpen() || !record.CurrentPosition().IsLong() {
 		return false
 	}
 
@@ -71,7 +71,7 @@ func NewDefaultChandelierExitShortRule(s *series.TimeSeries) Rule {
 }
 
 func (ce chandelierExitShortRule) IsSatisfied(index int, record *TradingRecord) bool {
-	if !record.CurrentPosition().IsOpen() {
+	if !record.CurrentPosition().IsOpen() || !record.CurrentPosition().IsShort() {
 		return false
 	}
 

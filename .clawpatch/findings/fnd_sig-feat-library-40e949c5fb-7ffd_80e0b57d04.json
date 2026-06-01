@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-library-40e949c5fb-7ffd_80e0b57d04",
+  "featureId": "feat_library_40e949c5fb",
+  "title": "Historical VaR helpers sort the caller's returns slice in place",
+  "category": "api-contract",
+  "severity": "low",
+  "confidence": "medium",
+  "triage": "contract-mismatch",
+  "evidence": [
+    {
+      "path": "pkg/metrics/risk.go",
+      "startLine": 10,
+      "endLine": 21,
+      "symbol": "ValueAtRisk",
+      "quote": "// ValueAtRisk calculates the VaR for a given confidence level (e.g., 0.95) using historical method\nfunc ValueAtRisk(returns []float64, confidence float64) float64 {\n...\n\tsort.Float64s(returns)\n\tindex := int(math.Floor((1 - confidence) * float64(len(returns))))"
+    },
+    {
+      "path": "pkg/metrics/risk.go",
+      "startLine": 24,
+      "endLine": 40,
+      "symbol": "ConditionalValueAtRisk",
+      "quote": "// ConditionalValueAtRisk (Expected Shortfall) calculates the average loss beyond VaR\nfunc ConditionalValueAtRisk(returns []float64, confidence float64) float64 {\n...\n\tsort.Float64s(returns)\n\tlimit := int(math.Floor((1 - confidence) * float64(len(returns))))"
+    },
+    {
+      "path": "pkg/metrics/risk_test.go",
+      "startLine": 17,
+      "endLine": 21,
+      "symbol": "TestValueAtRisk",
+      "quote": "returns := []float64{-0.05, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04}\n\t\tvarr := metrics.ValueAtRisk(returns, 0.95)\n\t\tassert.Greater(t, varr, 0.0)"
+    }
+  ],
+  "reasoning": "Both public calculation helpers mutate the caller-provided returns slice by sorting it in place, but their comments only describe calculating metrics. Return series order is often meaningful for later analytics, so this hidden side effect can corrupt caller state after a metric call.",
+  "reproduction": null,
+  "recommendation": "Copy returns before sorting, or explicitly document the in-place mutation if that is the intended API contract.",
+  "whyTestsDoNotAlreadyCoverThis": "The tests pass already sorted local slices and never inspect the input after calling ValueAtRisk or ConditionalValueAtRisk.",
+  "suggestedRegressionTest": "Pass an unsorted returns slice to each historical VaR helper, assert the metric value, and assert the original slice order is unchanged.",
+  "minimumFixScope": "ValueAtRisk and ConditionalValueAtRisk sorting behavior plus tests.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-library-40e949c5fb_7ffd8a55ad",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260601T230850-8db0c3",
+  "createdAt": "2026-06-01T23:12:23.713Z",
+  "updatedAt": "2026-06-01T23:12:23.713Z"
+}

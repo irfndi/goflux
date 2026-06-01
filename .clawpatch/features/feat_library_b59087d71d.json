@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_library_b59087d71d",
+  "title": "Go package series",
+  "summary": "Go package pkg/series with 7 source file(s).",
+  "kind": "library",
+  "source": "go-package",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "pkg/series/candle.go",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "pkg/series/candle.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/series/heikin_ashi.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/series/loader.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/series/renko.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/series/resample.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/series/timeperiod.go",
+      "reason": "go package source"
+    },
+    {
+      "path": "pkg/series/timeseries.go",
+      "reason": "go package source"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "pkg/series/candle_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/series/example_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/series/heikin_ashi_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/series/loader_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/series/renko_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/series/resample_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/series/timeperiod_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/series/timeseries_test.go",
+      "reason": "go package test"
+    },
+    {
+      "path": "pkg/decimal/decimal.go",
+      "reason": "imported package github.com/irfndi/goflux/pkg/decimal"
+    }
+  ],
+  "tests": [
+    {
+      "path": "pkg/series/candle_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/series/example_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/series/heikin_ashi_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/series/loader_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/series/renko_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/series/resample_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/series/timeperiod_test.go",
+      "command": "go test ./..."
+    },
+    {
+      "path": "pkg/series/timeseries_test.go",
+      "command": "go test ./..."
+    }
+  ],
+  "tags": [
+    "go",
+    "package"
+  ],
+  "trustBoundaries": [],
+  "status": "pending",
+  "lock": null,
+  "findingIds": [],
+  "patchAttemptIds": [],
+  "analysisHistory": [],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:08:40.273Z"
+}

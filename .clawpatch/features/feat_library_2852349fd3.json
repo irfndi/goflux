@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_library_2852349fd3",
+  "title": "Python source scripts",
+  "summary": "Python source group scripts with 2 files.",
+  "kind": "library",
+  "source": "python-source-group",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "scripts",
+      "symbol": "scripts",
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "scripts/check_regression.py",
+      "reason": "source group scripts"
+    },
+    {
+      "path": "scripts/compare_benchmarks.py",
+      "reason": "source group scripts"
+    }
+  ],
+  "contextFiles": [],
+  "tests": [],
+  "tags": [
+    "python",
+    "source-group"
+  ],
+  "trustBoundaries": [],
+  "status": "needs-fix",
+  "lock": null,
+  "findingIds": [
+    "fnd_sig-feat-library-2852349fd3-d3ef_50d8df5014",
+    "fnd_sig-feat-library-2852349fd3-bb9a_bd1878ce6e",
+    "fnd_sig-feat-library-2852349fd3-2928_88b9d86279"
+  ],
+  "patchAttemptIds": [],
+  "analysisHistory": [
+    {
+      "runId": "20260601T230850-8db0c3",
+      "kind": "review",
+      "summary": "3 finding(s)",
+      "provider": "codex",
+      "model": null,
+      "createdAt": "2026-06-01T23:11:18.139Z"
+    }
+  ],
+  "createdAt": "2026-06-01T23:08:40.273Z",
+  "updatedAt": "2026-06-01T23:11:18.139Z"
+}

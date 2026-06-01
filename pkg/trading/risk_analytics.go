@@ -261,8 +261,18 @@ func CalculatePortfolioVaR(returns []decimal.Decimal, weights []decimal.Decimal,
 		return NewVaRResult(decimal.ZERO, decimal.ZERO, decimal.New(confidence), 1)
 	}
 
+	n := len(returns)
+	if len(weights) < n {
+		n = len(weights)
+	}
+
+	weightedReturns := make([]decimal.Decimal, n)
+	for i := 0; i < n; i++ {
+		weightedReturns[i] = returns[i].Mul(weights[i])
+	}
+
 	varCalc := NewVaRCalculator(HistoricalVaR, confidence, 1)
-	return varCalc.Calculate(returns)
+	return varCalc.Calculate(weightedReturns)
 }
 
 func CalculateRollingVaR(prices []decimal.Decimal, window int, confidence float64, method VaRMethod) []*VaRResult {
