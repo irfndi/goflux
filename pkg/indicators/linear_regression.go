@@ -22,20 +22,22 @@ func (l linearRegressionBase) computeRegression(index int) (slope, intercept, fo
 	}
 
 	n := l.window
-	sumX := 0
-	sumX2 := 0
+	start := index - n + 1
+
+	// Cache indicator values to avoid redundant Calculate calls.
+	values := make([]decimal.Decimal, n)
 	sumY := decimal.ZERO
 	sumXY := decimal.ZERO
-
-	start := index - n + 1
 	for i := 0; i < n; i++ {
-		x := i
-		y := l.indicator.Calculate(start + i)
-		sumX += x
-		sumX2 += x * x
-		sumY = sumY.Add(y)
-		sumXY = sumXY.Add(y.Mul(decimal.New(float64(x))))
+		v := l.indicator.Calculate(start + i)
+		values[i] = v
+		sumY = sumY.Add(v)
+		sumXY = sumXY.Add(v.Mul(decimal.New(float64(i))))
 	}
+
+	// sumX and sumX2 are constants for x = 0..n-1.
+	sumX := n * (n - 1) / 2
+	sumX2 := n * (n - 1) * (2*n - 1) / 6
 
 	sumXDec := decimal.New(float64(sumX))
 	sumX2Dec := decimal.New(float64(sumX2))
@@ -50,13 +52,12 @@ func (l linearRegressionBase) computeRegression(index int) (slope, intercept, fo
 	interceptDec := sumY.Sub(slopeDec.Mul(sumXDec)).Div(nDec)
 	forecastDec := slopeDec.Mul(decimal.New(float64(n - 1))).Add(interceptDec)
 
-	// Standard error
+	// Standard error using cached values.
 	ssResidual := decimal.ZERO
 	for i := 0; i < n; i++ {
 		x := decimal.New(float64(i))
-		y := l.indicator.Calculate(start + i)
 		yHat := slopeDec.Mul(x).Add(interceptDec)
-		residual := y.Sub(yHat)
+		residual := values[i].Sub(yHat)
 		ssResidual = ssResidual.Add(residual.Mul(residual))
 	}
 
