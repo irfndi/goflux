@@ -67,11 +67,37 @@ func (pm *PerformanceMetrics) Calculate(trades []Trade, equityCurve []EquityPoin
 	pm.InitialEquity = initialEquity
 	pm.FinalEquity = finalEquity
 	pm.TradingDays = tradingDays
+	pm.TotalTrades = 0
+	pm.WinningTrades = 0
+	pm.LosingTrades = 0
+	pm.WinRate = decimal.ZERO
+	pm.TotalProfit = decimal.ZERO
 	pm.GrossProfit = decimal.ZERO
 	pm.GrossLoss = decimal.ZERO
-	pm.TotalProfit = decimal.ZERO
+	pm.ProfitFactor = decimal.ZERO
+	pm.AverageWin = decimal.ZERO
+	pm.AverageLoss = decimal.ZERO
+	pm.AverageTrade = decimal.ZERO
 	pm.AverageWinPct = decimal.ZERO
 	pm.AverageLossPct = decimal.ZERO
+	pm.MaxConsecutiveWins = 0
+	pm.MaxConsecutiveLosses = 0
+	pm.MaxDrawdown = decimal.ZERO
+	pm.MaxDrawdownPct = decimal.ZERO
+	pm.AvgDrawdown = decimal.ZERO
+	pm.AvgDrawdownPct = decimal.ZERO
+	pm.RecoveryFactor = decimal.ZERO
+	pm.RiskRewardRatio = decimal.ZERO
+	pm.CAGR = decimal.ZERO
+	pm.SharpeRatio = decimal.ZERO
+	pm.SortinoRatio = decimal.ZERO
+	pm.CalmarRatio = decimal.ZERO
+	pm.SterlingRatio = decimal.ZERO
+	pm.BurkeRatio = decimal.ZERO
+	pm.Skewness = decimal.ZERO
+	pm.Kurtosis = decimal.ZERO
+	pm.TotalReturn = decimal.ZERO
+	pm.TotalReturnPct = decimal.ZERO
 
 	if len(trades) == 0 {
 		return
@@ -210,7 +236,7 @@ func (pm *PerformanceMetrics) calculateRiskAdjustedMetrics(trades []Trade) {
 }
 
 func (pm *PerformanceMetrics) calculateCAGR() decimal.Decimal {
-	if pm.InitialEquity.IsZero() || pm.FinalEquity.LTE(pm.InitialEquity) {
+	if pm.InitialEquity.IsZero() {
 		return decimal.ZERO
 	}
 
@@ -331,17 +357,11 @@ func (pm *PerformanceMetrics) calculateDownsideDeviation(trades []Trade, mean de
 	}
 
 	sumSquares := decimal.ZERO
+	nDownside := 0
 	for _, trade := range trades {
 		if trade.ProfitPct.LT(mean) {
 			diff := mean.Sub(trade.ProfitPct)
 			sumSquares = sumSquares.Add(diff.Mul(diff))
-		}
-	}
-
-	targetReturn := decimal.New(0)
-	nDownside := 0
-	for _, trade := range trades {
-		if trade.ProfitPct.LT(targetReturn) {
 			nDownside++
 		}
 	}

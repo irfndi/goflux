@@ -45,14 +45,22 @@ func (p *Position) CostBasis() decimal.Decimal {
 	if p.entryOrder == nil {
 		return decimal.ZERO
 	}
-	return p.entryOrder.Amount.Mul(p.entryOrder.Price)
+	price := p.entryOrder.Price
+	if !p.entryOrder.FilledPrice.IsZero() {
+		price = p.entryOrder.FilledPrice
+	}
+	return p.entryOrder.Amount.Mul(price)
 }
 
 func (p *Position) ExitValue() decimal.Decimal {
 	if p.exitOrder == nil {
 		return decimal.ZERO
 	}
-	return p.exitOrder.Amount.Mul(p.exitOrder.Price)
+	price := p.exitOrder.Price
+	if !p.exitOrder.FilledPrice.IsZero() {
+		price = p.exitOrder.FilledPrice
+	}
+	return p.exitOrder.Amount.Mul(price)
 }
 
 func (p *Position) IsLong() bool {

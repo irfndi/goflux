@@ -1,40 +1,46 @@
 package trading
 
 import (
+	"time"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 )
 
 type DrawdownProtectionRule struct {
 	MaxDrawdownPct decimal.Decimal
+	InitialCapital decimal.Decimal
 }
 
 func NewDrawdownProtectionRule(maxDrawdownPct float64) Rule {
-	return DrawdownProtectionRule{
+	return &DrawdownProtectionRule{
 		MaxDrawdownPct: decimal.New(maxDrawdownPct),
+		InitialCapital: decimal.New(10000),
 	}
 }
 
-func (dpr DrawdownProtectionRule) IsSatisfied(index int, record *TradingRecord) bool {
+func NewDrawdownProtectionRuleWithCapital(maxDrawdownPct float64, initialCapital float64) Rule {
+	return &DrawdownProtectionRule{
+		MaxDrawdownPct: decimal.New(maxDrawdownPct),
+		InitialCapital: decimal.New(initialCapital),
+	}
+}
+
+func (dpr *DrawdownProtectionRule) IsSatisfied(index int, record *TradingRecord) bool {
 	if len(record.Trades) == 0 && record.CurrentPosition().IsNew() {
 		return false
 	}
 
-	var peakBalance, currentBalance decimal.Decimal
-	peakBalance = decimal.New(10000)
+	peakBalance := dpr.InitialCapital
+	currentBalance := dpr.InitialCapital
 
 	for _, trade := range record.Trades {
 		if trade.IsClosed() {
 			pnl := trade.ExitValue().Sub(trade.CostBasis())
 			currentBalance = currentBalance.Add(pnl)
+			if currentBalance.GT(peakBalance) {
+				peakBalance = currentBalance
+			}
 		}
-	}
-
-	if record.CurrentPosition().IsOpen() {
-		currentBalance = record.CurrentPosition().CostBasis()
-	}
-
-	if currentBalance.GT(peakBalance) {
-		peakBalance = currentBalance
 	}
 
 	drawdown := peakBalance.Sub(currentBalance)
@@ -117,16 +123,17 @@ func (dllr DailyLossLimitRule) IsSatisfied(index int, record *TradingRecord) boo
 type ConsecutiveLossRule struct {
 	MaxConsecutiveLosses int
 	currentConsecutive   int
+	lastProcessedTime    time.Time
 }
 
 func NewConsecutiveLossRule(maxConsecutiveLosses int) Rule {
-	return ConsecutiveLossRule{
+	return &ConsecutiveLossRule{
 		MaxConsecutiveLosses: maxConsecutiveLosses,
 		currentConsecutive:   0,
 	}
 }
 
-func (clr ConsecutiveLossRule) IsSatisfied(index int, record *TradingRecord) bool {
+func (clr *ConsecutiveLossRule) IsSatisfied(index int, record *TradingRecord) bool {
 	if len(record.Trades) == 0 {
 		return false
 	}
@@ -135,6 +142,12 @@ func (clr ConsecutiveLossRule) IsSatisfied(index int, record *TradingRecord) boo
 	if lastTrade == nil || !lastTrade.IsClosed() {
 		return false
 	}
+
+	// Avoid recounting the same trade on repeated calls
+	if lastTrade.ExitOrder().ExecutionTime.Equal(clr.lastProcessedTime) {
+		return clr.currentConsecutive >= clr.MaxConsecutiveLosses
+	}
+	clr.lastProcessedTime = lastTrade.ExitOrder().ExecutionTime
 
 	lastPnL := lastTrade.ExitValue().Sub(lastTrade.CostBasis())
 	if lastPnL.LT(decimal.ZERO) {
@@ -181,6 +194,9 @@ func NewPortfolioExposureRule(maxExposure float64) Rule {
 
 func (per PortfolioExposureRule) IsSatisfied(index int, record *TradingRecord) bool {
 	var totalExposure decimal.Decimal
+	if record.CurrentPosition().IsOpen() {
+		totalExposure = totalExposure.Add(record.CurrentPosition().CostBasis())
+	}
 	for _, trade := range record.Trades {
 		if trade.IsOpen() {
 			totalExposure = totalExposure.Add(trade.CostBasis())

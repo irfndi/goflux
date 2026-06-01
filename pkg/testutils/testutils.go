@@ -90,32 +90,33 @@ func DecimalEquals(t *testing.T, expected float64, actual decimal.Decimal) {
 	assert.Equal(t, fmt.Sprintf("%.4f", expected), fmt.Sprintf("%.4f", actual.Float()))
 }
 
-func Dump(indicator Indicator) (values []float64) {
+// Dump returns the first n indicator values as rounded float64s.
+// If n <= 0, it returns up to 1000 values to prevent infinite loops.
+func Dump(indicator Indicator, n int) (values []float64) {
 	precision := 4.0
 	m := math.Pow(10, precision)
 
-	for index := 0; ; index++ {
-		val, ok := safeCalculate(indicator, index)
-		if !ok {
-			break
-		}
+	if n <= 0 {
+		n = 1000
+	}
+
+	for index := 0; index < n; index++ {
+		val := indicator.Calculate(index)
 		values = append(values, math.Round(val.Float()*m)/m)
 	}
 
 	return
 }
 
-func safeCalculate(indicator Indicator, index int) (value decimal.Decimal, ok bool) {
-	defer func() {
-		if recover() != nil {
-			ok = false
-		}
-	}()
-
-	return indicator.Calculate(index), true
-}
-
+// IndicatorEquals asserts that the indicator produces exactly the expected values
+// at indices 0..len(expected)-1.
 func IndicatorEquals(t *testing.T, expected []float64, indicator Indicator) {
-	actualValues := Dump(indicator)
+	precision := 4.0
+	m := math.Pow(10, precision)
+
+	actualValues := make([]float64, len(expected))
+	for i := range expected {
+		actualValues[i] = math.Round(indicator.Calculate(i).Float()*m) / m
+	}
 	assert.EqualValues(t, expected, actualValues)
 }

@@ -11,15 +11,16 @@ def parse_benchmark_file(filename):
     with open(filename, "r") as f:
         for line in f:
             # Match lines like: BenchmarkSMA-20    5000000    3.5 ns/op    2 B/op    1 allocs/op
+            # Go benchmem can output decimal ns/op and integer B/op, or integer ns/op and decimal B/op
             match = re.search(
-                r"Benchmark(\w+)-\d+\s+(\d+)\s+(\d+)\s+ns/op\s+(\d+\.\d+)\s+B/op\s+(\d+)\s+allocs/op",
+                r"Benchmark(\w+)-\d+\s+(\d+)\s+(\d+(?:\.\d+)?)\s+ns/op\s+(\d+(?:\.\d+)?)\s+B/op\s+(\d+)\s+allocs/op",
                 line,
             )
             if match:
                 name = match.group(1)
                 ops = int(match.group(2))
                 ns_per_op = float(match.group(3))
-                b_per_op = int(match.group(4))
+                b_per_op = float(match.group(4))
                 allocs_per_op = int(match.group(5))
 
                 results[name] = {
@@ -30,13 +31,22 @@ def parse_benchmark_file(filename):
     return results
 
 
-def compare_benchmarks(current_file, baseline_file, threshold=1.1):
+def compare_benchmarks(current_file, baseline_file, threshold=0.1):
     """Compare current benchmark results with baseline and check for regressions"""
     current = parse_benchmark_file(current_file)
     baseline = parse_benchmark_file(baseline_file)
 
+    if not current or not baseline:
+        print("Error: no benchmarks parsed from one or both files")
+        sys.exit(1)
+
+    common_names = set(current.keys()) & set(baseline.keys())
+    if not common_names:
+        print("Error: no common benchmark names between current and baseline")
+        sys.exit(1)
+
     print(f"\n{'=' * 60}")
-    print(f"Performance Comparison (threshold: {threshold * 100}% regression)")
+    print(f"Performance Comparison (threshold: {threshold * 100:.0f}% regression)")
     print(f"{'=' * 60}")
 
     print(
@@ -87,7 +97,7 @@ def compare_benchmarks(current_file, baseline_file, threshold=1.1):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print(
             "Usage: python compare_benchmarks.py <current_results.txt> <baseline_results.txt> [threshold]"
         )
@@ -95,6 +105,6 @@ if __name__ == "__main__":
 
     current_file = sys.argv[1]
     baseline_file = sys.argv[2]
-    threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 1.1
+    threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 0.1
 
     compare_benchmarks(current_file, baseline_file, threshold)

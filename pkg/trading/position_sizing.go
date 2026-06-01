@@ -92,20 +92,23 @@ type volatilityBasedSizer struct {
 }
 
 func (vbs *volatilityBasedSizer) CalculateSize(config PositionSizingConfig) decimal.Decimal {
-	if config.Volatility.IsZero() || config.StopLoss.IsZero() || config.CurrentPrice.IsZero() {
+	if config.Volatility.IsZero() || config.CurrentPrice.IsZero() {
 		return decimal.ZERO
 	}
 
 	atrPercent := config.ATR.Div(config.CurrentPrice)
-
 	atrStopLoss := config.CurrentPrice.Sub(config.CurrentPrice.Mul(atrPercent.Mul(vbs.multiplier)))
 
-	if config.StopLoss.IsZero() {
-		config.StopLoss = atrStopLoss
+	stopLoss := config.StopLoss
+	if stopLoss.IsZero() {
+		stopLoss = atrStopLoss
+	}
+	if stopLoss.IsZero() {
+		return decimal.ZERO
 	}
 
 	riskAmount := config.Capital.Mul(decimal.New(0.01))
-	riskPerShare := config.CurrentPrice.Sub(config.StopLoss)
+	riskPerShare := config.CurrentPrice.Sub(stopLoss)
 
 	if riskPerShare.IsZero() || riskPerShare.IsNegative() {
 		return decimal.ZERO

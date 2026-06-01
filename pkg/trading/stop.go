@@ -25,8 +25,13 @@ func (slr stopLossRule) IsSatisfied(index int, record *TradingRecord) bool {
 		return false
 	}
 
-	openPrice := record.CurrentPosition().CostBasis()
-	loss := slr.Indicator.Calculate(index).Div(openPrice).Sub(decimal.ONE)
+	entryOrder := record.CurrentPosition().EntranceOrder()
+	entryPrice := entryOrder.Price
+	if !entryOrder.FilledPrice.IsZero() {
+		entryPrice = entryOrder.FilledPrice
+	}
+
+	loss := slr.Indicator.Calculate(index).Div(entryPrice).Sub(decimal.ONE)
 	return loss.LTE(slr.tolerance)
 }
 
@@ -102,8 +107,13 @@ func (fpr fixedProfitRule) IsSatisfied(index int, record *TradingRecord) bool {
 		return false
 	}
 
-	openPrice := record.CurrentPosition().CostBasis()
-	gain := fpr.Indicator.Calculate(index).Div(openPrice).Sub(decimal.ONE)
+	entryOrder := record.CurrentPosition().EntranceOrder()
+	entryPrice := entryOrder.Price
+	if !entryOrder.FilledPrice.IsZero() {
+		entryPrice = entryOrder.FilledPrice
+	}
+
+	gain := fpr.Indicator.Calculate(index).Div(entryPrice).Sub(decimal.ONE)
 	return gain.GTE(fpr.target)
 }
 

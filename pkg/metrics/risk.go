@@ -7,35 +7,41 @@ import (
 	"sort"
 )
 
-// ValueAtRisk calculates the VaR for a given confidence level (e.g., 0.95) using historical method
+// ValueAtRisk calculates the VaR for a given confidence level (e.g., 0.95) using historical method.
+// It creates a copy of returns before sorting so the caller's slice is not modified.
 func ValueAtRisk(returns []float64, confidence float64) float64 {
 	if len(returns) == 0 {
 		return 0
 	}
 
-	sort.Float64s(returns)
-	index := int(math.Floor((1 - confidence) * float64(len(returns))))
+	sorted := make([]float64, len(returns))
+	copy(sorted, returns)
+	sort.Float64s(sorted)
+	index := int(math.Floor((1 - confidence) * float64(len(sorted))))
 	if index < 0 {
 		index = 0
 	}
-	return -returns[index]
+	return -sorted[index]
 }
 
-// ConditionalValueAtRisk (Expected Shortfall) calculates the average loss beyond VaR
+// ConditionalValueAtRisk (Expected Shortfall) calculates the average loss beyond VaR.
+// It creates a copy of returns before sorting so the caller's slice is not modified.
 func ConditionalValueAtRisk(returns []float64, confidence float64) float64 {
 	if len(returns) == 0 {
 		return 0
 	}
 
-	sort.Float64s(returns)
-	limit := int(math.Floor((1 - confidence) * float64(len(returns))))
+	sorted := make([]float64, len(returns))
+	copy(sorted, returns)
+	sort.Float64s(sorted)
+	limit := int(math.Floor((1 - confidence) * float64(len(sorted))))
 	if limit <= 0 {
-		return -returns[0]
+		return -sorted[0]
 	}
 
 	sum := 0.0
 	for i := 0; i < limit; i++ {
-		sum += returns[i]
+		sum += sorted[i]
 	}
 	return -sum / float64(limit)
 }
@@ -73,7 +79,7 @@ func ParametricValueAtRisk(returns []float64, confidence float64) float64 {
 
 // MonteCarloValueAtRisk calculates VaR using Monte Carlo simulation
 func MonteCarloValueAtRisk(returns []float64, confidence float64, simulations int) float64 {
-	if len(returns) < 2 {
+	if len(returns) < 2 || simulations <= 0 {
 		return 0
 	}
 
