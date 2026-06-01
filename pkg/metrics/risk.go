@@ -21,6 +21,9 @@ func ValueAtRisk(returns []float64, confidence float64) float64 {
 	if index < 0 {
 		index = 0
 	}
+	if index >= len(sorted) {
+		index = len(sorted) - 1
+	}
 	return -sorted[index]
 }
 
