@@ -22,17 +22,17 @@ const (
 
 // Payload represents a single telemetry event.
 type Payload struct {
-	V           int               `json:"v"`
-	Ts          int64             `json:"ts"`
-	LibVersion  string            `json:"lib_version"`
-	GoVersion   string            `json:"go_version"`
-	OS          string            `json:"os"`
-	Arch        string            `json:"arch"`
-	Type        string            `json:"type"`
-	Feature     string            `json:"feature,omitempty"`
-	ErrorType   string            `json:"error_type,omitempty"`
-	ErrorHash   string            `json:"error_hash,omitempty"`
-	Context     map[string]string `json:"context,omitempty"`
+	V          int               `json:"v"`
+	Ts         int64             `json:"ts"`
+	LibVersion string            `json:"lib_version"`
+	GoVersion  string            `json:"go_version"`
+	OS         string            `json:"os"`
+	Arch       string            `json:"arch"`
+	Type       string            `json:"type"`
+	Feature    string            `json:"feature,omitempty"`
+	ErrorType  string            `json:"error_type,omitempty"`
+	ErrorHash  string            `json:"error_hash,omitempty"`
+	Context    map[string]string `json:"context,omitempty"`
 }
 
 // Reporter handles telemetry reporting. A nil Reporter is safe to use
@@ -46,6 +46,7 @@ type Reporter struct {
 	wg            sync.WaitGroup
 	closeOnce     sync.Once
 	closeCh       chan struct{}
+	configMu      sync.RWMutex
 	flushInterval time.Duration
 	batchSize     int
 }
@@ -168,10 +169,15 @@ func (r *Reporter) send(p Payload) {
 func (r *Reporter) flushLoop() {
 	defer r.wg.Done()
 
-	ticker := time.NewTicker(r.flushInterval)
+	r.configMu.RLock()
+	flushInterval := r.flushInterval
+	batchSize := r.batchSize
+	r.configMu.RUnlock()
+
+	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
 
-	batch := make([]Payload, 0, r.batchSize)
+	batch := make([]Payload, 0, batchSize)
 
 	flush := func() {
 		if len(batch) == 0 {
@@ -191,7 +197,10 @@ func (r *Reporter) flushLoop() {
 				return
 			}
 			batch = append(batch, p)
-			if len(batch) >= r.batchSize {
+			r.configMu.RLock()
+			bs := r.batchSize
+			r.configMu.RUnlock()
+			if len(batch) >= bs {
 				flush()
 			}
 		case <-ticker.C:
@@ -222,7 +231,7 @@ func (r *Reporter) post(p Payload) {
 	if err != nil {
 		return
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // Close shuts down the reporter, flushing pending events.

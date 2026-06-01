@@ -46,8 +46,10 @@ func setFastFlush() {
 	mu.Lock()
 	defer mu.Unlock()
 	if defaultReporter != nil {
+		defaultReporter.configMu.Lock()
 		defaultReporter.flushInterval = 50 * time.Millisecond
 		defaultReporter.batchSize = 1
+		defaultReporter.configMu.Unlock()
 	}
 }
 
