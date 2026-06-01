@@ -347,3 +347,17 @@ func BenchmarkVIDYA(b *testing.B) {
 		return NewVIDYAIndicator(NewClosePriceIndicator(sharedTimeSeries), 14)
 	})
 }
+
+// --- EOM / Force Index ---
+
+func BenchmarkEaseOfMovement(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewEaseOfMovementIndicator(sharedTimeSeries, 14)
+	})
+}
+
+func BenchmarkForceIndex(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewForceIndexIndicator(sharedTimeSeries, 13)
+	})
+}
