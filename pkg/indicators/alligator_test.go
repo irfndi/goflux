@@ -176,10 +176,53 @@ func TestGatorOscillatorValues(t *testing.T) {
 
 func TestAlligatorInsufficientData(t *testing.T) {
 	s := series.NewTimeSeries()
-	s.AddCandle(&series.Candle{ClosePrice: decimal.New(10), MaxPrice: decimal.New(11), MinPrice: decimal.New(9)})
+	c := series.NewCandle(series.NewTimePeriod(time.Unix(0, 0), time.Second))
+	c.ClosePrice = decimal.New(10)
+	c.MaxPrice = decimal.New(11)
+	c.MinPrice = decimal.New(9)
+	s.AddCandle(c)
 
 	jaw, teeth, lips := NewAlligatorIndicators(s)
 	assert.True(t, jaw.Calculate(0).IsZero())
 	assert.True(t, teeth.Calculate(0).IsZero())
 	assert.True(t, lips.Calculate(0).IsZero())
+}
+
+func TestAlligatorNilSeriesPanics(t *testing.T) {
+	assert.Panics(t, func() { NewAlligatorIndicators(nil) })
+	assert.Panics(t, func() { NewGatorOscillatorIndicators(nil) })
+}
+
+func TestAlligatorInvalidPeriodPanics(t *testing.T) {
+	s := testutils.MockTimeSeriesFl(10, 12, 14, 16, 18)
+	assert.Panics(t, func() { NewAlligatorIndicatorsCustom(s, 0, 1, 3, 1, 2, 0) })
+	assert.Panics(t, func() { NewAlligatorIndicatorsCustom(s, 5, 1, -1, 1, 2, 0) })
+	assert.Panics(t, func() { NewAlligatorIndicatorsCustom(s, 5, 1, 3, 1, 0, 0) })
+}
+
+func TestAlligatorNegativeShiftPanics(t *testing.T) {
+	s := testutils.MockTimeSeriesFl(10, 12, 14, 16, 18)
+	assert.Panics(t, func() { NewAlligatorIndicatorsCustom(s, 5, -1, 3, 1, 2, 0) })
+	assert.Panics(t, func() { NewAlligatorIndicatorsCustom(s, 5, 1, 3, -1, 2, 0) })
+	assert.Panics(t, func() { NewAlligatorIndicatorsCustom(s, 5, 1, 3, 1, 2, -1) })
+}
+
+func TestGatorOscillatorFromAlligator(t *testing.T) {
+	s := testutils.MockTimeSeriesFl(
+		10, 12, 14, 16, 18,
+		20, 22, 24, 26, 28,
+		30, 32, 34, 36, 38,
+		40, 42, 44, 46, 48,
+		50, 52, 54, 56, 58,
+	)
+
+	// Both constructors should produce identical values.
+	upper1, lower1 := NewGatorOscillatorIndicators(s)
+	jaw, teeth, lips := NewAlligatorIndicators(s)
+	upper2, lower2 := NewGatorOscillatorIndicatorsFromAlligator(jaw, teeth, lips)
+
+	for i := 0; i < s.Length(); i++ {
+		assert.True(t, upper1.Calculate(i).EQ(upper2.Calculate(i)), "upper mismatch at %d", i)
+		assert.True(t, lower1.Calculate(i).EQ(lower2.Calculate(i)), "lower mismatch at %d", i)
+	}
 }

@@ -14,19 +14,27 @@ import (
 // displaced forward by a fixed number of bars.
 //
 // Defaults: Jaw(13,8), Teeth(8,5), Lips(5,3).
+// Panics if s is nil.
 func NewAlligatorIndicators(s *series.TimeSeries) (jaw, teeth, lips Indicator) {
+	if s == nil {
+		panic("goflux: Alligator series cannot be nil")
+	}
 	telemetry.ReportUsage("Alligator", nil)
 	median := NewMedianPriceIndicator(s)
 	return newAlligatorJaw(median), newAlligatorTeeth(median), newAlligatorLips(median)
 }
 
 // NewAlligatorIndicatorsCustom returns Alligator lines with custom periods and shifts.
+// Panics if s is nil or if any period <= 0 or shift < 0.
 func NewAlligatorIndicatorsCustom(
 	s *series.TimeSeries,
 	jawPeriod, jawShift int,
 	teethPeriod, teethShift int,
 	lipsPeriod, lipsShift int,
 ) (jaw, teeth, lips Indicator) {
+	if s == nil {
+		panic("goflux: Alligator series cannot be nil")
+	}
 	telemetry.ReportUsage("AlligatorCustom", map[string]string{
 		"jaw_period":   strconv.Itoa(jawPeriod),
 		"jaw_shift":    strconv.Itoa(jawShift),
@@ -44,9 +52,19 @@ func NewAlligatorIndicatorsCustom(
 // NewGatorOscillatorIndicators returns the upper and lower histogram bars
 // of the Gator Oscillator derived from the Alligator lines.
 // Upper = |Jaw - Teeth|, Lower = -|Teeth - Lips|.
+// Panics if s is nil.
 func NewGatorOscillatorIndicators(s *series.TimeSeries) (upper, lower Indicator) {
+	if s == nil {
+		panic("goflux: Gator Oscillator series cannot be nil")
+	}
 	telemetry.ReportUsage("GatorOscillator", nil)
 	jaw, teeth, lips := NewAlligatorIndicators(s)
+	return NewGatorOscillatorIndicatorsFromAlligator(jaw, teeth, lips)
+}
+
+// NewGatorOscillatorIndicatorsFromAlligator creates Gator Oscillator bars
+// from pre-computed Alligator indicators, avoiding redundant SMMA computation.
+func NewGatorOscillatorIndicatorsFromAlligator(jaw, teeth, lips Indicator) (upper, lower Indicator) {
 	return gatorUpper{jaw: jaw, teeth: teeth},
 		gatorLower{teeth: teeth, lips: lips}
 }
@@ -59,6 +77,12 @@ type shiftedSMMA struct {
 }
 
 func newShiftedSMMA(indicator Indicator, period, shift int) Indicator {
+	if period <= 0 {
+		panic("goflux: Alligator SMMA period must be > 0")
+	}
+	if shift < 0 {
+		panic("goflux: Alligator shift must be >= 0")
+	}
 	return shiftedSMMA{smma: NewMMAIndicator(indicator, period), shift: shift}
 }
 
