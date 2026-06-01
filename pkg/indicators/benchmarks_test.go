@@ -269,3 +269,21 @@ func BenchmarkTRIX(b *testing.B) {
 		return NewTRIXIndicatorFromSeries(sharedTimeSeries, 14)
 	})
 }
+
+func BenchmarkDonchianUpperBand(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewDonchianUpperBandIndicator(sharedTimeSeries, 20)
+	})
+}
+
+func BenchmarkDonchianLowerBand(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewDonchianLowerBandIndicator(sharedTimeSeries, 20)
+	})
+}
+
+func BenchmarkDonchianMiddleBand(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewDonchianMiddleBandIndicator(sharedTimeSeries, 20)
+	})
+}
