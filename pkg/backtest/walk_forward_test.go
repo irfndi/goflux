@@ -96,16 +96,16 @@ func TestWFARunEmptySeries(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	result, err := analyzer.Run(nil, func(ts *series.TimeSeries) (trading.Strategy, BacktestConfig) {
-		return &wfaTestStrategy{}, BacktestConfig{InitialCapital: decimal.New(10000), AllowLong: true}
+	result, err := analyzer.Run(nil, func(ts *series.TimeSeries) (StrategyFactory, BacktestConfig) {
+		return func(s *series.TimeSeries) trading.Strategy { return &wfaTestStrategy{} }, BacktestConfig{InitialCapital: decimal.New(10000), AllowLong: true}
 	})
 	assert.NoError(t, err)
 	assert.Empty(t, result.Windows)
 	assert.Equal(t, 0, result.AggregateMetrics.TotalWindows)
 
 	emptySeries := series.NewTimeSeries()
-	result, err = analyzer.Run(emptySeries, func(ts *series.TimeSeries) (trading.Strategy, BacktestConfig) {
-		return &wfaTestStrategy{}, BacktestConfig{InitialCapital: decimal.New(10000), AllowLong: true}
+	result, err = analyzer.Run(emptySeries, func(ts *series.TimeSeries) (StrategyFactory, BacktestConfig) {
+		return func(s *series.TimeSeries) trading.Strategy { return &wfaTestStrategy{} }, BacktestConfig{InitialCapital: decimal.New(10000), AllowLong: true}
 	})
 	assert.NoError(t, err)
 	assert.Empty(t, result.Windows)
@@ -120,8 +120,8 @@ func TestWFARunSingleWindow(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	result, err := analyzer.Run(ts, func(s *series.TimeSeries) (trading.Strategy, BacktestConfig) {
-		return &wfaTestStrategy{}, BacktestConfig{
+	result, err := analyzer.Run(ts, func(s *series.TimeSeries) (StrategyFactory, BacktestConfig) {
+		return func(s *series.TimeSeries) trading.Strategy { return &wfaTestStrategy{} }, BacktestConfig{
 			InitialCapital: decimal.New(10000),
 			PositionSize:   decimal.New(10),
 			AllowLong:      true,
@@ -149,8 +149,8 @@ func TestWFARunMultipleWindows(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	result, err := analyzer.Run(ts, func(s *series.TimeSeries) (trading.Strategy, BacktestConfig) {
-		return &wfaTestStrategy{}, BacktestConfig{
+	result, err := analyzer.Run(ts, func(s *series.TimeSeries) (StrategyFactory, BacktestConfig) {
+		return func(s *series.TimeSeries) trading.Strategy { return &wfaTestStrategy{} }, BacktestConfig{
 			InitialCapital: decimal.New(10000),
 			PositionSize:   decimal.New(10),
 			AllowLong:      true,
@@ -277,8 +277,8 @@ func TestWFAWithNeverEnterStrategy(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	result, err := analyzer.Run(ts, func(s *series.TimeSeries) (trading.Strategy, BacktestConfig) {
-		return &neverEnterStrategy{}, BacktestConfig{
+	result, err := analyzer.Run(ts, func(s *series.TimeSeries) (StrategyFactory, BacktestConfig) {
+		return func(s *series.TimeSeries) trading.Strategy { return &neverEnterStrategy{} }, BacktestConfig{
 			InitialCapital: decimal.New(10000),
 			AllowLong:      true,
 		}

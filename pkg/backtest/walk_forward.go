@@ -63,9 +63,15 @@ type WFAResult struct {
 	AggregateMetrics WFAAggregateMetrics
 }
 
+// StrategyFactory creates a fresh strategy instance bound to the given series.
+// Used by WalkForwardAnalyzer to prevent indicator state leakage between
+// in-sample and out-of-sample runs.
+type StrategyFactory func(ts *series.TimeSeries) trading.Strategy
+
 // OptimizationFunc is a user-provided function that optimizes strategy
-// configuration on the given in-sample time series.
-type OptimizationFunc func(ts *series.TimeSeries) (trading.Strategy, BacktestConfig)
+// configuration on the given in-sample time series and returns a factory
+// that can build a fresh strategy for any sub-series.
+type OptimizationFunc func(ts *series.TimeSeries) (StrategyFactory, BacktestConfig)
 
 // WalkForwardAnalyzer runs walk-forward analysis on a time series.
 type WalkForwardAnalyzer struct {
@@ -106,22 +112,19 @@ func (wfa *WalkForwardAnalyzer) Run(
 		isEnd := isStart + cfg.InSampleWindowSize
 		oosStart := isEnd
 		oosEnd := oosStart + cfg.OutOfSampleWindowSize
-		if oosEnd > n {
-			break
-		}
 
 		isSeries := sliceTimeSeries(ts, isStart, isEnd)
 		oosSeries := sliceTimeSeries(ts, oosStart, oosEnd)
 
-		// Optimize on in-sample data
-		strategy, btConfig := optimize(isSeries)
+		// Optimize on in-sample data; factory prevents indicator state leakage
+		strategyFactory, btConfig := optimize(isSeries)
 
-		// Run in-sample backtest
-		isBacktester := NewBacktester(isSeries, strategy)
+		// Run in-sample backtest with a fresh strategy bound to IS data
+		isBacktester := NewBacktester(isSeries, strategyFactory(isSeries))
 		isResult := isBacktester.Run(btConfig)
 
-		// Run out-of-sample backtest with same strategy and config
-		oosBacktester := NewBacktester(oosSeries, strategy)
+		// Run out-of-sample backtest with a fresh strategy bound to OOS data
+		oosBacktester := NewBacktester(oosSeries, strategyFactory(oosSeries))
 		oosResult := oosBacktester.Run(btConfig)
 
 		results.Windows = append(results.Windows, WFWindowResult{
@@ -193,9 +196,12 @@ func (wfa *WalkForwardAnalyzer) computeAggregateMetrics(windows []WFWindowResult
 }
 
 // sliceTimeSeries creates a new TimeSeries containing candles [start, end).
+// Accesses Candles directly because the source series is not modified
+// concurrently during backtesting, avoiding per-iteration lock overhead.
 func sliceTimeSeries(ts *series.TimeSeries, start, end int) *series.TimeSeries {
 	result := series.NewTimeSeries()
-	length := ts.Length()
+	candles := ts.Candles
+	length := len(candles)
 	if start < 0 {
 		start = 0
 	}
@@ -203,8 +209,7 @@ func sliceTimeSeries(ts *series.TimeSeries, start, end int) *series.TimeSeries {
 		end = length
 	}
 	for i := start; i < end; i++ {
-		c := ts.GetCandle(i)
-		if c != nil {
+		if c := candles[i]; c != nil {
 			result.AddCandle(c)
 		}
 	}

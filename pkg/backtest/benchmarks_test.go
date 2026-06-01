@@ -20,8 +20,8 @@ func BenchmarkWalkForwardAnalysis(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = analyzer.Run(ts, func(s *series.TimeSeries) (trading.Strategy, BacktestConfig) {
-			return &benchmarkStrategy{}, BacktestConfig{
+		_, _ = analyzer.Run(ts, func(s *series.TimeSeries) (StrategyFactory, BacktestConfig) {
+			return func(ts *series.TimeSeries) trading.Strategy { return &benchmarkStrategy{} }, BacktestConfig{
 				InitialCapital: decimal.New(10000),
 				PositionSize:   decimal.New(10),
 				AllowLong:      true,
