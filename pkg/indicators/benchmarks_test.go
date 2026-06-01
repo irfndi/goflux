@@ -295,3 +295,19 @@ func BenchmarkFibonacciRetracementIndicator(b *testing.B) {
 		return NewFibonacciRetracementIndicator(sharedTimeSeries, 20, 0.618)
 	})
 }
+
+// --- Linear Regression ---
+
+func BenchmarkLinearRegression(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewLinearRegressionIndicator(NewClosePriceIndicator(sharedTimeSeries), 20)
+	})
+}
+
+func BenchmarkLinearRegressionChannel(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		mid, upper, _ := NewLinearRegressionChannel(NewClosePriceIndicator(sharedTimeSeries), 20, 2.0)
+		_ = mid
+		return upper
+	})
+}
