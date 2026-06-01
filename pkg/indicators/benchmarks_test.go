@@ -327,3 +327,23 @@ func BenchmarkGatorOscillatorUpper(b *testing.B) {
 		return upper
 	})
 }
+
+// --- Moving Averages Extended ---
+
+func BenchmarkT3(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewT3Indicator(NewClosePriceIndicator(sharedTimeSeries), 6, 0.7)
+	})
+}
+
+func BenchmarkALMA(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewALMAIndicator(NewClosePriceIndicator(sharedTimeSeries), 9, 0.85, 6.0)
+	})
+}
+
+func BenchmarkVIDYA(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewVIDYAIndicator(NewClosePriceIndicator(sharedTimeSeries), 14)
+	})
+}
