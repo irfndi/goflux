@@ -257,3 +257,9 @@ func BenchmarkAroonOscillator(b *testing.B) {
 		return NewAroonOscillatorFromSeries(sharedTimeSeries, 14)
 	})
 }
+
+func BenchmarkChaikinMoneyFlow(b *testing.B) {
+	benchmarkIndicatorConstruction(b, func() Indicator {
+		return NewChaikinMoneyFlowIndicator(sharedTimeSeries, 20)
+	})
+}
