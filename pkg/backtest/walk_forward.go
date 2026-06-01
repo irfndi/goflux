@@ -51,7 +51,7 @@ type WFAAggregateMetrics struct {
 	TotalWindows             int
 	AverageInSampleSharpe    decimal.Decimal
 	AverageOutOfSampleSharpe decimal.Decimal
-	DegradationRate          decimal.Decimal // (IS - OOS) / IS, lower is better
+	DegradationRate          decimal.Decimal // (IS - OOS) / |IS|, lower is better
 	WinningWindowsPercent    decimal.Decimal // % of OOS windows with positive net profit
 	AverageInSampleProfit    decimal.Decimal
 	AverageOutOfSampleProfit decimal.Decimal
