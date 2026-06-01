@@ -29,6 +29,16 @@ func TestDonchianBreakoutUpperRule(t *testing.T) {
 	if !rule.IsSatisfied(9, record) {
 		t.Errorf("DonchianBreakoutUpperRule should be satisfied when close > previous upper")
 	}
+
+	// Should not trigger before window is ready (band returns ZERO)
+	if rule.IsSatisfied(3, record) {
+		t.Errorf("DonchianBreakoutUpperRule should not be satisfied before window is ready")
+	}
+
+	// Should not trigger when close is below previous upper band
+	if rule.IsSatisfied(8, record) {
+		t.Errorf("DonchianBreakoutUpperRule should not be satisfied when close < previous upper")
+	}
 }
 
 func TestDonchianBreakoutLowerRule(t *testing.T) {
@@ -52,6 +62,16 @@ func TestDonchianBreakoutLowerRule(t *testing.T) {
 	// Lower band at index 8 = lowest low in [4..8] = 15; Close at index 9 = 5
 	if !rule.IsSatisfied(9, record) {
 		t.Errorf("DonchianBreakoutLowerRule should be satisfied when close < previous lower")
+	}
+
+	// Should not trigger before window is ready (band returns ZERO)
+	if rule.IsSatisfied(3, record) {
+		t.Errorf("DonchianBreakoutLowerRule should not be satisfied before window is ready")
+	}
+
+	// Should not trigger when close is above previous lower band
+	if rule.IsSatisfied(8, record) {
+		t.Errorf("DonchianBreakoutLowerRule should not be satisfied when close > previous lower")
 	}
 }
 
