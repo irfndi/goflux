@@ -45,12 +45,12 @@ func benchmarkEventSeries(n int) []*series.Candle {
 func BenchmarkEventDrivenBacktester_Small(b *testing.B) {
 	candles := benchmarkEventSeries(100)
 	events := createTestEvents("TEST", candles)
-	broker := NewSimulatedBroker("TEST", decimal.New(10000))
-	edb := NewEventDrivenBacktester()
-	edb.Register("TEST", broker, &edBenchStrategy{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		broker := NewSimulatedBroker("TEST", decimal.New(10000))
+		edb := NewEventDrivenBacktester()
+		edb.Register("TEST", broker, &edBenchStrategy{})
 		_, err := edb.Run(events)
 		if err != nil {
 			b.Fatal(err)
@@ -61,12 +61,12 @@ func BenchmarkEventDrivenBacktester_Small(b *testing.B) {
 func BenchmarkEventDrivenBacktester_Medium(b *testing.B) {
 	candles := benchmarkEventSeries(1000)
 	events := createTestEvents("TEST", candles)
-	broker := NewSimulatedBroker("TEST", decimal.New(10000))
-	edb := NewEventDrivenBacktester()
-	edb.Register("TEST", broker, &edBenchStrategy{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		broker := NewSimulatedBroker("TEST", decimal.New(10000))
+		edb := NewEventDrivenBacktester()
+		edb.Register("TEST", broker, &edBenchStrategy{})
 		_, err := edb.Run(events)
 		if err != nil {
 			b.Fatal(err)
@@ -77,12 +77,12 @@ func BenchmarkEventDrivenBacktester_Medium(b *testing.B) {
 func BenchmarkEventDrivenBacktester_Large(b *testing.B) {
 	candles := benchmarkEventSeries(5000)
 	events := createTestEvents("TEST", candles)
-	broker := NewSimulatedBroker("TEST", decimal.New(10000))
-	edb := NewEventDrivenBacktester()
-	edb.Register("TEST", broker, &edBenchStrategy{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		broker := NewSimulatedBroker("TEST", decimal.New(10000))
+		edb := NewEventDrivenBacktester()
+		edb.Register("TEST", broker, &edBenchStrategy{})
 		_, err := edb.Run(events)
 		if err != nil {
 			b.Fatal(err)

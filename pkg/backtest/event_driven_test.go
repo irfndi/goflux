@@ -285,10 +285,8 @@ func TestEventDrivenBacktester_PartialFill(t *testing.T) {
 
 	result := results["TEST"]
 	require.Equal(t, 1, result.TotalTrades)
-	// Half fill of 10 = 5
-	assert.True(t, result.Trades[0].Quantity.EQ(decimal.New(10)))
-	// Note: the position tracks the original order amount, but the fill amount is 5.
-	// This is a known limitation of the current Position type.
+	// Half fill of 10 = 5, quantity reflects the actual filled amount
+	assert.True(t, result.Trades[0].Quantity.EQ(decimal.New(5)))
 }
 
 func TestEventDrivenBacktester_CommissionDeducted(t *testing.T) {

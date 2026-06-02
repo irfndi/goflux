@@ -183,6 +183,15 @@ func (b *SimulatedBroker) ProcessStrategySignal(shouldEnter, shouldExit bool, in
 		return
 	}
 
+	if shouldEnter && b.canEnterShort() {
+		order := trading.NewOrderDetail(trading.SELL, trading.MarketOrder, b.Symbol, decimal.ONE)
+		order.CreationTime = time.Unix(int64(index), 0)
+		if b.fillMarketOrder(order, candle) {
+			b.enterPosition(order, index)
+		}
+		return
+	}
+
 	if shouldExit && b.hasOpenPosition() {
 		b.closeAllPositions(index, candle)
 	}
@@ -190,6 +199,10 @@ func (b *SimulatedBroker) ProcessStrategySignal(shouldEnter, shouldExit bool, in
 
 func (b *SimulatedBroker) canEnterLong() bool {
 	return b.AllowLong && !b.hasOpenPosition()
+}
+
+func (b *SimulatedBroker) canEnterShort() bool {
+	return b.AllowShort && !b.hasOpenPosition()
 }
 
 func (b *SimulatedBroker) hasOpenPosition() bool {
@@ -268,7 +281,12 @@ func (b *SimulatedBroker) executeFill(order *trading.Order, price decimal.Decima
 func (b *SimulatedBroker) handleFilledOrder(order *trading.Order, index int) {
 	if b.record.CurrentPosition().IsOpen() {
 		if len(b.openPositions) > 0 {
-			b.exitPosition(b.openPositions[0], order, index)
+			bp := b.openPositions[0]
+			entrySide := bp.pos.EntranceOrder().Side
+			if (entrySide == trading.BUY && order.Side == trading.SELL) ||
+				(entrySide == trading.SELL && order.Side == trading.BUY) {
+				b.exitPosition(bp, order, index)
+			}
 		}
 		return
 	}
@@ -281,7 +299,6 @@ func (b *SimulatedBroker) handleFilledOrder(order *trading.Order, index int) {
 
 func (b *SimulatedBroker) enterPosition(order *trading.Order, index int) {
 	pos := trading.NewPosition(*order)
-	pos.Enter(*order)
 	b.openPositions = append(b.openPositions, &brokerPosition{pos: pos, entryIndex: index})
 
 	order.ExecutionTime = time.Unix(int64(index), 0)
@@ -292,11 +309,15 @@ func (b *SimulatedBroker) exitPosition(bp *brokerPosition, order *trading.Order,
 	bp.pos.Exit(*order)
 
 	entryOrder := bp.pos.EntranceOrder()
+	qty := entryOrder.Amount
+	if !entryOrder.FilledAmount.IsZero() {
+		qty = entryOrder.FilledAmount
+	}
 	var profit decimal.Decimal
 	if bp.pos.IsLong() {
-		profit = order.FilledPrice.Sub(entryOrder.FilledPrice).Mul(entryOrder.Amount)
+		profit = order.FilledPrice.Sub(entryOrder.FilledPrice).Mul(qty)
 	} else {
-		profit = entryOrder.FilledPrice.Sub(order.FilledPrice).Mul(entryOrder.Amount)
+		profit = entryOrder.FilledPrice.Sub(order.FilledPrice).Mul(qty)
 	}
 	b.Equity = b.Equity.Add(profit)
 
@@ -320,8 +341,16 @@ func (b *SimulatedBroker) exitPosition(bp *brokerPosition, order *trading.Order,
 func (b *SimulatedBroker) closeAllPositions(index int, candle *series.Candle) {
 	for len(b.openPositions) > 0 {
 		bp := b.openPositions[0]
-		qty := bp.pos.EntranceOrder().Amount
-		order := trading.NewOrderDetail(trading.SELL, trading.MarketOrder, b.Symbol, qty)
+		entryOrder := bp.pos.EntranceOrder()
+		qty := entryOrder.Amount
+		if !entryOrder.FilledAmount.IsZero() {
+			qty = entryOrder.FilledAmount
+		}
+		exitSide := trading.SELL
+		if bp.pos.IsShort() {
+			exitSide = trading.BUY
+		}
+		order := trading.NewOrderDetail(exitSide, trading.MarketOrder, b.Symbol, qty)
 		order.CreationTime = time.Unix(int64(index), 0)
 		if b.fillMarketOrder(order, candle) {
 			b.exitPosition(bp, order, index)
@@ -354,8 +383,16 @@ func (b *SimulatedBroker) finalizeOpenPositions() {
 	}
 	exitPrice := b.lastCandle.ClosePrice
 	for _, bp := range b.openPositions {
-		qty := bp.pos.EntranceOrder().Amount
-		order := trading.NewOrderDetail(trading.SELL, trading.MarketOrder, b.Symbol, qty)
+		entryOrder := bp.pos.EntranceOrder()
+		qty := entryOrder.Amount
+		if !entryOrder.FilledAmount.IsZero() {
+			qty = entryOrder.FilledAmount
+		}
+		exitSide := trading.SELL
+		if bp.pos.IsShort() {
+			exitSide = trading.BUY
+		}
+		order := trading.NewOrderDetail(exitSide, trading.MarketOrder, b.Symbol, qty)
 		order.CreationTime = time.Unix(int64(b.currentIndex), 0)
 		order.Fill(exitPrice, qty)
 		b.exitPosition(bp, order, b.currentIndex)
@@ -367,6 +404,9 @@ func (b *SimulatedBroker) brokerTradeToTrade(bt brokerTrade) Trade {
 	exit := bt.pos.ExitOrder()
 
 	qty := entry.Amount
+	if !entry.FilledAmount.IsZero() {
+		qty = entry.FilledAmount
+	}
 	var profit decimal.Decimal
 	if bt.pos.IsLong() {
 		profit = exit.FilledPrice.Sub(entry.FilledPrice).Mul(qty)
@@ -503,7 +543,7 @@ func (edb *EventDrivenBacktester) Run(events []Event) (map[string]BacktestResult
 
 	sorted := make([]Event, len(events))
 	copy(sorted, events)
-	sort.Slice(sorted, func(i, j int) bool {
+	sort.SliceStable(sorted, func(i, j int) bool {
 		return sorted[i].Timestamp.Before(sorted[j].Timestamp)
 	})
 
