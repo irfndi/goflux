@@ -1,6 +1,7 @@
 package decimal
 
 import (
+	"encoding/json"
 	"math"
 	"testing"
 )
@@ -608,6 +609,89 @@ func TestDecimal_PowFloat(t *testing.T) {
 				t.Errorf("New(%v).PowFloat(%v) = %v, want %v", tt.base, tt.exp, result.Float(), tt.expected)
 			}
 		})
+	}
+}
+
+func TestDecimal_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    float64
+		expected string
+	}{
+		{"zero", 0, `"0"`},
+		{"positive", 123.456, `"123.456"`},
+		{"negative", -123.456, `"-123.456"`},
+		{"integer", 100, `"100"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := New(tt.input)
+			b, err := d.MarshalJSON()
+			if err != nil {
+				t.Fatalf("MarshalJSON error: %v", err)
+			}
+			if string(b) != tt.expected {
+				t.Errorf("MarshalJSON() = %s, want %s", string(b), tt.expected)
+			}
+		})
+	}
+}
+
+func TestDecimal_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expected    float64
+		expectError bool
+	}{
+		{"string zero", `"0"`, 0, false},
+		{"string positive", `"123.456"`, 123.456, false},
+		{"string negative", `"-123.456"`, -123.456, false},
+		{"number", `42.5`, 42.5, false},
+		{"integer string", `"100"`, 100, false},
+		{"invalid", `"abc"`, 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var d Decimal
+			err := d.UnmarshalJSON([]byte(tt.input))
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("UnmarshalJSON(%q) expected error, got nil", tt.input)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("UnmarshalJSON(%q) unexpected error: %v", tt.input, err)
+			}
+			if math.Abs(d.Float()-tt.expected) > 1e-9 {
+				t.Errorf("UnmarshalJSON(%q) = %v, want %v", tt.input, d.Float(), tt.expected)
+			}
+		})
+	}
+}
+
+func TestDecimal_JSONRoundTrip(t *testing.T) {
+	type container struct {
+		Value Decimal `json:"value"`
+	}
+
+	original := container{Value: New(123.456)}
+	data, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+
+	var decoded container
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	if math.Abs(original.Value.Float()-decoded.Value.Float()) > 1e-9 {
+		t.Errorf("round-trip failed: got %v, want %v", decoded.Value, original.Value)
 	}
 }
 
