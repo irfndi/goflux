@@ -54,12 +54,12 @@ type MCStats struct {
 
 // MCSimulationResult holds the outcome of a Monte Carlo simulation.
 type MCSimulationResult struct {
-	SimulatedEquityCurves [][]metrics.EquityPoint
-	FinalEquityStats      MCStats
-	MaxDrawdownStats      MCStats
-	SharpeStats           MCStats
-	RuinProbability       float64
-	Percentiles           map[string]map[float64]decimal.Decimal
+	SimulatedEquityCurves          [][]metrics.EquityPoint
+	FinalEquityStats               MCStats
+	MaxDrawdownStats               MCStats
+	SharpeStats                    MCStats
+	BelowInitialCapitalProbability float64
+	Percentiles                    map[string]map[float64]decimal.Decimal
 }
 
 // MonteCarloSimulator runs Monte Carlo simulations on backtest results.
@@ -115,12 +115,12 @@ func (mc *MonteCarloSimulator) Run(result BacktestResult) (*MCSimulationResult, 
 	percentiles := mc.computePercentiles(finalEquities, maxDrawdowns, sharpeRatios)
 
 	return &MCSimulationResult{
-		SimulatedEquityCurves: equityCurves,
-		FinalEquityStats:      computeStats(finalEquities),
-		MaxDrawdownStats:      computeStats(maxDrawdowns),
-		SharpeStats:           computeStats(sharpeRatios),
-		RuinProbability:       float64(ruinCount) / float64(simulations),
-		Percentiles:           percentiles,
+		SimulatedEquityCurves:          equityCurves,
+		FinalEquityStats:               computeStats(finalEquities),
+		MaxDrawdownStats:               computeStats(maxDrawdowns),
+		SharpeStats:                    computeStats(sharpeRatios),
+		BelowInitialCapitalProbability: float64(ruinCount) / float64(simulations),
+		Percentiles:                    percentiles,
 	}, nil
 }
 
@@ -165,7 +165,10 @@ func (mc *MonteCarloSimulator) randomStartTrades(trades []Trade) []Trade {
 	}
 	n := len(trades)
 	start := mc.rng.Intn(n)
-	return trades[start:]
+	end := start + 1 + mc.rng.Intn(n-start)
+	subset := make([]Trade, end-start)
+	copy(subset, trades[start:end])
+	return subset
 }
 
 func (mc *MonteCarloSimulator) buildEquityCurve(trades []Trade, initialCapital decimal.Decimal) []metrics.EquityPoint {
@@ -234,17 +237,31 @@ func (mc *MonteCarloSimulator) calculateSharpeFromTrades(trades []Trade) decimal
 }
 
 func (mc *MonteCarloSimulator) computePercentiles(finalEquities, maxDrawdowns, sharpeRatios []decimal.Decimal) map[string]map[float64]decimal.Decimal {
-	percentileKeys := []float64{0.05, 0.25, 0.50, 0.75, 0.95}
 	result := map[string]map[float64]decimal.Decimal{
 		"final_equity": make(map[float64]decimal.Decimal),
 		"max_drawdown": make(map[float64]decimal.Decimal),
 		"sharpe_ratio": make(map[float64]decimal.Decimal),
 	}
 
+	// Standard quintiles
+	percentileKeys := []float64{0.05, 0.25, 0.50, 0.75, 0.95}
 	for _, p := range percentileKeys {
 		result["final_equity"][p] = percentile(finalEquities, p)
 		result["max_drawdown"][p] = percentile(maxDrawdowns, p)
 		result["sharpe_ratio"][p] = percentile(sharpeRatios, p)
+	}
+
+	// Confidence interval bounds derived from config.ConfidenceLevel
+	cl := mc.config.ConfidenceLevel
+	if cl > 0 && cl < 1 {
+		lower := (1 - cl) / 2
+		upper := 1 - lower
+		result["final_equity"][lower] = percentile(finalEquities, lower)
+		result["final_equity"][upper] = percentile(finalEquities, upper)
+		result["max_drawdown"][lower] = percentile(maxDrawdowns, lower)
+		result["max_drawdown"][upper] = percentile(maxDrawdowns, upper)
+		result["sharpe_ratio"][lower] = percentile(sharpeRatios, lower)
+		result["sharpe_ratio"][upper] = percentile(sharpeRatios, upper)
 	}
 
 	return result
@@ -282,7 +299,11 @@ func computeStats(values []decimal.Decimal) MCStats {
 		diff := v.Float() - mean.Float()
 		variance += diff * diff
 	}
-	stdDev := decimal.New(math.Sqrt(variance / float64(len(values))))
+	// Use sample standard deviation (divide by n-1) for consistency with calculateSharpeFromTrades.
+	var stdDev decimal.Decimal
+	if len(values) > 1 {
+		stdDev = decimal.New(math.Sqrt(variance / float64(len(values)-1)))
+	}
 
 	return MCStats{
 		Mean:   mean,

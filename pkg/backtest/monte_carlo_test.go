@@ -44,8 +44,8 @@ func TestMonteCarloSimulator_TradeShuffle(t *testing.T) {
 	assert.True(t, simResult.FinalEquityStats.Mean.GT(decimal.ZERO))
 	assert.True(t, simResult.MaxDrawdownStats.Mean.GTE(decimal.ZERO))
 	assert.True(t, simResult.SharpeStats.Mean.GT(decimal.ZERO))
-	assert.GreaterOrEqual(t, simResult.RuinProbability, 0.0)
-	assert.LessOrEqual(t, simResult.RuinProbability, 1.0)
+	assert.GreaterOrEqual(t, simResult.BelowInitialCapitalProbability, 0.0)
+	assert.LessOrEqual(t, simResult.BelowInitialCapitalProbability, 1.0)
 
 	// Percentiles should exist
 	assert.NotNil(t, simResult.Percentiles["final_equity"])
@@ -107,7 +107,7 @@ func TestMonteCarloSimulator_EmptyTrades(t *testing.T) {
 	require.NotNil(t, simResult)
 
 	// With no trades, all simulations should have the same final equity
-	assert.Equal(t, 0.0, simResult.RuinProbability)
+	assert.Equal(t, 0.0, simResult.BelowInitialCapitalProbability)
 	assert.True(t, simResult.FinalEquityStats.Mean.EQ(decimal.New(1000)))
 	assert.True(t, simResult.FinalEquityStats.Min.EQ(decimal.New(1000)))
 	assert.True(t, simResult.FinalEquityStats.Max.EQ(decimal.New(1000)))
@@ -131,8 +131,8 @@ func TestMonteCarloSimulator_RuinScenario(t *testing.T) {
 	simResult, err := mc.Run(result)
 	require.NoError(t, err)
 
-	// With all negative trades, any ordering results in ruin
-	assert.Equal(t, 1.0, simResult.RuinProbability)
+	// With all negative trades, any ordering results in below initial capital
+	assert.Equal(t, 1.0, simResult.BelowInitialCapitalProbability)
 	assert.True(t, simResult.FinalEquityStats.Mean.LT(decimal.New(1000)))
 }
 
@@ -174,7 +174,7 @@ func TestMonteCarloSimulator_ReproducibleWithSeed(t *testing.T) {
 	require.NoError(t, err)
 
 	// With same seed, results should be identical
-	assert.Equal(t, r1.RuinProbability, r2.RuinProbability)
+	assert.Equal(t, r1.BelowInitialCapitalProbability, r2.BelowInitialCapitalProbability)
 	assert.True(t, r1.FinalEquityStats.Mean.EQ(r2.FinalEquityStats.Mean))
 	assert.True(t, r1.MaxDrawdownStats.Mean.EQ(r2.MaxDrawdownStats.Mean))
 }
