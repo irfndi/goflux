@@ -342,3 +342,22 @@ func (d Decimal) Frac() Decimal {
 	result := new(big.Float).SetInt(z)
 	return Decimal{val: new(big.Float).Sub(d.val, result)}
 }
+
+// MarshalJSON implements json.Marshaler by serializing the decimal as a string.
+func (d Decimal) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + d.String() + `"`), nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler by parsing a string or number.
+func (d *Decimal) UnmarshalJSON(data []byte) error {
+	str := string(data)
+	if len(str) >= 2 && str[0] == '"' && str[len(str)-1] == '"' {
+		str = str[1 : len(str)-1]
+	}
+	val, _, err := big.ParseFloat(str, 10, 256, big.ToNearestEven)
+	if err != nil {
+		return err
+	}
+	d.val = val
+	return nil
+}
