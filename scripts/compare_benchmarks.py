@@ -6,8 +6,9 @@ import re
 
 
 def parse_benchmark_file(filename):
-    """Parse benchmark output file into a dictionary"""
-    results = {}
+    """Parse benchmark output file into a dictionary.
+    Averages across multiple runs (-count=N) for stable comparison."""
+    raw = {}
     with open(filename, "r") as f:
         for line in f:
             # Match lines like: BenchmarkSMA-20    5000000    3.5 ns/op    2 B/op    1 allocs/op
@@ -18,16 +19,23 @@ def parse_benchmark_file(filename):
             )
             if match:
                 name = match.group(1)
-                ops = int(match.group(2))
                 ns_per_op = float(match.group(3))
                 b_per_op = float(match.group(4))
                 allocs_per_op = int(match.group(5))
+                if name not in raw:
+                    raw[name] = {"ns_per_op": [], "b_per_op": [], "allocs_per_op": []}
+                raw[name]["ns_per_op"].append(ns_per_op)
+                raw[name]["b_per_op"].append(b_per_op)
+                raw[name]["allocs_per_op"].append(allocs_per_op)
 
-                results[name] = {
-                    "ns_per_op": ns_per_op,
-                    "b_per_op": b_per_op,
-                    "allocs_per_op": allocs_per_op,
-                }
+    results = {}
+    for name, values in raw.items():
+        results[name] = {
+            "ns_per_op": sum(values["ns_per_op"]) / len(values["ns_per_op"]),
+            "b_per_op": sum(values["b_per_op"]) / len(values["b_per_op"]),
+            "allocs_per_op": sum(values["allocs_per_op"]) / len(values["allocs_per_op"]),
+            "runs": len(values["ns_per_op"]),
+        }
     return results
 
 
