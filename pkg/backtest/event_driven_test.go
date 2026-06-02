@@ -575,3 +575,72 @@ func TestEventDrivenBacktester_EquityTracking(t *testing.T) {
 	assert.True(t, result.FinalEquity.EQ(decimal.New(10002)))
 	assert.True(t, result.NetProfit.EQ(decimal.New(2)))
 }
+
+// shortStrategy enters short at bar 1 and exits at bar 3.
+type shortStrategy struct{}
+
+func (s *shortStrategy) ShouldEnter(index int, record *trading.TradingRecord) bool {
+	return index == 1 && record.CurrentPosition().IsNew()
+}
+
+func (s *shortStrategy) ShouldExit(index int, record *trading.TradingRecord) bool {
+	return index == 3 && record.CurrentPosition().IsOpen()
+}
+
+func TestEventDrivenBacktester_ShortPositionStrategySignal(t *testing.T) {
+	candles := []*series.Candle{
+		createTestCandle(100, 101, 102, 99),
+		createTestCandle(101, 102, 103, 100),
+		createTestCandle(102, 103, 104, 101),
+		createTestCandle(103, 104, 105, 102),
+	}
+	events := createTestEvents("TEST", candles)
+
+	broker := NewSimulatedBroker("TEST", decimal.New(10000))
+	broker.AllowLong = false
+	broker.AllowShort = true
+
+	edb := NewEventDrivenBacktester()
+	edb.Register("TEST", broker, &shortStrategy{})
+
+	results, err := edb.Run(events)
+	require.NoError(t, err)
+
+	result := results["TEST"]
+	require.Equal(t, 1, result.TotalTrades)
+	assert.Equal(t, "short", result.Trades[0].Direction)
+	// Entered short at bar 1 close = 102, exited at bar 3 close = 104
+	// Short profit = (entry - exit) * qty = (102 - 104) * 1 = -2
+	assert.True(t, result.Trades[0].Profit.IsNegative())
+}
+
+func TestEventDrivenBacktester_ShortPositionPendingOrder(t *testing.T) {
+	candles := []*series.Candle{
+		createTestCandle(100, 101, 102, 99),
+		createTestCandle(101, 102, 103, 100),
+		createTestCandle(102, 103, 104, 101),
+	}
+	events := createTestEvents("TEST", candles)
+
+	broker := NewSimulatedBroker("TEST", decimal.New(10000))
+	broker.AllowShort = true
+	edb := NewEventDrivenBacktester()
+	edb.Register("TEST", broker, &edNeverEnterStrategy{})
+
+	// Enter short via market order at bar 0
+	marketOrder := trading.NewOrderDetail(trading.SELL, trading.MarketOrder, "TEST", decimal.ONE)
+	broker.SubmitOrder(marketOrder)
+
+	// Close short with buy limit at 103 (fills when high >= 103 at bar 2)
+	limitOrder := trading.NewOrderDetail(trading.BUY, trading.LimitOrder, "TEST", decimal.ONE)
+	limitOrder.Price = decimal.New(103)
+	broker.SubmitOrder(limitOrder)
+
+	results, err := edb.Run(events)
+	require.NoError(t, err)
+
+	result := results["TEST"]
+	require.Equal(t, 1, result.TotalTrades)
+	assert.Equal(t, "short", result.Trades[0].Direction)
+	assert.True(t, result.Trades[0].ExitPrice.EQ(decimal.New(103)))
+}
