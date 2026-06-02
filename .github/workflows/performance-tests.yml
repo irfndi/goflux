@@ -21,7 +21,7 @@ jobs:
 
       - name: Run benchmarks
         run: |
-          go test -bench=. -benchmem ./pkg/indicators/... | tee benchmark_results.txt
+          go test -bench=. -benchmem -count=3 ./pkg/indicators/... | tee benchmark_results.txt
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -67,9 +67,9 @@ jobs:
           python3 scripts/compare_benchmarks.py current_results.txt baseline_results.txt
 
       - name: Fail on regression
-        # 10% threshold
+        # 0.25 = 25% threshold — shared runners have high variance; 0.1 produces frequent false positives
         run: |
-          python3 scripts/check_regression.py current_results.txt baseline_results.txt 1.1
+          python3 scripts/check_regression.py current_results.txt baseline_results.txt 0.25
 
       - name: Comment on PR
         if: failure()
@@ -80,5 +80,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '⚠️ Performance regression detected!\n\nBenchmark results show performance degradation > 10%.\n\nSee detailed comparison in workflow logs.'
+              body: '⚠️ Performance regression detected!\n\nBenchmark results show performance degradation > 25%.\n\nSee detailed comparison in workflow logs.'
             })

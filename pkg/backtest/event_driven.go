@@ -264,7 +264,10 @@ func (b *SimulatedBroker) fillStopOrder(order *trading.Order, candle *series.Can
 }
 
 func (b *SimulatedBroker) executeFill(order *trading.Order, price decimal.Decimal, candle *series.Candle) bool {
-	slippage := b.SlippageModel(order, candle)
+	var slippage decimal.Decimal
+	if order.Type != trading.LimitOrder {
+		slippage = b.SlippageModel(order, candle)
+	}
 	var fillPrice decimal.Decimal
 	if order.Side == trading.BUY {
 		fillPrice = price.Add(slippage)
@@ -356,9 +359,11 @@ func (b *SimulatedBroker) closeAllPositions(index int, candle *series.Candle) {
 		}
 		order := trading.NewOrderDetail(exitSide, trading.MarketOrder, b.Symbol, qty)
 		order.CreationTime = time.Unix(int64(index), 0)
-		if b.fillMarketOrder(order, candle) {
-			b.exitPosition(bp, order, index)
+		if !b.fillMarketOrder(order, candle) {
+			// Prevent infinite loop if market order cannot fill.
+			break
 		}
+		b.exitPosition(bp, order, index)
 	}
 }
 
@@ -386,7 +391,10 @@ func (b *SimulatedBroker) finalizeOpenPositions() {
 		return
 	}
 	exitPrice := b.lastCandle.ClosePrice
-	for _, bp := range b.openPositions {
+	// Copy slice to avoid mutation during iteration by exitPosition.
+	positions := make([]*brokerPosition, len(b.openPositions))
+	copy(positions, b.openPositions)
+	for _, bp := range positions {
 		entryOrder := bp.pos.EntranceOrder()
 		qty := effectiveQty(entryOrder)
 		exitSide := trading.SELL
