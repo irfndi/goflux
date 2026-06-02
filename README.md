@@ -124,6 +124,49 @@ strategy := goflux.RuleStrategy{
 strategy.ShouldEnter(0, record) // returns false
 ```
 
+### Parameter Optimization
+
+GoFlux includes a parameter optimization framework for systematically discovering optimal strategy parameter combinations via grid search or random search.
+
+```go
+import "github.com/irfndi/goflux/pkg/backtest"
+
+config := backtest.OptimizationConfig{
+    Method: backtest.OptMethodGridSearch,
+    ParameterSpaces: []backtest.ParameterSpace{
+        {Name: "ema_window", Min: 5, Max: 20, Step: 5},
+        {Name: "rsi_threshold", Min: 30, Max: 50, Step: 10},
+    },
+    ObjectiveFunc: backtest.ObjectiveNetProfit,
+    MaxWorkers:    4, // Parallel execution
+}
+
+optimizer, err := backtest.NewOptimizer(config)
+if err != nil {
+    log.Fatal(err)
+}
+
+result, err := optimizer.Optimize(
+    series,
+    func(params map[string]float64) trading.Strategy {
+        emaWindow := int(params["ema_window"])
+        rsiThreshold := params["rsi_threshold"]
+        // Build strategy with these parameters...
+        return myStrategyFactory(emaWindow, rsiThreshold)
+    },
+    backtest.BacktestConfig{
+        InitialCapital: decimal.New(10000),
+        AllowLong:      true,
+    },
+)
+
+fmt.Printf("Best config: %v\n", result.BestConfig)
+fmt.Printf("Best score: %f\n", result.BestScore)
+fmt.Printf("Total runs: %d\n", result.TotalRuns)
+```
+
+Built-in objective functions: `ObjectiveNetProfit`, `ObjectiveProfitFactor`, `ObjectiveWinRate`, `ObjectiveMaxDrawdown`, `ObjectiveSharpeRatio`. Custom objective functions are also supported.
+
 ## Issue Tracking
 
 This project uses **Beads** for issue tracking - a modern, AI-native tool designed for live directly in your codebase alongside your code.
