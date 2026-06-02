@@ -167,6 +167,57 @@ fmt.Printf("Total runs: %d\n", result.TotalRuns)
 
 Built-in objective functions: `ObjectiveNetProfit`, `ObjectiveProfitFactor`, `ObjectiveWinRate`, `ObjectiveMaxDrawdown`, `ObjectiveSharpeRatio`. Custom objective functions are also supported.
 
+### Event-Driven Backtesting
+
+GoFlux provides an event-driven backtesting engine for realistic order execution simulation. Unlike the vectorized backtester which fills at bar close, the event-driven engine processes bars sequentially and supports limit orders, stop orders, partial fills, slippage, and commission models.
+
+```go
+import "github.com/irfndi/goflux/pkg/backtest"
+
+// Create events from your market data
+events := []backtest.Event{
+    {
+        Type:      backtest.EventBar,
+        Timestamp: time.Now(),
+        Symbol:    "BTC-USD",
+        Data: backtest.BarEventData{
+            Candle: candle, // *series.Candle
+        },
+    },
+}
+
+// Configure a simulated broker with realistic fill models
+broker := backtest.NewSimulatedBroker("BTC-USD", decimal.New(10000))
+broker.FillPriceSource = backtest.FillAtOpen
+broker.CommissionModel = backtest.PercentCommission(0.001) // 0.1%
+broker.SlippageModel = backtest.FixedSlippage(decimal.New(0.5))
+
+// Submit a limit order that fills when price crosses the limit
+limitOrder := trading.NewOrderDetail(trading.BUY, trading.LimitOrder, "BTC-USD", decimal.New(1))
+limitOrder.Price = decimal.New(50000)
+broker.SubmitOrder(limitOrder)
+
+// Run the event-driven backtest
+edb := backtest.NewEventDrivenBacktester()
+edb.Register("BTC-USD", broker, strategy)
+
+results, err := edb.Run(events)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Trades: %d, Net Profit: %s\n",
+    results["BTC-USD"].TotalTrades,
+    results["BTC-USD"].NetProfit.FormattedString(2))
+```
+
+The event-driven engine supports:
+- **Market orders** filled at open or close of the bar
+- **Limit orders** filled when price crosses the limit
+- **Stop orders** filled when price crosses the stop trigger
+- **Partial fills** via configurable `PartialFillModel`
+- **Multi-asset** backtesting with independent brokers per symbol
+
 ## Issue Tracking
 
 This project uses **Beads** for issue tracking - a modern, AI-native tool designed for live directly in your codebase alongside your code.
