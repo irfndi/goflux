@@ -59,12 +59,12 @@ jobs:
       - name: Run current benchmarks
         run: |
           cd $GITHUB_WORKSPACE
-          go test -bench=. -benchmem ./pkg/indicators/... > current_results.txt
+          go test -bench=. -benchmem -benchtime=100ms -count=3 ./pkg/indicators/... > current_results.txt
 
       - name: Run baseline benchmarks
         run: |
           cd $GITHUB_WORKSPACE/baseline
-          go test -bench=. -benchmem ./pkg/indicators/... > $GITHUB_WORKSPACE/baseline_results.txt
+          go test -bench=. -benchmem -benchtime=100ms -count=3 ./pkg/indicators/... > $GITHUB_WORKSPACE/baseline_results.txt
 
       - name: Compare results
         run: |
