@@ -12,18 +12,15 @@ type Decimal struct {
 	val *big.Float
 }
 
-func (d Decimal) bigFloatOrZero() *big.Float {
-	if d.val == nil {
-		return big.NewFloat(0)
-	}
-	return d.val
-}
-
 var (
 	// ZERO is a Decimal with value 0
 	ZERO = New(0)
 	// ONE is a Decimal with value 1
 	ONE = New(1)
+	// zeroFloat is used for comparisons with a zero-value Decimal. big.Float's
+	// zero value is a valid immutable zero, so this avoids allocating a new
+	// big.Float on every comparison while preserving nil-safe semantics.
+	zeroFloat big.Float
 )
 
 // New creates a new Decimal from a float64
@@ -107,26 +104,41 @@ func (d Decimal) Div(d2 Decimal) Decimal {
 
 // GT returns true if d > d2
 func (d Decimal) GT(d2 Decimal) bool {
+	if d.val != nil && d2.val != nil {
+		return d.val.Cmp(d2.val) > 0
+	}
 	return d.Cmp(d2) > 0
 }
 
 // GTE returns true if d >= d2
 func (d Decimal) GTE(d2 Decimal) bool {
+	if d.val != nil && d2.val != nil {
+		return d.val.Cmp(d2.val) >= 0
+	}
 	return d.Cmp(d2) >= 0
 }
 
 // LT returns true if d < d2
 func (d Decimal) LT(d2 Decimal) bool {
+	if d.val != nil && d2.val != nil {
+		return d.val.Cmp(d2.val) < 0
+	}
 	return d.Cmp(d2) < 0
 }
 
 // LTE returns true if d <= d2
 func (d Decimal) LTE(d2 Decimal) bool {
+	if d.val != nil && d2.val != nil {
+		return d.val.Cmp(d2.val) <= 0
+	}
 	return d.Cmp(d2) <= 0
 }
 
 // EQ returns true if d == d2
 func (d Decimal) EQ(d2 Decimal) bool {
+	if d.val != nil && d2.val != nil {
+		return d.val.Cmp(d2.val) == 0
+	}
 	return d.Cmp(d2) == 0
 }
 
@@ -246,7 +258,16 @@ func (d Decimal) PowFloat(y float64) Decimal {
 //	 0 if d == d2
 //	+1 if d >  d2
 func (d Decimal) Cmp(d2 Decimal) int {
-	return d.bigFloatOrZero().Cmp(d2.bigFloatOrZero())
+	switch {
+	case d.val == nil && d2.val == nil:
+		return 0
+	case d.val == nil:
+		return zeroFloat.Cmp(d2.val)
+	case d2.val == nil:
+		return d.val.Cmp(&zeroFloat)
+	default:
+		return d.val.Cmp(d2.val)
+	}
 }
 
 // Sign returns -1 if d < 0, 0 if d == 0, +1 if d > 0
