@@ -127,3 +127,23 @@ func TestTimeSeries_LastIndex(t *testing.T) {
 
 	assert.EqualValues(t, 1, ts.LastIndex())
 }
+
+func TestTimeSeries_GetCandlePair(t *testing.T) {
+	ts := series.NewTimeSeries()
+	first := series.NewCandle(series.NewTimePeriod(time.Now(), time.Minute))
+	second := series.NewCandle(series.NewTimePeriod(time.Now().Add(time.Minute), time.Minute))
+	ts.AddCandle(first)
+	ts.AddCandle(second)
+
+	current, previous := ts.GetCandlePair(1)
+	assert.Same(t, second, current)
+	assert.Same(t, first, previous)
+
+	current, previous = ts.GetCandlePair(0)
+	assert.Same(t, first, current)
+	assert.Nil(t, previous)
+
+	current, previous = ts.GetCandlePair(2)
+	assert.Nil(t, current)
+	assert.Nil(t, previous)
+}

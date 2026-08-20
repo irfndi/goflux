@@ -107,6 +107,26 @@ func (ts *TimeSeries) GetCandle(index int) *Candle {
 	return ts.Candles[index]
 }
 
+// GetCandlePair returns the candle at index and its immediate predecessor.
+// Both lookups share one read lock so indicators that need adjacent candles
+// do not pay for multiple lock acquisitions.
+func (ts *TimeSeries) GetCandlePair(index int) (current, previous *Candle) {
+	if ts == nil {
+		return nil, nil
+	}
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
+	if index < 0 || index >= len(ts.Candles) {
+		return nil, nil
+	}
+	current = ts.Candles[index]
+	if index > 0 {
+		previous = ts.Candles[index-1]
+	}
+	return current, previous
+}
+
 // Length returns the number of candles in the series
 // Thread-safe: uses read lock.
 func (ts *TimeSeries) Length() int {

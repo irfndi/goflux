@@ -19,15 +19,17 @@ func NewTrueRangeIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (tri trueRangeIndicator) Calculate(index int) decimal.Decimal {
-	if tri.series == nil || index < 0 || index >= tri.series.Length() {
+	if tri.series == nil || index < 0 {
 		return decimal.ZERO
 	}
 
-	candle := tri.series.GetCandle(index)
+	candle, previous := tri.series.GetCandlePair(index)
+	if candle == nil {
+		return decimal.ZERO
+	}
 	if index == 0 {
 		return candle.MaxPrice.Sub(candle.MinPrice).Abs()
 	}
-	previous := tri.series.GetCandle(index - 1)
 	if previous == nil {
 		return decimal.ZERO
 	}
