@@ -20,6 +20,7 @@ type emaIndicator struct {
 // the given windowSize, with values closer to current index given more weight. A more in-depth explanation can be found here:
 // http://www.investopedia.com/terms/e/ema.asp
 func NewEMAIndicator(indicator Indicator, window int) Indicator {
+	window = safeWindow(window)
 	telemetry.ReportUsage("EMA", map[string]string{"window": strconv.Itoa(window)})
 	return &emaIndicator{
 		indicator:   indicator,
@@ -30,6 +31,9 @@ func NewEMAIndicator(indicator Indicator, window int) Indicator {
 }
 
 func (ema *emaIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || ema.indicator == nil {
+		return decimal.ZERO
+	}
 	if cachedValue := returnIfCached(ema, index, func(i int) decimal.Decimal {
 		return NewSimpleMovingAverage(ema.indicator, ema.window).Calculate(i)
 	}); cachedValue != nil {

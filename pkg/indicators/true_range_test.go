@@ -11,7 +11,7 @@ func TestTrueRangeIndicator(t *testing.T) {
 	trueRangeIndicator := indicators.NewTrueRangeIndicator(testutils.MockedTimeSeries)
 
 	expectedValues := []float64{
-		0,
+		2,
 		2,
 		2,
 		2,

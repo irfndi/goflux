@@ -60,9 +60,8 @@ func BenchmarkHullMovingAverage(b *testing.B) {
 }
 
 func BenchmarkKaufmanAdaptiveMA(b *testing.B) {
-	benchmarkIndicatorConstruction(b, func() Indicator {
-		return NewKAMAIndicator(sharedTimeSeries, 10)
-	})
+	// KAMA is recursive; measure the steady-state cached path after initialization.
+	benchmarkIndicator(b, NewKAMAIndicator(sharedTimeSeries, 10))
 }
 
 func BenchmarkModifiedMovingAverage(b *testing.B) {
@@ -188,9 +187,8 @@ func BenchmarkAccumulationDistribution(b *testing.B) {
 // --- Trend ---
 
 func BenchmarkParabolicSAR(b *testing.B) {
-	benchmarkIndicatorConstruction(b, func() Indicator {
-		return NewParabolicSARIndicator(sharedTimeSeries)
-	})
+	// Parabolic SAR is recursive; measure the steady-state cached path after initialization.
+	benchmarkIndicator(b, NewParabolicSARIndicator(sharedTimeSeries))
 }
 
 func BenchmarkIchimoku(b *testing.B) {

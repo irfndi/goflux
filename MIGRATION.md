@@ -22,12 +22,12 @@ import "github.com/sdcoffey/techan"
 import "github.com/irfndi/goflux/pkg"
 ```
 
-The exported API stays compatible where possible; GoFlux keeps the same overall concepts (time series, indicators, strategies, rules) while continuing maintenance and adding new indicators/tests over time.
+The legacy root facade preserves the v0.0.5 factory-variable API and the historical database scaffolds. New functionality is organized in subpackages (`analysis`, `backtest`, `database`, `decimal`, `indicators`, `series`, `telemetry`, and `trading`). Database backends remain scaffolds and return an explicit not-implemented error until a client is configured.
 
 ## Project Layout
 
-GoFlux is currently organized as a single Go package under `pkg/`, with usage examples under `example/`.
+GoFlux is organized as multiple Go packages under `pkg/`, with usage examples under `example/`.
 
 ## Next Steps
 
-See [BEADS.md](BEADS.md) for the current roadmap and ongoing work.
+Use `bd ready` for the current issue-tracking roadmap and see `AGENTS.md` for the project workflow.

@@ -38,6 +38,9 @@ func ParseTimePeriod(period string) (TimePeriod, error) {
 
 	formats := make([]string, len(dateMatches))
 	timeStrings := make([]string, len(dateMatches))
+	if len(dateMatches) == 0 || len(dateMatches) > 2 {
+		return TimePeriod{}, fmt.Errorf("expected one or two dates in time period %q", period)
+	}
 
 	for i, j := 0, 0; i < len(dateMatches); i++ {
 		date := period[dateMatches[i][0]:dateMatches[i][1]]
@@ -104,6 +107,7 @@ func Parse(timerange string) (tr TimePeriod, err error) {
 
 	if tr.Start, err = time.Parse(layout, start); err != nil {
 		err = fmt.Errorf("could not parse time string %s", start)
+		return
 	}
 
 	if end == "" {

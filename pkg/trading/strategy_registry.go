@@ -28,6 +28,12 @@ func NewStrategyRegistry() *StrategyRegistry {
 }
 
 func (sr *StrategyRegistry) Register(name string, factory StrategyFactory) {
+	if sr == nil {
+		return
+	}
+	if sr.strategies == nil {
+		sr.strategies = make(map[string]NamedStrategy)
+	}
 	sr.strategies[name] = NamedStrategy{
 		Name:    name,
 		Factory: factory,
@@ -43,6 +49,9 @@ func (sr *StrategyRegistry) Instantiate(name string, ts *series.TimeSeries, para
 	strategy, ok := sr.Lookup(name)
 	if !ok {
 		return nil, fmt.Errorf("strategy %s not found", name)
+	}
+	if strategy.Factory == nil {
+		return nil, fmt.Errorf("strategy %s has no factory", name)
 	}
 	return strategy.Factory(ts, params), nil
 }

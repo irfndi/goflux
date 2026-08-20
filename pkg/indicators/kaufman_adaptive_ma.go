@@ -1,6 +1,8 @@
 package indicators
 
 import (
+	"sync"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
 )
@@ -15,9 +17,12 @@ type kamaIndicator struct {
 	smoothing2  decimal.Decimal
 	prevKAMA    decimal.Decimal
 	initialized bool
+	results     []decimal.Decimal
+	mu          sync.Mutex
 }
 
 func NewKAMAIndicator(s *series.TimeSeries, window int) Indicator {
+	window = safeWindow(window)
 	kama := &kamaIndicator{
 		series:      s,
 		indicator:   NewClosePriceIndicator(s),
@@ -32,37 +37,51 @@ func NewKAMAIndicator(s *series.TimeSeries, window int) Indicator {
 }
 
 func (k *kamaIndicator) Calculate(index int) decimal.Decimal {
-	if index < k.erWindow-1 {
-		return k.indicator.Calculate(index)
+	if k == nil || k.series == nil || index < 0 || index >= k.series.Length() {
+		return decimal.ZERO
+	}
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	if index < len(k.results) {
+		return k.results[index]
 	}
 
-	currentPrice := k.indicator.Calculate(index)
+	for i := len(k.results); i <= index; i++ {
+		if i < k.erWindow-1 {
+			k.results = append(k.results, k.indicator.Calculate(i))
+			continue
+		}
 
-	if !k.initialized {
-		k.prevKAMA = k.calculateSMA(index, k.window)
-		k.initialized = true
-		return k.prevKAMA
+		currentPrice := k.indicator.Calculate(i)
+
+		if !k.initialized {
+			k.prevKAMA = k.calculateSMA(i, k.window)
+			k.initialized = true
+			k.results = append(k.results, k.prevKAMA)
+			continue
+		}
+
+		change := currentPrice.Sub(k.indicator.Calculate(i - k.erWindow))
+		volatility := k.calculateVolatility(i, k.erWindow)
+
+		er := decimal.ZERO
+		if !volatility.Zero() {
+			er = change.Abs().Div(volatility)
+		}
+
+		alpha := er.Mul(k.smoothing1.Add(k.smoothing2)).Add(k.smoothing2)
+		if alpha.GT(decimal.ONE) {
+			alpha = decimal.ONE
+		}
+		if alpha.LT(decimal.New(0.0001)) {
+			alpha = decimal.New(0.0001)
+		}
+
+		k.prevKAMA = k.prevKAMA.Add(alpha.Mul(currentPrice.Sub(k.prevKAMA)))
+		k.results = append(k.results, k.prevKAMA)
 	}
 
-	change := currentPrice.Sub(k.indicator.Calculate(index - k.erWindow))
-	volatility := k.calculateVolatility(index, k.erWindow)
-
-	er := decimal.ZERO
-	if !volatility.Zero() {
-		er = change.Abs().Div(volatility)
-	}
-
-	alpha := er.Mul(k.smoothing1.Add(k.smoothing2)).Add(k.smoothing2)
-	if alpha.GT(decimal.ONE) {
-		alpha = decimal.ONE
-	}
-	if alpha.LT(decimal.New(0.0001)) {
-		alpha = decimal.New(0.0001)
-	}
-
-	k.prevKAMA = k.prevKAMA.Add(alpha.Mul(currentPrice.Sub(k.prevKAMA)))
-
-	return k.prevKAMA
+	return k.results[index]
 }
 
 func (k *kamaIndicator) calculateSMA(index int, window int) decimal.Decimal {

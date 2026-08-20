@@ -72,16 +72,22 @@ func (m *mamaIndicator) compute(index int) {
 	for i := len(m.results); i <= index; i++ {
 		price := m.indicator.Calculate(i)
 
-		// Hilbert Transform placeholder logic for adaptability
-		// In a full implementation, we'd calculate Period and Phase here.
-
-		// For now, use a simplified adaptability based on price change
 		prevMAMA := m.results[i-1].mama
 		prevFAMA := m.results[i-1].fama
 
-		// Alpha calculation would normally be based on Phase
-		// alpha = FastLimit / (1 + ABS(PhaseChange)) or similar
-		alpha := m.fastLimit // Simplified
+		// Approximate the adaptive response using the normalized price change:
+		// fast markets use fastLimit while quiet markets move toward slowLimit.
+		alpha := m.fastLimit
+		if previous := m.indicator.Calculate(i - 1); !previous.IsZero() {
+			change := price.Sub(previous).Abs().Div(previous.Abs())
+			alpha = m.fastLimit / (1 + change.Float())
+		}
+		if alpha < m.slowLimit {
+			alpha = m.slowLimit
+		}
+		if alpha > m.fastLimit {
+			alpha = m.fastLimit
+		}
 
 		mama := price.Mul(decimal.New(alpha)).Add(decimal.ONE.Sub(decimal.New(alpha)).Mul(prevMAMA))
 		fama := mama.Mul(decimal.New(alpha * 0.5)).Add(decimal.ONE.Sub(decimal.New(alpha * 0.5)).Mul(prevFAMA))

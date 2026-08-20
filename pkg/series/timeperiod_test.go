@@ -283,3 +283,15 @@ func TestTimePeriod_UTC(t *testing.T) {
 	assert.EqualValues(t, tp.Start.Location().String(), "UTC")
 	assert.EqualValues(t, tp.End.Location().String(), "UTC")
 }
+
+func TestParseTimePeriodRejectsInvalidDateCount(t *testing.T) {
+	_, err := series.ParseTimePeriod("not a date")
+	assert.Error(t, err)
+	_, err = series.ParseTimePeriod("2009-01-01 2010-01-01 2011-01-01")
+	assert.Error(t, err)
+}
+
+func TestParseRejectsInvalidStartWhenEndIsValid(t *testing.T) {
+	_, err := series.Parse("02/30/2020:01/01/2021")
+	assert.Error(t, err)
+}

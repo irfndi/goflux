@@ -84,10 +84,19 @@ func NewBacktester(s *series.TimeSeries, strategy trading.Strategy) *Backtester 
 
 // AddAnalyzer adds an analyzer to the backtester.
 func (b *Backtester) AddAnalyzer(a Analyzer) {
+	if b == nil {
+		return
+	}
+	if b.analyzers == nil {
+		b.analyzers = NewAnalyzerRegistry()
+	}
 	b.analyzers.Add(a)
 }
 
 func (b *Backtester) Run(config BacktestConfig) BacktestResult {
+	if b == nil || b.series == nil || b.strategy == nil {
+		return BacktestResult{InitialCapital: config.InitialCapital, FinalEquity: config.InitialCapital}
+	}
 	positions := make([]Position, 0)
 	trades := make([]Trade, 0)
 	equityCurve := make([]decimal.Decimal, len(b.series.Candles))
@@ -99,7 +108,10 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 		b.step(i, &positions, &trades, equityCurve, &equity, record, config)
 	}
 
-	b.finalizeOpenPositions(&positions, &trades, &equity)
+	b.finalizeOpenPositions(&positions, &trades, &equity, config)
+	if len(equityCurve) > 0 {
+		equityCurve[len(equityCurve)-1] = equity
+	}
 
 	result := b.calculateResults(trades, equityCurve, config.InitialCapital, equity)
 
@@ -132,7 +144,9 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 		}
 	}
 
-	result.Analysis = b.analyzers.Run(metricsTrades, metricsEquityCurve)
+	if b.analyzers != nil {
+		result.Analysis = b.analyzers.Run(metricsTrades, metricsEquityCurve)
+	}
 
 	return result
 }
@@ -146,17 +160,21 @@ func (b *Backtester) step(
 	record *trading.TradingRecord,
 	config BacktestConfig,
 ) {
-	equityCurve[index] = *equity
-
 	candle := b.series.Candles[index]
 	if candle == nil {
+		equityCurve[index] = *equity
 		return
 	}
 
 	currentPrice := candle.ClosePrice
 
-	b.closePositionsByStops(index, currentPrice, positions, trades, equity, record)
+	b.closePositionsByStops(index, currentPrice, positions, trades, equity, record, config)
 	b.applyStrategy(index, currentPrice, positions, trades, equity, record, config)
+	markedEquity := *equity
+	for _, position := range *positions {
+		markedEquity = markedEquity.Add(b.positionProfit(position, currentPrice))
+	}
+	equityCurve[index] = markedEquity
 }
 
 func (b *Backtester) closePositionsByStops(
@@ -166,6 +184,7 @@ func (b *Backtester) closePositionsByStops(
 	trades *[]Trade,
 	equity *decimal.Decimal,
 	record *trading.TradingRecord,
+	config BacktestConfig,
 ) {
 	for j := len(*positions) - 1; j >= 0; j-- {
 		pos := (*positions)[j]
@@ -173,13 +192,19 @@ func (b *Backtester) closePositionsByStops(
 			continue
 		}
 
-		profit := b.positionProfit(pos, currentPrice)
-		*trades = append(*trades, b.makeTrade(pos, index, currentPrice, profit))
+		exitPrice := b.exitPrice(currentPrice, pos.Direction, config)
+		profit := b.positionProfit(pos, exitPrice)
+		*trades = append(*trades, b.makeTrade(pos, index, exitPrice, profit))
 		*equity = equity.Add(profit)
+		*equity = equity.Sub(config.Commission)
 
+		exitSide := trading.SELL
+		if pos.Direction == "short" {
+			exitSide = trading.BUY
+		}
 		record.Operate(trading.Order{
-			Side:   trading.SELL,
-			Price:  currentPrice,
+			Side:   exitSide,
+			Price:  exitPrice,
 			Amount: pos.Quantity,
 		})
 
@@ -199,6 +224,8 @@ func (b *Backtester) applyStrategy(
 	if b.strategy.ShouldEnter(index, record) {
 		if config.AllowLong {
 			b.openLong(index, currentPrice, positions, equity, record, config)
+		} else if config.AllowShort {
+			b.openShort(index, currentPrice, positions, equity, record, config)
 		}
 		return
 	}
@@ -207,7 +234,7 @@ func (b *Backtester) applyStrategy(
 		return
 	}
 
-	b.closeAllPositions(index, currentPrice, positions, trades, equity, record)
+	b.closeAllPositions(index, currentPrice, positions, trades, equity, record, config)
 }
 
 func (b *Backtester) openLong(
@@ -220,21 +247,43 @@ func (b *Backtester) openLong(
 ) {
 	quantity := config.PositionSize
 	if quantity.IsZero() {
-		quantity = equity.Div(currentPrice)
+		quantity = b.positionQuantity(*equity, currentPrice, config)
 	}
+	entryPrice := b.entryPrice(currentPrice, "long", config)
 
 	*positions = append(*positions, Position{
 		EntryTime:  index,
-		EntryPrice: currentPrice,
+		EntryPrice: entryPrice,
 		Direction:  "long",
 		Quantity:   quantity,
 	})
 
 	record.Operate(trading.Order{
 		Side:   trading.BUY,
-		Price:  currentPrice,
+		Price:  entryPrice,
 		Amount: quantity,
 	})
+	*equity = equity.Sub(config.Commission)
+}
+
+func (b *Backtester) openShort(
+	index int,
+	currentPrice decimal.Decimal,
+	positions *[]Position,
+	equity *decimal.Decimal,
+	record *trading.TradingRecord,
+	config BacktestConfig,
+) {
+	quantity := config.PositionSize
+	if quantity.IsZero() {
+		quantity = b.positionQuantity(*equity, currentPrice, config)
+	}
+	entryPrice := b.entryPrice(currentPrice, "short", config)
+	*positions = append(*positions, Position{
+		EntryTime: index, EntryPrice: entryPrice, Direction: "short", Quantity: quantity,
+	})
+	record.Operate(trading.Order{Side: trading.SELL, Price: entryPrice, Amount: quantity})
+	*equity = equity.Sub(config.Commission)
 }
 
 func (b *Backtester) closeAllPositions(
@@ -244,16 +293,23 @@ func (b *Backtester) closeAllPositions(
 	trades *[]Trade,
 	equity *decimal.Decimal,
 	record *trading.TradingRecord,
+	config BacktestConfig,
 ) {
 	for j := len(*positions) - 1; j >= 0; j-- {
 		pos := (*positions)[j]
-		profit := b.positionProfit(pos, exitPrice)
-		*trades = append(*trades, b.makeTrade(pos, exitTime, exitPrice, profit))
+		adjustedExitPrice := b.exitPrice(exitPrice, pos.Direction, config)
+		profit := b.positionProfit(pos, adjustedExitPrice)
+		*trades = append(*trades, b.makeTrade(pos, exitTime, adjustedExitPrice, profit))
 		*equity = equity.Add(profit)
+		*equity = equity.Sub(config.Commission)
 
+		exitSide := trading.SELL
+		if pos.Direction == "short" {
+			exitSide = trading.BUY
+		}
 		record.Operate(trading.Order{
-			Side:   trading.SELL,
-			Price:  exitPrice,
+			Side:   exitSide,
+			Price:  adjustedExitPrice,
 			Amount: pos.Quantity,
 		})
 
@@ -261,7 +317,7 @@ func (b *Backtester) closeAllPositions(
 	}
 }
 
-func (b *Backtester) finalizeOpenPositions(positions *[]Position, trades *[]Trade, equity *decimal.Decimal) {
+func (b *Backtester) finalizeOpenPositions(positions *[]Position, trades *[]Trade, equity *decimal.Decimal, config BacktestConfig) {
 	if len(*positions) == 0 || len(b.series.Candles) == 0 {
 		return
 	}
@@ -274,10 +330,33 @@ func (b *Backtester) finalizeOpenPositions(positions *[]Position, trades *[]Trad
 	exitPrice := lastCandle.ClosePrice
 
 	for _, pos := range *positions {
-		profit := b.positionProfit(pos, exitPrice)
-		*trades = append(*trades, b.makeTrade(pos, lastIndex, exitPrice, profit))
+		adjustedExitPrice := b.exitPrice(exitPrice, pos.Direction, config)
+		profit := b.positionProfit(pos, adjustedExitPrice)
+		*trades = append(*trades, b.makeTrade(pos, lastIndex, adjustedExitPrice, profit))
 		*equity = equity.Add(profit)
+		*equity = equity.Sub(config.Commission)
 	}
+}
+
+func (b *Backtester) positionQuantity(equity, price decimal.Decimal, config BacktestConfig) decimal.Decimal {
+	if config.RiskPerTrade.IsPositive() {
+		return equity.Mul(config.RiskPerTrade).Div(price)
+	}
+	return equity.Div(price)
+}
+
+func (b *Backtester) entryPrice(price decimal.Decimal, direction string, config BacktestConfig) decimal.Decimal {
+	if direction == "short" {
+		return price.Sub(config.Slippage)
+	}
+	return price.Add(config.Slippage)
+}
+
+func (b *Backtester) exitPrice(price decimal.Decimal, direction string, config BacktestConfig) decimal.Decimal {
+	if direction == "short" {
+		return price.Add(config.Slippage)
+	}
+	return price.Sub(config.Slippage)
 }
 
 func (b *Backtester) exitTriggered(pos Position, currentPrice decimal.Decimal) bool {

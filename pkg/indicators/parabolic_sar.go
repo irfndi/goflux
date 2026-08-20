@@ -1,6 +1,8 @@
 package indicators
 
 import (
+	"sync"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 	"github.com/irfndi/goflux/pkg/series"
 )
@@ -17,6 +19,8 @@ type parabolicSARIndicator struct {
 	prevAF      decimal.Decimal
 	trend       int
 	initialized bool
+	results     []decimal.Decimal
+	mu          sync.Mutex
 }
 
 func NewParabolicSARIndicator(s *series.TimeSeries) Indicator {
@@ -31,15 +35,30 @@ func NewParabolicSARIndicator(s *series.TimeSeries) Indicator {
 }
 
 func (ps *parabolicSARIndicator) Calculate(index int) decimal.Decimal {
-	if index < 1 {
-		return ps.high.Calculate(index)
+	if ps == nil || ps.series == nil || index < 0 || index >= ps.series.Length() {
+		return decimal.ZERO
 	}
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
 
-	if !ps.initialized {
+	if index < len(ps.results) {
+		return ps.results[index]
+	}
+	if len(ps.results) == 0 {
+		ps.results = append(ps.results, ps.high.Calculate(0))
+	}
+	if !ps.initialized && index >= 1 {
 		ps.initialize()
-		return ps.prevSAR
+		ps.results = append(ps.results, ps.prevSAR)
 	}
+	for i := len(ps.results); i <= index; i++ {
+		ps.step(i)
+		ps.results = append(ps.results, ps.prevSAR)
+	}
+	return ps.results[index]
+}
 
+func (ps *parabolicSARIndicator) step(index int) {
 	currentHigh := ps.high.Calculate(index)
 	currentLow := ps.low.Calculate(index)
 	previousHigh := ps.high.Calculate(index - 1)
@@ -80,10 +99,12 @@ func (ps *parabolicSARIndicator) Calculate(index int) decimal.Decimal {
 		}
 	}
 
-	return ps.prevSAR
 }
 
 func (ps *parabolicSARIndicator) initialize() {
+	if ps.series == nil || ps.series.Length() < 2 {
+		return
+	}
 	firstHigh := ps.high.Calculate(0)
 	firstLow := ps.low.Calculate(0)
 	secondHigh := ps.high.Calculate(1)

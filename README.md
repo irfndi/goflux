@@ -275,7 +275,7 @@ Past work includes:
 
 ## Migration from Techan
 
-GoFlux maintains backward compatibility with the original techan API. Simply update your imports:
+GoFlux preserves the legacy techan-shaped facade where possible. Update your imports:
 
 ```go
 // Old
@@ -285,7 +285,7 @@ import "github.com/sdcoffey/techan"
 import "github.com/irfndi/goflux/pkg"
 ```
 
-The package name is `goflux`, so you can use it directly:
+The package name is `goflux`, so you can use the legacy facade directly. New indicators, backtesting engines, and storage APIs are exposed by their subpackages:
 
 ```go
 import "github.com/irfndi/goflux/pkg"
@@ -328,17 +328,21 @@ GoFlux includes an optional telemetry system to help us understand which indicat
 Add one line to your application initialization:
 
 ```go
-import "github.com/irfndi/goflux/pkg/telemetry"
+import (
+    "os"
+
+    "github.com/irfndi/goflux/pkg/telemetry"
+)
 
 func main() {
-    telemetry.Enable("https://goflux-telemetry.irfndi.workers.dev/v1/telemetry", "")
+    telemetry.Enable("https://goflux-telemetry.irfndi.workers.dev/v1/telemetry", os.Getenv("GOFLUX_TELEMETRY_TOKEN"))
     // ... rest of your application
 }
 ```
 
 ### What is collected
 
-- Library version and Go version (e.g., `go1.21`, `0.0.6`)
+- Build-reported library version and Go version (the development default is `dev`)
 - Operating system and architecture (e.g., `linux/amd64`)
 - Indicator names and parameter sizes (e.g., `EMA` with `window=10`)
 - Error types and hashed error messages (no stack traces or raw errors)

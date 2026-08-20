@@ -25,26 +25,14 @@ func NewWilliamsRIndicator(s *series.TimeSeries, window int) Indicator {
 }
 
 func (wi *williamsRIndicator) Calculate(index int) decimal.Decimal {
-	if index < wi.window-1 {
+	if wi == nil || wi.series == nil || index < wi.window-1 {
 		return decimal.ZERO
 	}
 
-	highestHigh := wi.high.Calculate(index - wi.window + 1)
-	lowestLow := wi.low.Calculate(index - wi.window + 1)
-
-	for i := index - wi.window + 2; i <= index; i++ {
-		highVal := wi.high.Calculate(i)
-		lowVal := wi.low.Calculate(i)
-
-		if highestHigh.LT(highVal) {
-			highestHigh = highVal
-		}
-		if lowestLow.GT(lowVal) {
-			lowestLow = lowVal
-		}
+	highestHigh, lowestLow, closePrice, ok := wi.series.HighLowClose(index-wi.window+1, index+1)
+	if !ok {
+		return decimal.ZERO
 	}
-
-	closePrice := wi.close.Calculate(index)
 	rangeVal := highestHigh.Sub(lowestLow)
 
 	if rangeVal.Zero() {

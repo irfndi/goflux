@@ -28,7 +28,7 @@ func NewVWAPIndicator(s *series.TimeSeries) Indicator {
 }
 
 func (v *vwapIndicator) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(v.series.Candles) {
+	if v == nil || v.series == nil || index < 0 || index >= len(v.series.Candles) {
 		return decimal.ZERO
 	}
 
@@ -84,12 +84,12 @@ func NewWindowedVWAPIndicator(s *series.TimeSeries, window int) Indicator {
 		series:       s,
 		typicalPrice: NewTypicalPriceIndicator(s),
 		volume:       NewVolumeIndicator(s),
-		window:       window,
+		window:       safeWindow(window),
 	}
 }
 
 func (v *windowedVWAPIndicator) Calculate(index int) decimal.Decimal {
-	if index < v.window-1 {
+	if v == nil || v.series == nil || index < 0 || index >= len(v.series.Candles) || index < v.window-1 {
 		return decimal.ZERO
 	}
 

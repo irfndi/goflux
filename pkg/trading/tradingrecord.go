@@ -16,11 +16,20 @@ func NewTradingRecord() (t *TradingRecord) {
 
 // CurrentPosition returns the current position in this record
 func (tr *TradingRecord) CurrentPosition() *Position {
+	if tr == nil {
+		return nil
+	}
+	if tr.currentPosition == nil {
+		tr.currentPosition = new(Position)
+	}
 	return tr.currentPosition
 }
 
 // LastTrade returns the last trade executed in this record
 func (tr *TradingRecord) LastTrade() *Position {
+	if tr == nil {
+		return nil
+	}
 	if len(tr.Trades) == 0 {
 		return nil
 	}
@@ -32,6 +41,12 @@ func (tr *TradingRecord) LastTrade() *Position {
 // - The current position is open and the passed order was executed after the entrance order
 // - The current position is new and the passed order was executed after the last exit order
 func (tr *TradingRecord) Operate(order Order) {
+	if tr == nil {
+		return
+	}
+	if tr.currentPosition == nil {
+		tr.currentPosition = new(Position)
+	}
 	if tr.currentPosition.IsOpen() {
 		if order.ExecutionTime.Before(tr.CurrentPosition().EntranceOrder().ExecutionTime) {
 			return

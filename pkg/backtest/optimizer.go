@@ -41,6 +41,12 @@ func (ps ParameterSpace) Validate() error {
 	if ps.Min > ps.Max {
 		return fmt.Errorf("parameter %q: min (%g) cannot be greater than max (%g)", ps.Name, ps.Min, ps.Max)
 	}
+	if math.IsNaN(ps.Min) || math.IsInf(ps.Min, 0) || math.IsNaN(ps.Max) || math.IsInf(ps.Max, 0) {
+		return fmt.Errorf("parameter %q: min and max must be finite", ps.Name)
+	}
+	if math.IsNaN(ps.Step) || math.IsInf(ps.Step, 0) {
+		return fmt.Errorf("parameter %q: step must be finite", ps.Name)
+	}
 	return nil
 }
 
@@ -68,6 +74,13 @@ func (c OptimizationConfig) Validate() error {
 			return err
 		}
 	}
+	names := make(map[string]struct{}, len(c.ParameterSpaces))
+	for _, ps := range c.ParameterSpaces {
+		if _, exists := names[ps.Name]; exists {
+			return fmt.Errorf("duplicate parameter name: %q", ps.Name)
+		}
+		names[ps.Name] = struct{}{}
+	}
 	if c.Method == OptMethodGridSearch {
 		for _, ps := range c.ParameterSpaces {
 			if ps.Step <= 0 {
@@ -81,8 +94,20 @@ func (c OptimizationConfig) Validate() error {
 	if c.ObjectiveFunc == nil {
 		return errors.New("objective function is required")
 	}
+	if c.Method == OptMethodGridSearch {
+		combinations := 1
+		for _, ps := range c.ParameterSpaces {
+			count := int(math.Floor((ps.Max-ps.Min)/ps.Step+1e-9)) + 1
+			if count <= 0 || count > maxOptimizationCombinations || combinations > maxOptimizationCombinations/count {
+				return fmt.Errorf("parameter grid exceeds maximum of %d combinations", maxOptimizationCombinations)
+			}
+			combinations *= count
+		}
+	}
 	return nil
 }
+
+const maxOptimizationCombinations = 1_000_000
 
 // ObjectiveFunction scores a backtest result. Higher is better.
 type ObjectiveFunction func(result BacktestResult) float64
@@ -132,6 +157,9 @@ func (o *Optimizer) Optimize(
 	strategyFactory func(params map[string]float64) trading.Strategy,
 	btConfig BacktestConfig,
 ) (*OptimizationResult, error) {
+	if strategyFactory == nil {
+		return nil, errors.New("strategy factory is required")
+	}
 	if ts == nil || ts.Length() == 0 {
 		return &OptimizationResult{}, nil
 	}
@@ -244,8 +272,13 @@ func (o *Optimizer) generateGridCombinations() []map[string]float64 {
 	valueLists := make([][]float64, len(spaces))
 	for i, ps := range spaces {
 		values := make([]float64, 0)
-		for v := ps.Min; v <= ps.Max+1e-9; v += ps.Step {
-			values = append(values, v)
+		count := int(math.Floor((ps.Max-ps.Min)/ps.Step+1e-9)) + 1
+		for j := 0; j < count; j++ {
+			value := ps.Min + float64(j)*ps.Step
+			if value > ps.Max+1e-9 {
+				break
+			}
+			values = append(values, value)
 		}
 		valueLists[i] = values
 	}

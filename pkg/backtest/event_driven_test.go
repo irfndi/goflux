@@ -285,8 +285,9 @@ func TestEventDrivenBacktester_PartialFill(t *testing.T) {
 
 	result := results["TEST"]
 	require.Equal(t, 1, result.TotalTrades)
-	// Half fill of 10 = 5, quantity reflects the actual filled amount
-	assert.True(t, result.Trades[0].Quantity.EQ(decimal.New(5)))
+	// The remaining half fills on the next bar; the final 2.5 remains pending,
+	// so the forced liquidation closes the actual 7.5 filled units.
+	assert.True(t, result.Trades[0].Quantity.EQ(decimal.New(7.5)))
 }
 
 func TestEventDrivenBacktester_CommissionDeducted(t *testing.T) {

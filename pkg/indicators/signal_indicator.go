@@ -45,22 +45,11 @@ func (cs *crossoverSignal) CalculateSignal(index int) int {
 	prevShort := cs.shortTerm.Calculate(index - 1)
 	prevLong := cs.longTerm.Calculate(index - 1)
 
-	if cs.crossType == CrossAbove {
-		if prevShort.LTE(prevLong) && currentShort.GT(currentLong) {
-			return SignalBuy
-		}
-		if prevShort.GTE(prevLong) && currentShort.LT(currentLong) {
-			return SignalSell
-		}
+	if cs.crossType == CrossAbove && prevShort.LTE(prevLong) && currentShort.GT(currentLong) {
+		return SignalBuy
 	}
-
-	if cs.crossType == CrossBelow {
-		if prevShort.GTE(prevLong) && currentShort.LT(currentLong) {
-			return SignalSell
-		}
-		if prevShort.LTE(prevLong) && currentShort.GT(currentLong) {
-			return SignalBuy
-		}
+	if cs.crossType == CrossBelow && prevShort.GTE(prevLong) && currentShort.LT(currentLong) {
+		return SignalSell
 	}
 
 	return SignalNeutral

@@ -101,6 +101,36 @@ type noSignalStrategy struct {
 	trading.Strategy
 }
 
+type twoBarStrategy struct{}
+
+func (twoBarStrategy) ShouldEnter(index int, record *trading.TradingRecord) bool {
+	return index == 0 && record.CurrentPosition().IsNew()
+}
+
+func (twoBarStrategy) ShouldExit(index int, record *trading.TradingRecord) bool {
+	return index == 1 && record.CurrentPosition().IsOpen()
+}
+
+func TestBacktesterSupportsShortPositionsAndRiskSizing(t *testing.T) {
+	s := series.NewTimeSeries()
+	s.AddCandle(&series.Candle{OpenPrice: decimal.New(100), MaxPrice: decimal.New(101), MinPrice: decimal.New(99), ClosePrice: decimal.New(100)})
+	s.AddCandle(&series.Candle{OpenPrice: decimal.New(90), MaxPrice: decimal.New(91), MinPrice: decimal.New(89), ClosePrice: decimal.New(90)})
+
+	result := NewBacktester(s, twoBarStrategy{}).Run(BacktestConfig{
+		InitialCapital: decimal.New(1000),
+		RiskPerTrade:   decimal.New(0.1),
+		AllowShort:     true,
+		AllowLong:      false,
+	})
+
+	if len(result.Trades) != 1 || !result.Trades[0].Quantity.EQ(decimal.New(1)) {
+		t.Fatalf("short trade = %+v, want one unit", result.Trades)
+	}
+	if !result.Trades[0].Profit.EQ(decimal.New(10)) {
+		t.Fatalf("short profit = %s, want 10", result.Trades[0].Profit)
+	}
+}
+
 func (s *noSignalStrategy) ShouldEnter(index int, record *trading.TradingRecord) bool {
 	return false
 }

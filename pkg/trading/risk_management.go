@@ -1,6 +1,8 @@
 package trading
 
 import (
+	"time"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 )
 
@@ -33,7 +35,7 @@ func (dpr *DrawdownProtectionRule) IsSatisfied(index int, record *TradingRecord)
 
 	for _, trade := range record.Trades {
 		if trade.IsClosed() {
-			pnl := trade.ExitValue().Sub(trade.CostBasis())
+			pnl := positionPnL(trade)
 			currentBalance = currentBalance.Add(pnl)
 			if currentBalance.GT(peakBalance) {
 				peakBalance = currentBalance
@@ -77,7 +79,7 @@ func (mlr MaxLossRule) IsSatisfied(index int, record *TradingRecord) bool {
 	var totalPL decimal.Decimal
 	for _, trade := range record.Trades {
 		if trade.IsClosed() {
-			pnl := trade.ExitValue().Sub(trade.CostBasis())
+			pnl := positionPnL(trade)
 			totalPL = totalPL.Add(pnl)
 		}
 	}
@@ -103,19 +105,52 @@ func NewDailyLossLimitRule(maxDailyLoss float64) Rule {
 }
 
 func (dllr DailyLossLimitRule) IsSatisfied(index int, record *TradingRecord) bool {
-	if len(record.Trades) == 0 {
+	if record == nil || len(record.Trades) == 0 {
 		return false
+	}
+
+	var latestExit time.Time
+	for _, trade := range record.Trades {
+		if trade == nil || !trade.IsClosed() {
+			continue
+		}
+		exitTime := trade.ExitOrder().ExecutionTime
+		if !exitTime.IsZero() && (latestExit.IsZero() || exitTime.After(latestExit)) {
+			latestExit = exitTime
+		}
 	}
 
 	var sessionPL decimal.Decimal
 	for _, trade := range record.Trades {
-		if trade.IsClosed() {
-			pnl := trade.ExitValue().Sub(trade.CostBasis())
-			sessionPL = sessionPL.Add(pnl)
+		if trade == nil || !trade.IsClosed() {
+			continue
 		}
+		if !latestExit.IsZero() {
+			exitTime := trade.ExitOrder().ExecutionTime
+			if exitTime.IsZero() || !sameCalendarDay(exitTime, latestExit) {
+				continue
+			}
+		}
+		sessionPL = sessionPL.Add(positionPnL(trade))
 	}
 
 	return sessionPL.LTE(dllr.MaxDailyLoss.Neg())
+}
+
+func sameCalendarDay(a, b time.Time) bool {
+	ay, am, ad := a.Date()
+	by, bm, bd := b.Date()
+	return ay == by && am == bm && ad == bd
+}
+
+func positionPnL(position *Position) decimal.Decimal {
+	if position == nil {
+		return decimal.ZERO
+	}
+	if position.IsShort() {
+		return position.CostBasis().Sub(position.ExitValue())
+	}
+	return position.ExitValue().Sub(position.CostBasis())
 }
 
 type ConsecutiveLossRule struct {

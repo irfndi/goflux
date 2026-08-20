@@ -1,7 +1,6 @@
 package indicators_test
 
 import (
-	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -56,5 +55,5 @@ func TestRelativeStrengthIndicator(t *testing.T) {
 func TestRelativeStrengthIndicatorNoPriceChange(t *testing.T) {
 	close := indicators.NewClosePriceIndicator(testutils.MockTimeSeries("42.0", "42.0"))
 	rsInd := indicators.NewRelativeStrengthIndicator(close, 2)
-	assert.Equal(t, decimal.New(math.Inf(1)).FormattedString(2), rsInd.Calculate(1).FormattedString(2))
+	assert.Equal(t, decimal.ONE.FormattedString(2), rsInd.Calculate(1).FormattedString(2))
 }

@@ -49,3 +49,24 @@ func TestLoadJSON(t *testing.T) {
 	assert.Equal(t, "105.00", ts.Candles[0].MaxPrice.FormattedString(2))
 	assert.Equal(t, time.Minute, ts.Candles[0].Period.Length())
 }
+
+func TestLoadCSVRejectsMalformedRows(t *testing.T) {
+	config := series.NewCSVConfig()
+	config.TimeFormat = time.RFC3339
+
+	_, err := series.LoadCSV(strings.NewReader("time,open,high,low,close\n2023-01-01T00:00:00Z,100,105"), config)
+	assert.Error(t, err)
+
+	_, err = series.LoadCSV(strings.NewReader("time,open,high,low,close\n2023-01-01T00:00:00Z,not-a-number,105,95,102"), config)
+	assert.Error(t, err)
+}
+
+func TestLoadCSVRejectsOutOfOrderCandles(t *testing.T) {
+	config := series.NewCSVConfig()
+	config.TimeFormat = time.RFC3339
+	data := "time,open,high,low,close\n" +
+		"2023-01-01T00:01:00Z,100,105,95,102\n" +
+		"2023-01-01T00:00:00Z,100,105,95,102\n"
+	_, err := series.LoadCSV(strings.NewReader(data), config)
+	assert.Error(t, err)
+}

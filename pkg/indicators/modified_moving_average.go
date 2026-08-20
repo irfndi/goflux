@@ -17,6 +17,7 @@ type modifiedMovingAverageIndicator struct {
 // indictator. An in-depth explanation can be found here:
 // https://en.wikipedia.org/wiki/Moving_average#Modified_moving_average
 func NewMMAIndicator(indicator Indicator, window int) Indicator {
+	window = safeWindow(window)
 	return &modifiedMovingAverageIndicator{
 		indicator:   indicator,
 		window:      window,
@@ -25,6 +26,9 @@ func NewMMAIndicator(indicator Indicator, window int) Indicator {
 }
 
 func (mma *modifiedMovingAverageIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || mma.indicator == nil {
+		return decimal.ZERO
+	}
 	if cachedValue := returnIfCached(mma, index, func(i int) decimal.Decimal {
 		return NewSimpleMovingAverage(mma.indicator, mma.window).Calculate(i)
 	}); cachedValue != nil {

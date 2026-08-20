@@ -2,6 +2,7 @@ package trading
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/irfndi/goflux/pkg/decimal"
@@ -56,12 +57,11 @@ type Order struct {
 	CreationTime  time.Time
 }
 
-var orderCounter int64
+var orderCounter atomic.Int64
 
 func NewOrderDetail(side OrderSide, ordType OrderType, security string, amount decimal.Decimal) *Order {
-	orderCounter++
 	return &Order{
-		ID:           fmt.Sprintf("%d-%d", time.Now().UnixNano(), orderCounter),
+		ID:           fmt.Sprintf("%d-%d", time.Now().UnixNano(), orderCounter.Add(1)),
 		Side:         side,
 		Type:         ordType,
 		Security:     security,
@@ -71,20 +71,48 @@ func NewOrderDetail(side OrderSide, ordType OrderType, security string, amount d
 	}
 }
 
-func (o *Order) SetLimitPrice(p decimal.Decimal) { o.Price = p }
-func (o *Order) SetStopPrice(p decimal.Decimal)  { o.StopPrice = p }
+func (o *Order) SetLimitPrice(p decimal.Decimal) {
+	if o != nil {
+		o.Price = p
+	}
+}
+func (o *Order) SetStopPrice(p decimal.Decimal) {
+	if o != nil {
+		o.StopPrice = p
+	}
+}
 func (o *Order) SetTrailingStop(pct decimal.Decimal) {
+	if o == nil {
+		return
+	}
 	o.Type = TrailingStopOrder
 	o.TrailingPct = pct
 }
-func (o *Order) IsBuy() bool { return o.Side == BUY }
+func (o *Order) IsBuy() bool { return o != nil && o.Side == BUY }
 func (o *Order) Fill(price, amount decimal.Decimal) {
-	o.Status = OrderStatusFilled
+	if o == nil || amount.IsNegative() || amount.IsZero() {
+		return
+	}
+	remaining := o.Amount.Sub(o.FilledAmount)
+	if !o.Amount.IsZero() && !remaining.IsPositive() {
+		return
+	}
+	if !o.Amount.IsZero() && amount.GT(remaining) {
+		amount = remaining
+	}
+	o.Status = OrderStatusPending
 	o.FilledPrice = price
-	o.FilledAmount = amount
+	o.FilledAmount = o.FilledAmount.Add(amount)
 	o.ExecutionTime = time.Now()
+	if o.Amount.IsZero() || o.FilledAmount.GTE(o.Amount) {
+		o.Status = OrderStatusFilled
+	}
 }
-func (o *Order) Cancel() { o.Status = OrderStatusCancelled }
+func (o *Order) Cancel() {
+	if o != nil {
+		o.Status = OrderStatusCancelled
+	}
+}
 
 // OrderBook manage orders
 type OrderBook struct {
@@ -95,13 +123,32 @@ func NewOrderBook() *OrderBook {
 	return &OrderBook{orders: make(map[string]*Order)}
 }
 
-func (ob *OrderBook) Add(o *Order)     { ob.orders[o.ID] = o }
-func (ob *OrderBook) Remove(id string) { delete(ob.orders, id) }
+func (ob *OrderBook) Add(o *Order) {
+	if ob == nil || o == nil {
+		return
+	}
+	if ob.orders == nil {
+		ob.orders = make(map[string]*Order)
+	}
+	ob.orders[o.ID] = o
+}
+func (ob *OrderBook) Remove(id string) {
+	if ob == nil {
+		return
+	}
+	delete(ob.orders, id)
+}
 func (ob *OrderBook) Get(id string) (*Order, bool) {
+	if ob == nil {
+		return nil, false
+	}
 	o, ok := ob.orders[id]
 	return o, ok
 }
 func (ob *OrderBook) GetBySecurity(security string) []*Order {
+	if ob == nil {
+		return nil
+	}
 	var res []*Order
 	for _, o := range ob.orders {
 		if o.Security == security {
@@ -111,6 +158,9 @@ func (ob *OrderBook) GetBySecurity(security string) []*Order {
 	return res
 }
 func (ob *OrderBook) GetPending() []*Order {
+	if ob == nil {
+		return nil
+	}
 	var res []*Order
 	for _, o := range ob.orders {
 		if o.Status == OrderStatusNew || o.Status == OrderStatusPending {
@@ -128,6 +178,9 @@ type BracketOrder struct {
 }
 
 func NewBracketOrder(parent *Order, tpPrice, slPrice decimal.Decimal) *BracketOrder {
+	if parent == nil {
+		return nil
+	}
 	tp := NewOrderDetail(SELL, LimitOrder, parent.Security, parent.Amount)
 	if parent.Side == SELL {
 		tp.Side = BUY
@@ -148,6 +201,9 @@ func NewBracketOrder(parent *Order, tpPrice, slPrice decimal.Decimal) *BracketOr
 }
 
 func (bo *BracketOrder) GetAllOrders() []*Order {
+	if bo == nil {
+		return nil
+	}
 	return []*Order{bo.Parent, bo.TakeProfit, bo.StopLoss}
 }
 
@@ -160,38 +216,62 @@ func NewOrderManager() *OrderManager {
 }
 
 func (om *OrderManager) Submit(o *Order) {
+	if om == nil || o == nil {
+		return
+	}
+	if om.orderBook == nil {
+		om.orderBook = NewOrderBook()
+	}
 	o.Status = OrderStatusPending
 	om.orderBook.Add(o)
 }
 
 func (om *OrderManager) SubmitBracket(b *BracketOrder) {
+	if om == nil || b == nil {
+		return
+	}
 	om.Submit(b.Parent)
 	om.Submit(b.TakeProfit)
 	om.Submit(b.StopLoss)
 }
 
 func (om *OrderManager) ProcessMarketOrder(o *Order, price decimal.Decimal) {
+	if o == nil {
+		return
+	}
 	o.Fill(price, o.Amount)
 }
 
 func (om *OrderManager) ProcessLimitOrder(o *Order, price decimal.Decimal) {
+	if o == nil {
+		return
+	}
 	if (o.Side == BUY && price.LTE(o.Price)) || (o.Side == SELL && price.GTE(o.Price)) {
 		o.Fill(price, o.Amount)
 	}
 }
 
 func (om *OrderManager) ProcessStopOrder(o *Order, price decimal.Decimal) {
+	if o == nil {
+		return
+	}
 	if (o.Side == BUY && price.GTE(o.StopPrice)) || (o.Side == SELL && price.LTE(o.StopPrice)) {
 		o.Fill(price, o.Amount)
 	}
 }
 
 func (om *OrderManager) ProcessTrailingStop(o *Order, price decimal.Decimal) {
+	if o == nil {
+		return
+	}
 	// Simple implementation
 	o.Fill(price, o.Amount)
 }
 
 func (om *OrderManager) CancelPending() {
+	if om == nil {
+		return
+	}
 	for _, o := range om.orderBook.GetPending() {
 		o.Cancel()
 	}
@@ -206,6 +286,9 @@ const (
 )
 
 func GetPriceFromCandle(c *series.Candle, source PriceSource) decimal.Decimal {
+	if c == nil {
+		return decimal.ZERO
+	}
 	switch source {
 	case ClosePrice:
 		return c.ClosePrice

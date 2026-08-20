@@ -49,7 +49,7 @@ func (p *Position) CostBasis() decimal.Decimal {
 	if !p.entryOrder.FilledPrice.IsZero() {
 		price = p.entryOrder.FilledPrice
 	}
-	return p.entryOrder.Amount.Mul(price)
+	return orderQuantity(p.entryOrder).Mul(price)
 }
 
 func (p *Position) ExitValue() decimal.Decimal {
@@ -60,7 +60,17 @@ func (p *Position) ExitValue() decimal.Decimal {
 	if !p.exitOrder.FilledPrice.IsZero() {
 		price = p.exitOrder.FilledPrice
 	}
-	return p.exitOrder.Amount.Mul(price)
+	return orderQuantity(p.exitOrder).Mul(price)
+}
+
+func orderQuantity(order *Order) decimal.Decimal {
+	if order == nil {
+		return decimal.ZERO
+	}
+	if !order.FilledAmount.IsZero() {
+		return order.FilledAmount
+	}
+	return order.Amount
 }
 
 func (p *Position) IsLong() bool {

@@ -118,10 +118,10 @@ func (e *BacktestExporter) exportCSV(result BacktestResult, writer io.Writer) er
 
 func (e *BacktestExporter) exportTradesCSV(trades []Trade, writer io.Writer) error {
 	w := csv.NewWriter(writer)
-	defer w.Flush()
 
 	if e.opts.IncludeHeader {
 		if err := w.Write([]string{"entry_time", "exit_time", "entry_price", "exit_price", "direction", "quantity", "profit", "profit_percent", "duration"}); err != nil {
+			w.Flush()
 			return err
 		}
 	}
@@ -139,18 +139,20 @@ func (e *BacktestExporter) exportTradesCSV(trades []Trade, writer io.Writer) err
 			strconv.Itoa(t.Duration),
 		}
 		if err := w.Write(record); err != nil {
+			w.Flush()
 			return err
 		}
 	}
-	return nil
+	w.Flush()
+	return w.Error()
 }
 
 func (e *BacktestExporter) exportEquityCurveCSV(curve []metrics.EquityPoint, writer io.Writer) error {
 	w := csv.NewWriter(writer)
-	defer w.Flush()
 
 	if e.opts.IncludeHeader {
 		if err := w.Write([]string{"equity", "drawdown", "drawdown_percent"}); err != nil {
+			w.Flush()
 			return err
 		}
 	}
@@ -162,18 +164,20 @@ func (e *BacktestExporter) exportEquityCurveCSV(curve []metrics.EquityPoint, wri
 			point.DrawdownPct.String(),
 		}
 		if err := w.Write(record); err != nil {
+			w.Flush()
 			return err
 		}
 	}
-	return nil
+	w.Flush()
+	return w.Error()
 }
 
 func (e *BacktestExporter) exportSummaryCSV(result BacktestResult, writer io.Writer) error {
 	w := csv.NewWriter(writer)
-	defer w.Flush()
 
 	if e.opts.IncludeHeader {
 		if err := w.Write([]string{"metric", "value"}); err != nil {
+			w.Flush()
 			return err
 		}
 	}
@@ -208,10 +212,12 @@ func (e *BacktestExporter) exportSummaryCSV(result BacktestResult, writer io.Wri
 
 	for _, row := range rows {
 		if err := w.Write([]string{row.metric, row.value}); err != nil {
+			w.Flush()
 			return err
 		}
 	}
-	return nil
+	w.Flush()
+	return w.Error()
 }
 
 // --- JSON exporters ---

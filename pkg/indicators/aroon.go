@@ -14,7 +14,7 @@ type aroonIndicator struct {
 }
 
 func (ai *aroonIndicator) Calculate(index int) decimal.Decimal {
-	if index < ai.window-1 {
+	if ai.indicator == nil || index < 0 || index < ai.window-1 {
 		return decimal.ZERO
 	}
 
@@ -27,7 +27,7 @@ func (ai *aroonIndicator) Calculate(index int) decimal.Decimal {
 }
 
 func (ai aroonIndicator) findLowIndex(index int) int {
-	if ai.lowIndex < 1 || ai.lowIndex < index-ai.window {
+	if ai.lowIndex < 1 || ai.lowIndex <= index-ai.window {
 		lv := decimal.New(math.MaxFloat64)
 		lowIndex := -1
 		for i := (index + 1) - ai.window; i <= index; i++ {
@@ -57,6 +57,7 @@ func (ai aroonIndicator) findLowIndex(index int) int {
 //
 // Note: this indicator should be constructed with a either a HighPriceIndicator or a derivative thereof
 func NewAroonUpIndicator(indicator Indicator, window int) Indicator {
+	window = safeWindow(window)
 	return &aroonIndicator{
 		indicator: indicator,
 		window:    window,
@@ -71,6 +72,7 @@ func NewAroonUpIndicator(indicator Indicator, window int) Indicator {
 //
 // Note: this indicator should be constructed with a either a LowPriceIndicator or a derivative thereof
 func NewAroonDownIndicator(indicator Indicator, window int) Indicator {
+	window = safeWindow(window)
 	return &aroonIndicator{
 		indicator: indicator,
 		window:    window,

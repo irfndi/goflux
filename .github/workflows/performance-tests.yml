@@ -1,10 +1,14 @@
 name: Performance Tests
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   benchmark:
@@ -33,7 +37,7 @@ jobs:
     name: Compare Performance
     runs-on: ubuntu-latest
     needs: benchmark
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -55,30 +59,18 @@ jobs:
       - name: Run current benchmarks
         run: |
           cd $GITHUB_WORKSPACE
-          go test -bench=. -benchmem ./pkg/indicators/... > current_results.txt
+          go test -bench=. -benchmem -benchtime=100ms -count=3 ./pkg/indicators/... > current_results.txt
 
       - name: Run baseline benchmarks
         run: |
           cd $GITHUB_WORKSPACE/baseline
-          go test -bench=. -benchmem ./pkg/indicators/... > $GITHUB_WORKSPACE/baseline_results.txt
+          go test -bench=. -benchmem -benchtime=100ms -count=3 ./pkg/indicators/... > $GITHUB_WORKSPACE/baseline_results.txt
 
       - name: Compare results
         run: |
-          python3 scripts/compare_benchmarks.py current_results.txt baseline_results.txt
+          python3 scripts/compare_benchmarks.py current_results.txt baseline_results.txt 0.25
 
       - name: Fail on regression
         # 0.25 = 25% threshold — shared runners have high variance; 0.1 produces frequent false positives
         run: |
           python3 scripts/check_regression.py current_results.txt baseline_results.txt 0.25
-
-      - name: Comment on PR
-        if: failure()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '⚠️ Performance regression detected!\n\nBenchmark results show performance degradation > 25%.\n\nSee detailed comparison in workflow logs.'
-            })

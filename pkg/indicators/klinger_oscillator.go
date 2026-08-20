@@ -40,7 +40,7 @@ type vfIndicator struct {
 }
 
 func (v *vfIndicator) Calculate(index int) decimal.Decimal {
-	if index <= 0 {
+	if v == nil || v.series == nil || index <= 0 || index >= len(v.series.Candles) {
 		return decimal.ZERO
 	}
 
@@ -52,7 +52,9 @@ func (v *vfIndicator) Calculate(index int) decimal.Decimal {
 	start := len(v.cache)
 	if start == 0 {
 		v.cache = append(v.cache, decimal.ZERO)
-		v.prevDM = v.series.Candles[0].MaxPrice.Sub(v.series.Candles[0].MinPrice)
+		if v.series.Candles[0] != nil {
+			v.prevDM = v.series.Candles[0].MaxPrice.Sub(v.series.Candles[0].MinPrice)
+		}
 		v.prevCM = decimal.ZERO
 		v.prevTrend = 0
 		start = 1
@@ -61,6 +63,10 @@ func (v *vfIndicator) Calculate(index int) decimal.Decimal {
 	for i := start; i <= index; i++ {
 		candle := v.series.Candles[i]
 		prevCandle := v.series.Candles[i-1]
+		if candle == nil || prevCandle == nil {
+			v.cache = append(v.cache, decimal.ZERO)
+			continue
+		}
 
 		tp := candle.MaxPrice.Add(candle.MinPrice).Add(candle.ClosePrice)
 		prevTP := prevCandle.MaxPrice.Add(prevCandle.MinPrice).Add(prevCandle.ClosePrice)

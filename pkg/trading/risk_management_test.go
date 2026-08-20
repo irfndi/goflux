@@ -2,6 +2,7 @@ package trading_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -114,6 +115,40 @@ func TestDailyLossLimitRule(t *testing.T) {
 
 		assert.True(t, rule.IsSatisfied(0, record))
 	})
+}
+
+func TestDailyLossLimitRuleUsesLatestTradingDay(t *testing.T) {
+	record := trading.NewTradingRecord()
+	dayOne := time.Date(2026, time.January, 1, 12, 0, 0, 0, time.UTC)
+	dayTwo := dayOne.Add(24 * time.Hour)
+
+	record.Operate(trading.Order{
+		Side:          trading.BUY,
+		Amount:        decimal.ONE,
+		Price:         decimal.New(100),
+		ExecutionTime: dayOne,
+	})
+	record.Operate(trading.Order{
+		Side:          trading.SELL,
+		Amount:        decimal.ONE,
+		Price:         decimal.New(90),
+		ExecutionTime: dayOne.Add(time.Hour),
+	})
+	record.Operate(trading.Order{
+		Side:          trading.BUY,
+		Amount:        decimal.ONE,
+		Price:         decimal.New(100),
+		ExecutionTime: dayTwo,
+	})
+	record.Operate(trading.Order{
+		Side:          trading.SELL,
+		Amount:        decimal.ONE,
+		Price:         decimal.New(90),
+		ExecutionTime: dayTwo.Add(time.Hour),
+	})
+
+	rule := trading.NewDailyLossLimitRule(15)
+	assert.False(t, rule.IsSatisfied(0, record), "losses from prior trading days must not count")
 }
 
 func TestNewConsecutiveLossRule(t *testing.T) {

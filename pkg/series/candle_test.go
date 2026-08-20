@@ -57,3 +57,14 @@ Volume:	10.00
 
 	assert.EqualValues(t, expected, candle.String())
 }
+
+func TestCandle_AddTradeWithZeroPrice(t *testing.T) {
+	candle := series.NewCandle(series.TimePeriod{})
+	candle.AddTrade(decimal.ONE, decimal.ZERO)
+	candle.AddTrade(decimal.ONE, decimal.New(10))
+
+	assert.True(t, candle.OpenPrice.IsZero())
+	assert.True(t, candle.MinPrice.IsZero())
+	assert.True(t, candle.MaxPrice.EQ(decimal.New(10)))
+	assert.True(t, candle.ClosePrice.EQ(decimal.New(10)))
+}

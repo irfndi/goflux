@@ -15,7 +15,11 @@ func NewVolumeIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (vi volumeIndicator) Calculate(index int) decimal.Decimal {
-	return vi.series.Candles[index].Volume
+	candle := candleAt(vi.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
+	return candle.Volume
 }
 
 type closePriceIndicator struct {
@@ -28,7 +32,11 @@ func NewClosePriceIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (cpi closePriceIndicator) Calculate(index int) decimal.Decimal {
-	return cpi.series.Candles[index].ClosePrice
+	candle := candleAt(cpi.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
+	return candle.ClosePrice
 }
 
 type highPriceIndicator struct {
@@ -43,7 +51,11 @@ func NewHighPriceIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (hpi highPriceIndicator) Calculate(index int) decimal.Decimal {
-	return hpi.series.Candles[index].MaxPrice
+	candle := candleAt(hpi.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
+	return candle.MaxPrice
 }
 
 type lowPriceIndicator struct {
@@ -58,7 +70,11 @@ func NewLowPriceIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (lpi lowPriceIndicator) Calculate(index int) decimal.Decimal {
-	return lpi.series.Candles[index].MinPrice
+	candle := candleAt(lpi.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
+	return candle.MinPrice
 }
 
 type openPriceIndicator struct {
@@ -73,7 +89,11 @@ func NewOpenPriceIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (opi openPriceIndicator) Calculate(index int) decimal.Decimal {
-	return opi.series.Candles[index].OpenPrice
+	candle := candleAt(opi.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
+	return candle.OpenPrice
 }
 
 type typicalPriceIndicator struct {
@@ -87,7 +107,11 @@ func NewTypicalPriceIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (tpi typicalPriceIndicator) Calculate(index int) decimal.Decimal {
-	numerator := tpi.series.Candles[index].MaxPrice.Add(tpi.series.Candles[index].MinPrice).Add(tpi.series.Candles[index].ClosePrice)
+	candle := candleAt(tpi.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
+	numerator := candle.MaxPrice.Add(candle.MinPrice).Add(candle.ClosePrice)
 	return numerator.Div(decimal.NewFromString("3"))
 }
 
@@ -100,7 +124,10 @@ func NewAveragePriceIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (api averagePriceIndicator) Calculate(index int) decimal.Decimal {
-	candle := api.series.Candles[index]
+	candle := candleAt(api.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
 	return candle.OpenPrice.Add(candle.MaxPrice).Add(candle.MinPrice).Add(candle.ClosePrice).Div(decimal.New(4))
 }
 
@@ -113,7 +140,10 @@ func NewMedianPriceIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (mpi medianPriceIndicator) Calculate(index int) decimal.Decimal {
-	candle := mpi.series.Candles[index]
+	candle := candleAt(mpi.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
 	return candle.MaxPrice.Add(candle.MinPrice).Div(decimal.New(2))
 }
 
@@ -126,6 +156,16 @@ func NewWeightedCloseIndicator(series *series.TimeSeries) Indicator {
 }
 
 func (wci weightedCloseIndicator) Calculate(index int) decimal.Decimal {
-	candle := wci.series.Candles[index]
+	candle := candleAt(wci.series, index)
+	if candle == nil {
+		return decimal.ZERO
+	}
 	return candle.MaxPrice.Add(candle.MinPrice).Add(candle.ClosePrice).Add(candle.ClosePrice).Div(decimal.New(4))
+}
+
+func candleAt(s *series.TimeSeries, index int) *series.Candle {
+	if s == nil {
+		return nil
+	}
+	return s.GetCandle(index)
 }

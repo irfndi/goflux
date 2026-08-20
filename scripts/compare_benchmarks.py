@@ -3,6 +3,7 @@
 
 import sys
 import re
+import math
 
 
 def parse_benchmark_file(filename):
@@ -14,14 +15,14 @@ def parse_benchmark_file(filename):
             # Match lines like: BenchmarkSMA-20    5000000    3.5 ns/op    2 B/op    1 allocs/op
             # Go benchmem can output decimal ns/op and integer B/op, or integer ns/op and decimal B/op
             match = re.search(
-                r"Benchmark(\w+)-\d+\s+(\d+)\s+(\d+(?:\.\d+)?)\s+ns/op\s+(\d+(?:\.\d+)?)\s+B/op\s+(\d+)\s+allocs/op",
+                r"Benchmark(\S+?)-\d+\s+(\d+)\s+(\d+(?:\.\d+)?)\s+ns/op\s+(\d+(?:\.\d+)?)\s+B/op\s+(\d+(?:\.\d+)?)\s+allocs/op",
                 line,
             )
             if match:
                 name = match.group(1)
                 ns_per_op = float(match.group(3))
                 b_per_op = float(match.group(4))
-                allocs_per_op = int(match.group(5))
+                allocs_per_op = float(match.group(5))
                 if name not in raw:
                     raw[name] = {"ns_per_op": [], "b_per_op": [], "allocs_per_op": []}
                 raw[name]["ns_per_op"].append(ns_per_op)
@@ -69,7 +70,10 @@ def compare_benchmarks(current_file, baseline_file, threshold=0.1):
             current_ns = current[name]["ns_per_op"]
             baseline_ns = baseline[name]["ns_per_op"]
 
-            change_percent = (current_ns - baseline_ns) / baseline_ns
+            if baseline_ns == 0:
+                change_percent = 0 if current_ns == 0 else math.inf
+            else:
+                change_percent = (current_ns - baseline_ns) / baseline_ns
 
             print(
                 f"{name:<30}{current_ns:>15.2f}{baseline_ns:>15.2f}{change_percent:>15.2%}"

@@ -18,6 +18,9 @@ type StreamingSMA struct {
 }
 
 func NewStreamingSMA(window int) *StreamingSMA {
+	if window <= 0 {
+		window = 1
+	}
 	return &StreamingSMA{
 		window: window,
 		values: make([]decimal.Decimal, 0, window),
@@ -50,6 +53,9 @@ type StreamingEMA struct {
 }
 
 func NewStreamingEMA(window int) *StreamingEMA {
+	if window <= 0 {
+		window = 1
+	}
 	return &StreamingEMA{
 		window:  window,
 		alpha:   decimal.New(2).Div(decimal.New(float64(window + 1))),

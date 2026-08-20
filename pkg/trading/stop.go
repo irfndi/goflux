@@ -34,7 +34,11 @@ func (slr stopLossRule) IsSatisfied(index int, record *TradingRecord) bool {
 		return false
 	}
 
-	loss := slr.Indicator.Calculate(index).Div(entryPrice).Sub(decimal.ONE)
+	currentPrice := slr.Calculate(index)
+	loss := currentPrice.Div(entryPrice).Sub(decimal.ONE)
+	if record.CurrentPosition().IsShort() {
+		loss = entryPrice.Div(currentPrice).Sub(decimal.ONE)
+	}
 	return loss.LTE(slr.tolerance)
 }
 
@@ -119,7 +123,11 @@ func (fpr fixedProfitRule) IsSatisfied(index int, record *TradingRecord) bool {
 		return false
 	}
 
-	gain := fpr.Indicator.Calculate(index).Div(entryPrice).Sub(decimal.ONE)
+	currentPrice := fpr.Calculate(index)
+	gain := currentPrice.Div(entryPrice).Sub(decimal.ONE)
+	if record.CurrentPosition().IsShort() {
+		gain = entryPrice.Div(currentPrice).Sub(decimal.ONE)
+	}
 	return gain.GTE(fpr.target)
 }
 

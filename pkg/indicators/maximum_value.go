@@ -22,7 +22,6 @@ type maximumValueIndicator struct {
 
 func (mvi maximumValueIndicator) Calculate(index int) decimal.Decimal {
 	maxValue := decimal.NewFromString("-Inf")
-
 	start := 0
 	if mvi.window > 0 {
 		start = math.Max(index-mvi.window+1, 0)
