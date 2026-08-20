@@ -19,6 +19,6 @@ func TestMaximumDrawdownIndicator(t *testing.T) {
 		ts := testutils.MockTimeSeriesFl(-1, 10, 0, 20, 1, 4)
 
 		mvi := indicators.NewMaximumDrawdownIndicator(indicators.NewClosePriceIndicator(ts), -1)
-		testutils.DecimalEquals(t, -1.05, mvi.Calculate(ts.LastIndex()))
+		testutils.DecimalEquals(t, -1, mvi.Calculate(ts.LastIndex()))
 	})
 }

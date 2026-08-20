@@ -15,11 +15,15 @@ type smaIndicator struct {
 // NewSimpleMovingAverage returns a derivative Indicator which returns the average of the current value and preceding
 // values in the given windowSize.
 func NewSimpleMovingAverage(indicator Indicator, window int) Indicator {
+	window = safeWindow(window)
 	telemetry.ReportUsage("SMA", map[string]string{"window": strconv.Itoa(window)})
 	return smaIndicator{indicator, window}
 }
 
 func (sma smaIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || sma.indicator == nil {
+		return decimal.ZERO
+	}
 	if index < sma.window-1 {
 		return decimal.ZERO
 	}

@@ -23,7 +23,7 @@ func NewTimeSeries() (t *TimeSeries) {
 // If the candle is added, AddCandle will return true, otherwise it will return false.
 // Thread-safe: uses write lock.
 func (ts *TimeSeries) AddCandle(candle *Candle) bool {
-	if candle == nil {
+	if ts == nil || candle == nil {
 		return false
 	}
 
@@ -43,6 +43,9 @@ func (ts *TimeSeries) AddCandle(candle *Candle) bool {
 // Returns error if candle is nil or if candle cannot be added.
 // Thread-safe: uses write lock.
 func (ts *TimeSeries) AddCandleErr(candle *Candle) error {
+	if ts == nil {
+		return fmt.Errorf("time series cannot be nil")
+	}
 	if candle == nil {
 		return fmt.Errorf("candle cannot be nil")
 	}
@@ -62,6 +65,9 @@ func (ts *TimeSeries) AddCandleErr(candle *Candle) error {
 // LastCandle will return the lastCandle in this series, or nil if this series is empty
 // Thread-safe: uses read lock.
 func (ts *TimeSeries) LastCandle() *Candle {
+	if ts == nil {
+		return nil
+	}
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
 	return ts.lastCandleUnsafe()
@@ -78,6 +84,9 @@ func (ts *TimeSeries) lastCandleUnsafe() *Candle {
 // LastIndex will return the index of the last candle in this series
 // Thread-safe: uses read lock.
 func (ts *TimeSeries) LastIndex() int {
+	if ts == nil {
+		return -1
+	}
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
 	return len(ts.Candles) - 1
@@ -86,6 +95,9 @@ func (ts *TimeSeries) LastIndex() int {
 // GetCandle returns the candle at the given index, or nil if out of bounds
 // Thread-safe: uses read lock.
 func (ts *TimeSeries) GetCandle(index int) *Candle {
+	if ts == nil {
+		return nil
+	}
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
 
@@ -98,7 +110,31 @@ func (ts *TimeSeries) GetCandle(index int) *Candle {
 // Length returns the number of candles in the series
 // Thread-safe: uses read lock.
 func (ts *TimeSeries) Length() int {
+	if ts == nil {
+		return 0
+	}
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
 	return len(ts.Candles)
+}
+
+// CandlesSnapshot returns a shallowly immutable snapshot of the candles.
+// The returned candle values are copies and can be safely rearranged by the
+// caller without changing the series slice. Use AddCandle for series updates.
+func (ts *TimeSeries) CandlesSnapshot() []*Candle {
+	if ts == nil {
+		return nil
+	}
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
+	snapshot := make([]*Candle, len(ts.Candles))
+	for i, candle := range ts.Candles {
+		if candle == nil {
+			continue
+		}
+		copy := *candle
+		snapshot[i] = &copy
+	}
+	return snapshot
 }

@@ -1,6 +1,8 @@
 package indicators
 
 import (
+	"math"
+
 	"github.com/irfndi/goflux/pkg/decimal"
 )
 
@@ -14,16 +16,52 @@ func NewDominantCyclePeriod(indicator Indicator) Indicator {
 }
 
 func (dcp dominantCyclePeriod) Calculate(index int) decimal.Decimal {
-	if index < 7 {
+	if dcp.indicator == nil || index < 7 {
 		return decimal.ZERO
 	}
 
-	// This is a simplified version of Ehlers' dominant cycle calculation.
-	// For a production system, a full implementation with Hilbert Transform is recommended.
+	maxPeriod := index / 2
+	if maxPeriod > 50 {
+		maxPeriod = 50
+	}
+	if maxPeriod < 7 {
+		return decimal.New(7)
+	}
 
-	// Example placeholder implementation
-	// In a real implementation we would do complex phase analysis.
-	return decimal.New(20) // Defaulting to 20 for placeholder
+	bestPeriod := 7
+	bestScore := math.Inf(-1)
+	for period := 7; period <= maxPeriod; period++ {
+		count := minInt(period, index-period+1)
+		var sumX, sumY, sumXX, sumYY, sumXY float64
+		for i := 0; i < count; i++ {
+			x := dcp.indicator.Calculate(index - i).Float()
+			y := dcp.indicator.Calculate(index - i - period).Float()
+			sumX += x
+			sumY += y
+			sumXX += x * x
+			sumYY += y * y
+			sumXY += x * y
+		}
+		countFloat := float64(count)
+		covariance := countFloat*sumXY - sumX*sumY
+		variance := (countFloat*sumXX - sumX*sumX) * (countFloat*sumYY - sumY*sumY)
+		score := 0.0
+		if variance > 0 {
+			score = covariance / math.Sqrt(variance)
+		}
+		if score > bestScore {
+			bestScore = score
+			bestPeriod = period
+		}
+	}
+	return decimal.New(float64(bestPeriod))
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // HilbertTransform provides the In-Phase and Quadrature components of a signal

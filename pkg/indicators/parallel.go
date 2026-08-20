@@ -1,43 +1,30 @@
 package indicators
 
-import (
-	"sync"
+import "github.com/irfndi/goflux/pkg/decimal"
 
-	"github.com/irfndi/goflux/pkg/decimal"
-)
-
-// MultiCalculate calculates multiple indicators for a given index in parallel
+// MultiCalculate calculates multiple indicators for a given index.
+// Indicator implementations may maintain recursive caches, so calculations
+// are deliberately ordered to keep the helper race-free for every Indicator.
 func MultiCalculate(index int, indicators ...Indicator) []decimal.Decimal {
 	results := make([]decimal.Decimal, len(indicators))
-	var wg sync.WaitGroup
-	wg.Add(len(indicators))
-
 	for i, ind := range indicators {
-		go func(idx int, indicator Indicator) {
-			defer wg.Done()
-			results[idx] = indicator.Calculate(index)
-		}(i, ind)
+		if ind != nil {
+			results[i] = ind.Calculate(index)
+		}
 	}
-
-	wg.Wait()
 	return results
 }
 
-// BatchCalculate calculates an indicator for a range of indices in parallel
+// BatchCalculate calculates an indicator for a range of indices.
 // NOTE: This only works for non-recursive indicators (like SMA, RSI, but NOT EMA)
 // unless the cache is already populated or the indicator handles concurrency internally.
 func BatchCalculate(ind Indicator, indices []int) []decimal.Decimal {
 	results := make([]decimal.Decimal, len(indices))
-	var wg sync.WaitGroup
-	wg.Add(len(indices))
-
-	for i, idx := range indices {
-		go func(resultIdx int, dataIdx int) {
-			defer wg.Done()
-			results[resultIdx] = ind.Calculate(dataIdx)
-		}(i, idx)
+	if ind == nil {
+		return results
 	}
-
-	wg.Wait()
+	for i, idx := range indices {
+		results[i] = ind.Calculate(idx)
+	}
 	return results
 }

@@ -9,7 +9,7 @@ import (
 // A new brick is created when the price moves by more than the brick size from the previous brick's close.
 func Renko(s *TimeSeries, brickSize decimal.Decimal) *TimeSeries {
 	renko := NewTimeSeries()
-	if s.Length() == 0 {
+	if s == nil || s.Length() == 0 || !brickSize.IsPositive() {
 		return renko
 	}
 

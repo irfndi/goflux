@@ -106,6 +106,7 @@ func effectiveQty(order *trading.Order) decimal.Decimal {
 type brokerPosition struct {
 	pos        *trading.Position
 	entryIndex int
+	remaining  decimal.Decimal
 }
 
 // brokerTrade tracks a closed position with entry/exit indices.
@@ -134,6 +135,7 @@ type SimulatedBroker struct {
 	equityHistory []decimal.Decimal
 	currentIndex  int
 	lastCandle    *series.Candle
+	lastExecution *trading.Order
 }
 
 // NewSimulatedBroker creates a new simulated broker.
@@ -156,27 +158,44 @@ func NewSimulatedBroker(symbol string, initialCapital decimal.Decimal) *Simulate
 // SubmitOrder submits an order to the broker. It becomes pending and is
 // evaluated against subsequent bars.
 func (b *SimulatedBroker) SubmitOrder(order *trading.Order) {
+	if b == nil || order == nil {
+		return
+	}
 	order.Status = trading.OrderStatusPending
 	b.pendingOrders = append(b.pendingOrders, order)
 }
 
 // ProcessBar processes all pending orders against the given candle and
-// records the pre-trade equity.
+// records marked-to-market equity for the bar.
 func (b *SimulatedBroker) ProcessBar(index int, candle *series.Candle) {
+	if b == nil {
+		return
+	}
 	b.currentIndex = index
 	b.lastCandle = candle
 	b.equityHistory = append(b.equityHistory, b.Equity)
+	if candle == nil {
+		return
+	}
 
 	var remaining []*trading.Order
 	for _, order := range b.pendingOrders {
 		filled := b.tryFill(order, candle)
 		if filled {
-			b.handleFilledOrder(order, index)
-		} else {
+			execution := b.lastExecution
+			if execution == nil {
+				execution = order
+			}
+			b.handleFilledOrder(execution, index)
+		}
+		if order.Status != trading.OrderStatusFilled {
 			remaining = append(remaining, order)
 		}
 	}
 	b.pendingOrders = remaining
+	if len(b.equityHistory) > 0 {
+		b.equityHistory[len(b.equityHistory)-1] = b.markedEquity(candle)
+	}
 }
 
 // ProcessStrategySignal handles immediate market orders from strategy signals.
@@ -184,6 +203,9 @@ func (b *SimulatedBroker) ProcessBar(index int, candle *series.Candle) {
 // When both AllowLong and AllowShort are true, short entries take priority
 // because the Strategy interface does not specify direction.
 func (b *SimulatedBroker) ProcessStrategySignal(shouldEnter, shouldExit bool, index int, candle *series.Candle) {
+	if b == nil || candle == nil {
+		return
+	}
 	if shouldEnter && b.canEnterShort() {
 		order := trading.NewOrderDetail(trading.SELL, trading.MarketOrder, b.Symbol, decimal.ONE)
 		order.CreationTime = time.Unix(int64(index), 0)
@@ -219,6 +241,30 @@ func (b *SimulatedBroker) hasOpenPosition() bool {
 	return len(b.openPositions) > 0
 }
 
+func (b *SimulatedBroker) markedEquity(candle *series.Candle) decimal.Decimal {
+	if candle == nil {
+		return b.Equity
+	}
+
+	marked := b.Equity
+	for _, bp := range b.openPositions {
+		if bp == nil || bp.pos == nil || !bp.remaining.IsPositive() {
+			continue
+		}
+		entryOrder := bp.pos.EntranceOrder()
+		entryPrice := entryOrder.FilledPrice
+		if entryPrice.IsZero() {
+			entryPrice = entryOrder.Price
+		}
+		if bp.pos.IsLong() {
+			marked = marked.Add(candle.ClosePrice.Sub(entryPrice).Mul(bp.remaining))
+		} else if bp.pos.IsShort() {
+			marked = marked.Add(entryPrice.Sub(candle.ClosePrice).Mul(bp.remaining))
+		}
+	}
+	return marked
+}
+
 func (b *SimulatedBroker) tryFill(order *trading.Order, candle *series.Candle) bool {
 	switch order.Type {
 	case trading.MarketOrder:
@@ -233,6 +279,9 @@ func (b *SimulatedBroker) tryFill(order *trading.Order, candle *series.Candle) b
 }
 
 func (b *SimulatedBroker) fillMarketOrder(order *trading.Order, candle *series.Candle) bool {
+	if candle == nil {
+		return false
+	}
 	var price decimal.Decimal
 	switch b.FillPriceSource {
 	case FillAtOpen:
@@ -244,6 +293,9 @@ func (b *SimulatedBroker) fillMarketOrder(order *trading.Order, candle *series.C
 }
 
 func (b *SimulatedBroker) fillLimitOrder(order *trading.Order, candle *series.Candle) bool {
+	if order == nil || candle == nil {
+		return false
+	}
 	if order.Side == trading.BUY && candle.MinPrice.LTE(order.Price) {
 		return b.executeFill(order, order.Price, candle)
 	}
@@ -254,6 +306,9 @@ func (b *SimulatedBroker) fillLimitOrder(order *trading.Order, candle *series.Ca
 }
 
 func (b *SimulatedBroker) fillStopOrder(order *trading.Order, candle *series.Candle) bool {
+	if order == nil || candle == nil {
+		return false
+	}
 	if order.Side == trading.BUY && candle.MaxPrice.GTE(order.StopPrice) {
 		return b.executeFill(order, order.StopPrice, candle)
 	}
@@ -264,8 +319,15 @@ func (b *SimulatedBroker) fillStopOrder(order *trading.Order, candle *series.Can
 }
 
 func (b *SimulatedBroker) executeFill(order *trading.Order, price decimal.Decimal, candle *series.Candle) bool {
+	if order == nil || candle == nil {
+		return false
+	}
+	remaining := order.Amount.Sub(order.FilledAmount)
+	if !remaining.IsPositive() {
+		return false
+	}
 	var slippage decimal.Decimal
-	if order.Type != trading.LimitOrder {
+	if order.Type != trading.LimitOrder && b.SlippageModel != nil {
 		slippage = b.SlippageModel(order, candle)
 	}
 	var fillPrice decimal.Decimal
@@ -275,17 +337,33 @@ func (b *SimulatedBroker) executeFill(order *trading.Order, price decimal.Decima
 		fillPrice = price.Sub(slippage)
 	}
 
-	fillAmount := b.PartialFillModel(order, candle)
-	if fillAmount.GT(order.Amount) {
-		fillAmount = order.Amount
+	fillRequest := *order
+	fillRequest.Amount = remaining
+	fillRequest.FilledAmount = decimal.ZERO
+	fillModel := b.PartialFillModel
+	if fillModel == nil {
+		fillModel = FullFill
+	}
+	fillAmount := fillModel(&fillRequest, candle)
+	if fillAmount.GT(remaining) {
+		fillAmount = remaining
 	}
 	if fillAmount.IsZero() {
 		return false
 	}
 
-	commission := b.CommissionModel(order, fillPrice, fillAmount)
+	commission := decimal.ZERO
+	if b.CommissionModel != nil {
+		commission = b.CommissionModel(order, fillPrice, fillAmount)
+	}
 
 	order.Fill(fillPrice, fillAmount)
+	execution := *order
+	execution.Amount = fillAmount
+	execution.FilledAmount = fillAmount
+	execution.FilledPrice = fillPrice
+	execution.Status = trading.OrderStatusFilled
+	b.lastExecution = &execution
 	b.Equity = b.Equity.Sub(commission)
 
 	return true
@@ -299,6 +377,14 @@ func (b *SimulatedBroker) handleFilledOrder(order *trading.Order, index int) {
 			if (entrySide == trading.BUY && order.Side == trading.SELL) ||
 				(entrySide == trading.SELL && order.Side == trading.BUY) {
 				b.exitPosition(bp, order, index)
+			} else if order.Side == entrySide {
+				// A partial entry may fill over multiple bars. Consolidate the
+				// execution into the open position instead of dropping it.
+				quantity := effectiveQty(order)
+				entry := bp.pos.EntranceOrder()
+				entry.Amount = entry.Amount.Add(quantity)
+				entry.FilledAmount = entry.FilledAmount.Add(quantity)
+				bp.remaining = bp.remaining.Add(quantity)
 			}
 		}
 		return
@@ -311,18 +397,31 @@ func (b *SimulatedBroker) handleFilledOrder(order *trading.Order, index int) {
 }
 
 func (b *SimulatedBroker) enterPosition(order *trading.Order, index int) {
-	pos := trading.NewPosition(*order)
-	b.openPositions = append(b.openPositions, &brokerPosition{pos: pos, entryIndex: index})
-
+	if order == nil || order.FilledAmount.IsZero() {
+		return
+	}
 	order.ExecutionTime = time.Unix(int64(index), 0)
+	pos := trading.NewPosition(*order)
+	b.openPositions = append(b.openPositions, &brokerPosition{
+		pos: pos, entryIndex: index, remaining: effectiveQty(order),
+	})
+
 	b.record.Operate(*order)
 }
 
 func (b *SimulatedBroker) exitPosition(bp *brokerPosition, order *trading.Order, index int) {
-	bp.pos.Exit(*order)
+	if bp == nil || bp.pos == nil || order == nil {
+		return
+	}
 
 	entryOrder := bp.pos.EntranceOrder()
-	qty := effectiveQty(entryOrder)
+	qty := effectiveQty(order)
+	if qty.GT(bp.remaining) {
+		qty = bp.remaining
+	}
+	if qty.IsZero() {
+		return
+	}
 	var profit decimal.Decimal
 	if bp.pos.IsLong() {
 		profit = order.FilledPrice.Sub(entryOrder.FilledPrice).Mul(qty)
@@ -331,35 +430,47 @@ func (b *SimulatedBroker) exitPosition(bp *brokerPosition, order *trading.Order,
 	}
 	b.Equity = b.Equity.Add(profit)
 
-	for i, p := range b.openPositions {
-		if p == bp {
-			b.openPositions = append(b.openPositions[:i], b.openPositions[i+1:]...)
-			break
-		}
-	}
+	bp.remaining = bp.remaining.Sub(qty)
+	partial := bp.remaining.IsPositive()
+	tradeEntry := *entryOrder
+	tradeEntry.Amount = qty
+	tradeEntry.FilledAmount = qty
+	tradeExit := *order
+	tradeExit.Amount = qty
+	tradeExit.FilledAmount = qty
+	tradePos := trading.NewPosition(tradeEntry)
+	tradePos.Exit(tradeExit)
 
 	b.closedTrades = append(b.closedTrades, brokerTrade{
-		pos:        bp.pos,
+		pos:        tradePos,
 		entryIndex: bp.entryIndex,
 		exitIndex:  index,
 	})
 
 	order.ExecutionTime = time.Unix(int64(index), 0)
-	b.record.Operate(*order)
+	if !partial {
+		bp.pos.Exit(*order)
+		for i, p := range b.openPositions {
+			if p == bp {
+				b.openPositions = append(b.openPositions[:i], b.openPositions[i+1:]...)
+				break
+			}
+		}
+		b.record.Operate(*order)
+	}
 }
 
 func (b *SimulatedBroker) closeAllPositions(index int, candle *series.Candle) {
 	for len(b.openPositions) > 0 {
 		bp := b.openPositions[0]
-		entryOrder := bp.pos.EntranceOrder()
-		qty := effectiveQty(entryOrder)
+		qty := bp.remaining
 		exitSide := trading.SELL
 		if bp.pos.IsShort() {
 			exitSide = trading.BUY
 		}
 		order := trading.NewOrderDetail(exitSide, trading.MarketOrder, b.Symbol, qty)
 		order.CreationTime = time.Unix(int64(index), 0)
-		if !b.fillMarketOrder(order, candle) {
+		if !b.fillMarketOrderFull(order, candle) {
 			// Prevent infinite loop if market order cannot fill.
 			break
 		}
@@ -369,9 +480,15 @@ func (b *SimulatedBroker) closeAllPositions(index int, candle *series.Candle) {
 
 // BacktestResult converts broker state to a BacktestResult.
 func (b *SimulatedBroker) BacktestResult() BacktestResult {
+	if b == nil {
+		return BacktestResult{}
+	}
 	// Close any remaining open positions at the last known equity price.
 	// Use the last equity value as the exit price basis.
 	b.finalizeOpenPositions()
+	if len(b.equityHistory) > 0 {
+		b.equityHistory[len(b.equityHistory)-1] = b.Equity
+	}
 
 	trades := make([]Trade, 0, len(b.closedTrades))
 	for _, bt := range b.closedTrades {
@@ -390,22 +507,30 @@ func (b *SimulatedBroker) finalizeOpenPositions() {
 		b.openPositions = nil
 		return
 	}
-	exitPrice := b.lastCandle.ClosePrice
 	// Copy slice to avoid mutation during iteration by exitPosition.
 	positions := make([]*brokerPosition, len(b.openPositions))
 	copy(positions, b.openPositions)
 	for _, bp := range positions {
-		entryOrder := bp.pos.EntranceOrder()
-		qty := effectiveQty(entryOrder)
+		qty := bp.remaining
 		exitSide := trading.SELL
 		if bp.pos.IsShort() {
 			exitSide = trading.BUY
 		}
 		order := trading.NewOrderDetail(exitSide, trading.MarketOrder, b.Symbol, qty)
 		order.CreationTime = time.Unix(int64(b.currentIndex), 0)
-		order.Fill(exitPrice, qty)
+		if !b.fillMarketOrderFull(order, b.lastCandle) {
+			continue
+		}
 		b.exitPosition(bp, order, b.currentIndex)
 	}
+}
+
+func (b *SimulatedBroker) fillMarketOrderFull(order *trading.Order, candle *series.Candle) bool {
+	partialFillModel := b.PartialFillModel
+	b.PartialFillModel = FullFill
+	filled := b.fillMarketOrder(order, candle)
+	b.PartialFillModel = partialFillModel
+	return filled
 }
 
 func (b *SimulatedBroker) brokerTradeToTrade(bt brokerTrade) Trade {
@@ -532,17 +657,35 @@ func NewEventDrivenBacktester() *EventDrivenBacktester {
 
 // Register associates a symbol with its broker and strategy.
 func (edb *EventDrivenBacktester) Register(symbol string, broker *SimulatedBroker, strategy trading.Strategy) {
+	if edb == nil || broker == nil || strategy == nil {
+		return
+	}
+	if edb.brokers == nil {
+		edb.brokers = make(map[string]*SimulatedBroker)
+	}
+	if edb.strategies == nil {
+		edb.strategies = make(map[string]trading.Strategy)
+	}
 	edb.brokers[symbol] = broker
 	edb.strategies[symbol] = strategy
 }
 
 // AddAnalyzer adds an analyzer to the backtester.
 func (edb *EventDrivenBacktester) AddAnalyzer(a Analyzer) {
+	if edb == nil {
+		return
+	}
+	if edb.analyzers == nil {
+		edb.analyzers = NewAnalyzerRegistry()
+	}
 	edb.analyzers.Add(a)
 }
 
 // Run processes events in chronological order and returns per-symbol results.
 func (edb *EventDrivenBacktester) Run(events []Event) (map[string]BacktestResult, error) {
+	if edb == nil {
+		return nil, errors.New("event-driven backtester cannot be nil")
+	}
 	if len(events) == 0 {
 		return make(map[string]BacktestResult), nil
 	}
@@ -600,7 +743,9 @@ func (edb *EventDrivenBacktester) Run(events []Event) (map[string]BacktestResult
 			}
 		}
 
-		result.Analysis = edb.analyzers.Run(metricsTrades, metricsEquityCurve)
+		if edb.analyzers != nil {
+			result.Analysis = edb.analyzers.Run(metricsTrades, metricsEquityCurve)
+		}
 		results[symbol] = result
 	}
 

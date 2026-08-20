@@ -94,6 +94,22 @@ func TestNewFromBigFloat(t *testing.T) {
 	}
 }
 
+func TestNewFromBigFloatNilIsZero(t *testing.T) {
+	if got := NewFromBigFloat(nil); !got.IsZero() {
+		t.Fatalf("NewFromBigFloat(nil) = %s, want zero", got)
+	}
+}
+
+func TestZeroValueComparisonsMatchCmp(t *testing.T) {
+	var zero Decimal
+	if !zero.EQ(New(0)) || !zero.GTE(New(0)) || !zero.LTE(New(0)) {
+		t.Fatal("zero-value Decimal comparisons must match numeric zero")
+	}
+	if !zero.LT(New(1)) || !New(1).GT(zero) {
+		t.Fatal("zero-value Decimal ordering is inconsistent")
+	}
+}
+
 func TestDecimalArithmetic(t *testing.T) {
 	t.Run("Add", func(t *testing.T) {
 		d1 := NewFromString("123.456")
@@ -440,6 +456,13 @@ func TestRound(t *testing.T) {
 				t.Errorf("Round(%s) = %s, want %s", tt.input, result.String(), tt.expected)
 			}
 		})
+	}
+}
+
+func TestRoundPreservesLargeIntegerPrecision(t *testing.T) {
+	d := NewFromString("9007199254740993.5")
+	if got := d.Round().String(); got != "9007199254740994" {
+		t.Fatalf("Round(%s) = %s, want 9007199254740994", d, got)
 	}
 }
 

@@ -21,7 +21,7 @@ func NewADLineIndicator(s *series.TimeSeries) Indicator {
 }
 
 func (adl *adLineIndicator) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(adl.series.Candles) {
+	if adl == nil || adl.series == nil || index < 0 || index >= len(adl.series.Candles) {
 		return decimal.ZERO
 	}
 
@@ -37,6 +37,10 @@ func (adl *adLineIndicator) Calculate(index int) decimal.Decimal {
 
 	for i := start; i <= index; i++ {
 		candle := adl.series.Candles[i]
+		if candle == nil {
+			adl.cache = append(adl.cache, prevADL)
+			continue
+		}
 		high := candle.MaxPrice
 		low := candle.MinPrice
 		close := candle.ClosePrice

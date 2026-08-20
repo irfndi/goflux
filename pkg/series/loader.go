@@ -38,27 +38,38 @@ func NewCSVConfig() CSVConfig {
 
 // LoadCSV parses CSV data from an io.Reader and returns a TimeSeries
 func LoadCSV(reader io.Reader, config CSVConfig) (*TimeSeries, error) {
+	if err := config.validate(); err != nil {
+		return nil, err
+	}
+
 	csvReader := csv.NewReader(reader)
 	if config.HasHeader {
 		_, err := csvReader.Read() // Skip header
 		if err != nil {
-			return nil, fmt.Errorf("error reading CSV header: %v", err)
+			return nil, fmt.Errorf("error reading CSV header: %w", err)
 		}
 	}
 
 	ts := NewTimeSeries()
+	rowNumber := 1
+	if config.HasHeader {
+		rowNumber++
+	}
 	for {
 		record, err := csvReader.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("error reading CSV record: %v", err)
+			return nil, fmt.Errorf("error reading CSV record on row %d: %w", rowNumber, err)
+		}
+		if required := config.maxIndex(); required >= len(record) {
+			return nil, fmt.Errorf("CSV row %d has %d fields; index %d is out of range", rowNumber, len(record), required)
 		}
 
 		t, err := time.Parse(config.TimeFormat, record[config.TimeIndex])
 		if err != nil {
-			return nil, fmt.Errorf("error parsing time: %v", err)
+			return nil, fmt.Errorf("error parsing time on row %d: %w", rowNumber, err)
 		}
 
 		// Calculate duration if possible, otherwise assume 1 min or similar?
@@ -67,26 +78,48 @@ func LoadCSV(reader io.Reader, config CSVConfig) (*TimeSeries, error) {
 		// Actually, NewTimePeriod needs a duration.
 
 		candle := NewCandle(NewTimePeriod(t, 0)) // Initial duration 0
-		candle.OpenPrice = decimal.NewFromString(record[config.OpenIndex])
-		candle.MaxPrice = decimal.NewFromString(record[config.HighIndex])
-		candle.MinPrice = decimal.NewFromString(record[config.LowIndex])
-		candle.ClosePrice = decimal.NewFromString(record[config.CloseIndex])
-		if config.VolumeIndex < len(record) {
-			candle.Volume = decimal.NewFromString(record[config.VolumeIndex])
+		var parseDecimal = func(label string, index int) (decimal.Decimal, error) {
+			value, parseErr := decimal.NewFromStringWithError(record[index])
+			if parseErr != nil {
+				return decimal.ZERO, fmt.Errorf("error parsing %s on row %d: %w", label, rowNumber, parseErr)
+			}
+			return value, nil
+		}
+		if candle.OpenPrice, err = parseDecimal("open", config.OpenIndex); err != nil {
+			return nil, err
+		}
+		if candle.MaxPrice, err = parseDecimal("high", config.HighIndex); err != nil {
+			return nil, err
+		}
+		if candle.MinPrice, err = parseDecimal("low", config.LowIndex); err != nil {
+			return nil, err
+		}
+		if candle.ClosePrice, err = parseDecimal("close", config.CloseIndex); err != nil {
+			return nil, err
+		}
+		if config.VolumeIndex >= 0 && config.VolumeIndex < len(record) {
+			if candle.Volume, err = parseDecimal("volume", config.VolumeIndex); err != nil {
+				return nil, err
+			}
 		}
 
-		ts.AddCandle(candle)
+		if err := ts.AddCandleErr(candle); err != nil {
+			return nil, fmt.Errorf("error adding CSV row %d: %w", rowNumber, err)
+		}
+		rowNumber++
 	}
 
 	// Post-process to fix durations if we have at least 2 candles
 	if ts.Length() >= 2 {
-		d := ts.Candles[1].Period.Start.Sub(ts.Candles[0].Period.Start)
+		d := ts.GetCandle(1).Period.Start.Sub(ts.GetCandle(0).Period.Start)
 		for i := 0; i < ts.Length(); i++ {
-			ts.Candles[i].Period.End = ts.Candles[i].Period.Start.Add(d)
+			candle := ts.GetCandle(i)
+			candle.Period.End = candle.Period.Start.Add(d)
 		}
 	} else if ts.Length() == 1 {
 		// Default to 1 minute if only one candle?
-		ts.Candles[0].Period.End = ts.Candles[0].Period.Start.Add(time.Minute)
+		candle := ts.GetCandle(0)
+		candle.Period.End = candle.Period.Start.Add(time.Minute)
 	}
 
 	return ts, nil
@@ -107,14 +140,14 @@ func LoadJSON(reader io.Reader, timeFormat string) (*TimeSeries, error) {
 	var jsonCandles []JSONCandle
 	decoder := json.NewDecoder(reader)
 	if err := decoder.Decode(&jsonCandles); err != nil {
-		return nil, fmt.Errorf("error decoding JSON: %v", err)
+		return nil, fmt.Errorf("error decoding JSON: %w", err)
 	}
 
 	ts := NewTimeSeries()
 	for _, jc := range jsonCandles {
 		t, err := time.Parse(timeFormat, jc.Time)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing time %s: %v", jc.Time, err)
+			return nil, fmt.Errorf("error parsing time %s: %w", jc.Time, err)
 		}
 
 		candle := NewCandle(NewTimePeriod(t, 0))
@@ -124,18 +157,50 @@ func LoadJSON(reader io.Reader, timeFormat string) (*TimeSeries, error) {
 		candle.ClosePrice = decimal.New(jc.Close)
 		candle.Volume = decimal.New(jc.Volume)
 
-		ts.AddCandle(candle)
+		if err := ts.AddCandleErr(candle); err != nil {
+			return nil, fmt.Errorf("error adding JSON candle %q: %w", jc.Time, err)
+		}
 	}
 
 	// Post-process to fix durations
 	if ts.Length() >= 2 {
-		d := ts.Candles[1].Period.Start.Sub(ts.Candles[0].Period.Start)
+		d := ts.GetCandle(1).Period.Start.Sub(ts.GetCandle(0).Period.Start)
 		for i := 0; i < ts.Length(); i++ {
-			ts.Candles[i].Period.End = ts.Candles[i].Period.Start.Add(d)
+			candle := ts.GetCandle(i)
+			candle.Period.End = candle.Period.Start.Add(d)
 		}
 	} else if ts.Length() == 1 {
-		ts.Candles[0].Period.End = ts.Candles[0].Period.Start.Add(time.Minute)
+		candle := ts.GetCandle(0)
+		candle.Period.End = candle.Period.Start.Add(time.Minute)
 	}
 
 	return ts, nil
+}
+
+func (config CSVConfig) validate() error {
+	if config.TimeFormat == "" {
+		return fmt.Errorf("CSV time format cannot be empty")
+	}
+	for name, index := range map[string]int{
+		"time": config.TimeIndex, "open": config.OpenIndex, "high": config.HighIndex,
+		"low": config.LowIndex, "close": config.CloseIndex,
+	} {
+		if index < 0 {
+			return fmt.Errorf("CSV %s index cannot be negative: %d", name, index)
+		}
+	}
+	if config.VolumeIndex < -1 {
+		return fmt.Errorf("CSV volume index cannot be less than -1: %d", config.VolumeIndex)
+	}
+	return nil
+}
+
+func (config CSVConfig) maxIndex() int {
+	maxIndex := config.TimeIndex
+	for _, index := range []int{config.OpenIndex, config.HighIndex, config.LowIndex, config.CloseIndex} {
+		if index > maxIndex {
+			maxIndex = index
+		}
+	}
+	return maxIndex
 }

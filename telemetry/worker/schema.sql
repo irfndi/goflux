@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS telemetry_events (
   feature TEXT,
   error_type TEXT,
   error_hash TEXT,
+  context_json TEXT,
   ip_hash TEXT NOT NULL
 );
 

@@ -58,6 +58,9 @@ func NewFromStringWithError(s string) (Decimal, error) {
 
 // NewFromBigFloat creates a new Decimal from a big.Float
 func NewFromBigFloat(f *big.Float) Decimal {
+	if f == nil {
+		return Decimal{}
+	}
 	return Decimal{val: new(big.Float).Copy(f)}
 }
 
@@ -104,42 +107,27 @@ func (d Decimal) Div(d2 Decimal) Decimal {
 
 // GT returns true if d > d2
 func (d Decimal) GT(d2 Decimal) bool {
-	if d.val == nil || d2.val == nil {
-		return false
-	}
-	return d.val.Cmp(d2.val) > 0
+	return d.Cmp(d2) > 0
 }
 
 // GTE returns true if d >= d2
 func (d Decimal) GTE(d2 Decimal) bool {
-	if d.val == nil || d2.val == nil {
-		return d.val == d2.val
-	}
-	return d.val.Cmp(d2.val) >= 0
+	return d.Cmp(d2) >= 0
 }
 
 // LT returns true if d < d2
 func (d Decimal) LT(d2 Decimal) bool {
-	if d.val == nil || d2.val == nil {
-		return false
-	}
-	return d.val.Cmp(d2.val) < 0
+	return d.Cmp(d2) < 0
 }
 
 // LTE returns true if d <= d2
 func (d Decimal) LTE(d2 Decimal) bool {
-	if d.val == nil || d2.val == nil {
-		return d.val == d2.val
-	}
-	return d.val.Cmp(d2.val) <= 0
+	return d.Cmp(d2) <= 0
 }
 
 // EQ returns true if d == d2
 func (d Decimal) EQ(d2 Decimal) bool {
-	if d.val == nil || d2.val == nil {
-		return d.Sign() == d2.Sign()
-	}
-	return d.val.Cmp(d2.val) == 0
+	return d.Cmp(d2) == 0
 }
 
 // Zero returns true if d == 0
@@ -206,7 +194,7 @@ func (d Decimal) Min(d2 Decimal) Decimal {
 
 // Sqrt returns square root of d
 func (d Decimal) Sqrt() Decimal {
-	if d.val == nil {
+	if d.val == nil || d.IsNegative() {
 		return ZERO
 	}
 	return Decimal{val: new(big.Float).Sqrt(d.val)}
@@ -218,11 +206,16 @@ func (d Decimal) Pow(y int) Decimal {
 		return ONE
 	}
 
-	absY := y
+	var absY uint
 	neg := false
 	if y < 0 {
-		absY = -y
+		// Convert through y+1 so math.MinInt is handled without overflowing
+		// the signed int range before it is converted to an unsigned value.
+		absY = uint(-(y + 1))
+		absY++
 		neg = true
+	} else {
+		absY = uint(y)
 	}
 
 	result := ONE
@@ -281,15 +274,22 @@ func (d Decimal) IsPositive() bool {
 
 // Round returns d rounded to the nearest integer, with ties rounding away from zero
 func (d Decimal) Round() Decimal {
-	if d.IsZero() {
+	if d.val == nil || d.IsZero() {
 		return d
 	}
 
-	f := d.Float()
-	if d.IsPositive() {
-		return New(float64(int(f + 0.5)))
+	integer := new(big.Int)
+	d.val.Int(integer)
+	fraction := new(big.Float).SetPrec(d.val.Prec()).Sub(d.val, new(big.Float).SetPrec(d.val.Prec()).SetInt(integer))
+	if new(big.Float).Abs(fraction).Cmp(new(big.Float).SetPrec(d.val.Prec()).SetFloat64(0.5)) >= 0 {
+		if d.IsPositive() {
+			integer.Add(integer, big.NewInt(1))
+		} else {
+			integer.Sub(integer, big.NewInt(1))
+		}
 	}
-	return New(float64(int(f - 0.5)))
+
+	return Decimal{val: new(big.Float).SetPrec(d.val.Prec()).SetInt(integer)}
 }
 
 // Floor returns the greatest integer value less than or equal to d

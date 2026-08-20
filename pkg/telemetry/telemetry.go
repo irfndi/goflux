@@ -15,10 +15,9 @@ import (
 	"time"
 )
 
-const (
-	libVersion = "0.0.6"
-	schemaVer  = 1
-)
+var libVersion = "dev"
+
+const schemaVer = 1
 
 // Payload represents a single telemetry event.
 type Payload struct {
@@ -47,6 +46,8 @@ type Reporter struct {
 	closeOnce     sync.Once
 	closeCh       chan struct{}
 	configMu      sync.RWMutex
+	sendMu        sync.RWMutex
+	closed        bool
 	flushInterval time.Duration
 	batchSize     int
 }
@@ -126,7 +127,7 @@ func ReportError(err error, context map[string]string) {
 		Type:       "error",
 		ErrorType:  fmt.Sprintf("%T", err),
 		ErrorHash:  hex.EncodeToString(hash[:8]),
-		Context:    context,
+		Context:    cloneContext(context),
 	}
 
 	r.send(p)
@@ -152,13 +153,21 @@ func ReportUsage(feature string, context map[string]string) {
 		Arch:       runtime.GOARCH,
 		Type:       "usage",
 		Feature:    feature,
-		Context:    context,
+		Context:    cloneContext(context),
 	}
 
 	r.send(p)
 }
 
 func (r *Reporter) send(p Payload) {
+	if r == nil {
+		return
+	}
+	r.sendMu.RLock()
+	defer r.sendMu.RUnlock()
+	if r.closed {
+		return
+	}
 	select {
 	case r.buffer <- p:
 	default:
@@ -236,9 +245,25 @@ func (r *Reporter) post(p Payload) {
 
 // Close shuts down the reporter, flushing pending events.
 func (r *Reporter) Close() {
+	if r == nil {
+		return
+	}
 	r.closeOnce.Do(func() {
+		r.sendMu.Lock()
+		r.closed = true
 		close(r.closeCh)
+		r.sendMu.Unlock()
 		r.wg.Wait()
-		close(r.buffer)
 	})
+}
+
+func cloneContext(context map[string]string) map[string]string {
+	if len(context) == 0 {
+		return nil
+	}
+	clone := make(map[string]string, len(context))
+	for key, value := range context {
+		clone[key] = value
+	}
+	return clone
 }

@@ -13,9 +13,13 @@ export interface TelemetryPayload {
 }
 
 export interface Env {
-  TELEMETRY_TOKEN?: string;
+  TELEMETRY_TOKEN: string;
   DB: D1Database;
 }
+
+const MAX_BODY_BYTES = 64 * 1024;
+const MAX_CONTEXT_ENTRIES = 32;
+const MAX_CONTEXT_VALUE_LENGTH = 256;
 
 function hashIP(ip: string): string {
   let hash = 5381;
@@ -40,8 +44,8 @@ async function storeEvent(db: D1Database, payload: TelemetryPayload, ipHash: str
   await db
     .prepare(
       `INSERT INTO telemetry_events
-       (received_at, ts, lib_version, go_version, os, arch, type, feature, error_type, error_hash, ip_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (received_at, ts, lib_version, go_version, os, arch, type, feature, error_type, error_hash, context_json, ip_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       Date.now(),
@@ -54,6 +58,7 @@ async function storeEvent(db: D1Database, payload: TelemetryPayload, ipHash: str
       payload.feature ?? null,
       payload.error_type ?? null,
       payload.error_hash ?? null,
+      payload.context ? JSON.stringify(payload.context) : null,
       ipHash
     )
     .run();
@@ -190,37 +195,47 @@ export default {
 
     // Submit telemetry
     if (url.pathname === "/v1/telemetry" && request.method === "POST") {
-      if (env.TELEMETRY_TOKEN) {
-        const auth = request.headers.get("Authorization");
-        if (auth !== `Bearer ${env.TELEMETRY_TOKEN}`) {
-          return jsonResponse({ error: "unauthorized" }, 401);
-        }
+      if (!env.TELEMETRY_TOKEN) {
+        return jsonResponse({ error: "telemetry authentication is not configured" }, 503);
+      }
+      const auth = request.headers.get("Authorization");
+      if (auth !== `Bearer ${env.TELEMETRY_TOKEN}`) {
+        return jsonResponse({ error: "unauthorized" }, 401);
+      }
+      const contentLength = Number(request.headers.get("Content-Length") ?? 0);
+      if (contentLength > MAX_BODY_BYTES) {
+        return jsonResponse({ error: "payload too large" }, 413);
       }
 
       try {
-        const payload = (await request.json()) as TelemetryPayload;
+        const body = await request.text();
+        if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
+          return jsonResponse({ error: "payload too large" }, 413);
+        }
+        const payload = JSON.parse(body) as TelemetryPayload;
 
-        if (!payload.v || !payload.ts || !payload.lib_version || !payload.go_version || !payload.type) {
+        if (!isValidPayload(payload)) {
           return jsonResponse({ error: "missing required fields" }, 400);
         }
 
         await storeEvent(env.DB, payload, hashedIP);
 
         return jsonResponse({ ok: true }, 202);
-      } catch (e) {
+      } catch {
         return jsonResponse({ error: "invalid json" }, 400);
       }
     }
 
-    // Stats endpoints (optional token auth)
-    if (env.TELEMETRY_TOKEN) {
-      const auth = request.headers.get("Authorization");
-      if (auth !== `Bearer ${env.TELEMETRY_TOKEN}`) {
-        return jsonResponse({ error: "unauthorized" }, 401);
-      }
+    // Stats endpoints require the same token as ingestion.
+    if (!env.TELEMETRY_TOKEN) {
+      return jsonResponse({ error: "telemetry authentication is not configured" }, 503);
+    }
+    const auth = request.headers.get("Authorization");
+    if (auth !== `Bearer ${env.TELEMETRY_TOKEN}`) {
+      return jsonResponse({ error: "unauthorized" }, 401);
     }
 
-    const hours = parseInt(url.searchParams.get("hours") || "24", 10);
+    const hours = boundedInteger(url.searchParams.get("hours"), 24, 1, 24 * 365);
 
     if (url.pathname === "/v1/stats/summary") {
       const summary = await getSummary(env.DB, hours);
@@ -240,3 +255,61 @@ export default {
     return jsonResponse({ error: "not found" }, 404);
   },
 };
+
+function isValidPayload(payload: TelemetryPayload): boolean {
+  if (!payload || typeof payload !== "object" || !Number.isInteger(payload.v) || payload.v < 1 || !Number.isFinite(payload.ts)) {
+    return false;
+  }
+  if (
+    typeof payload.lib_version !== "string" ||
+    payload.lib_version.length === 0 ||
+    payload.lib_version.length > 64 ||
+    typeof payload.go_version !== "string" ||
+    payload.go_version.length === 0 ||
+    payload.go_version.length > 64
+  ) {
+    return false;
+  }
+  if (
+    typeof payload.os !== "string" ||
+    payload.os.length === 0 ||
+    payload.os.length > 32 ||
+    typeof payload.arch !== "string" ||
+    payload.arch.length === 0 ||
+    payload.arch.length > 32
+  ) {
+    return false;
+  }
+  if (payload.type !== "error" && payload.type !== "usage") {
+    return false;
+  }
+  if (payload.feature !== undefined && (typeof payload.feature !== "string" || payload.feature.length > 128)) {
+    return false;
+  }
+  if (payload.error_type !== undefined && (typeof payload.error_type !== "string" || payload.error_type.length > 256)) {
+    return false;
+  }
+  if (payload.error_hash !== undefined && (typeof payload.error_hash !== "string" || payload.error_hash.length > 128)) {
+    return false;
+  }
+  if (
+    payload.context !== undefined &&
+    (payload.context === null || typeof payload.context !== "object" || Array.isArray(payload.context))
+  ) {
+    return false;
+  }
+  if (payload.context && Object.keys(payload.context).length > MAX_CONTEXT_ENTRIES) {
+    return false;
+  }
+  return !payload.context || Object.entries(payload.context).every(
+    ([key, value]) => typeof value === "string" && key.length <= 64 && value.length <= MAX_CONTEXT_VALUE_LENGTH,
+  );
+}
+
+function boundedInteger(value: string | null, fallback: number, min: number, max: number): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(Math.max(parsed, min), max);
+}

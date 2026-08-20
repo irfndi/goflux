@@ -19,8 +19,8 @@ func NewAwesomeOscillatorIndicator(s *series.TimeSeries, windowFast, windowSlow 
 	telemetry.ReportUsage("AwesomeOscillator", map[string]string{"window_fast": strconv.Itoa(windowFast), "window_slow": strconv.Itoa(windowSlow)})
 	return &awesomeOscillatorIndicator{
 		series:     s,
-		windowFast: windowFast,
-		windowSlow: windowSlow,
+		windowFast: safeWindow(windowFast),
+		windowSlow: safeWindow(windowSlow),
 	}
 }
 
@@ -29,7 +29,7 @@ func NewDefaultAwesomeOscillatorIndicator(s *series.TimeSeries) Indicator {
 }
 
 func (ao *awesomeOscillatorIndicator) Calculate(index int) decimal.Decimal {
-	if index < ao.windowSlow-1 {
+	if ao == nil || ao.series == nil || index < 0 || index >= len(ao.series.Candles) || index < ao.windowSlow-1 {
 		return decimal.ZERO
 	}
 
@@ -40,7 +40,7 @@ func (ao *awesomeOscillatorIndicator) Calculate(index int) decimal.Decimal {
 }
 
 func (ao *awesomeOscillatorIndicator) calculateSMA(index int, window int) decimal.Decimal {
-	if index < window-1 {
+	if ao == nil || ao.series == nil || index < 0 || index >= len(ao.series.Candles) || index < window-1 {
 		return decimal.ZERO
 	}
 
@@ -49,6 +49,9 @@ func (ao *awesomeOscillatorIndicator) calculateSMA(index int, window int) decima
 		idx := index - i
 		if idx >= 0 && idx < len(ao.series.Candles) {
 			candle := ao.series.Candles[idx]
+			if candle == nil {
+				continue
+			}
 			high := candle.MaxPrice
 			low := candle.MinPrice
 			medianPrice := high.Add(low).Div(decimal.New(2))

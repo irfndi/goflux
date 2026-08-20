@@ -34,3 +34,10 @@ func TestRenko(t *testing.T) {
 	assert.Equal(t, "104.00", renko.Candles[2].OpenPrice.FormattedString(2))
 	assert.Equal(t, "106.00", renko.Candles[2].ClosePrice.FormattedString(2))
 }
+
+func TestRenkoRejectsNonPositiveBrickSize(t *testing.T) {
+	ts := testutils.MockTimeSeriesFl(100, 102)
+	assert.Empty(t, series.Renko(ts, decimal.ZERO).Candles)
+	assert.Empty(t, series.Renko(ts, decimal.New(-1)).Candles)
+	assert.Empty(t, series.Renko(nil, decimal.ONE).Candles)
+}

@@ -1,5 +1,8 @@
 name: Performance Tests
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ main, develop ]
@@ -64,21 +67,9 @@ jobs:
 
       - name: Compare results
         run: |
-          python3 scripts/compare_benchmarks.py current_results.txt baseline_results.txt
+          python3 scripts/compare_benchmarks.py current_results.txt baseline_results.txt 0.25
 
       - name: Fail on regression
         # 0.25 = 25% threshold — shared runners have high variance; 0.1 produces frequent false positives
         run: |
           python3 scripts/check_regression.py current_results.txt baseline_results.txt 0.25
-
-      - name: Comment on PR
-        if: failure()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '⚠️ Performance regression detected!\n\nBenchmark results show performance degradation > 25%.\n\nSee detailed comparison in workflow logs.'
-            })

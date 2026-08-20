@@ -27,12 +27,18 @@ func NewAnalyzerRegistry() *AnalyzerRegistry {
 
 // Add adds an analyzer to the registry.
 func (ar *AnalyzerRegistry) Add(analyzer Analyzer) {
+	if ar == nil || analyzer == nil {
+		return
+	}
 	ar.analyzers = append(ar.analyzers, analyzer)
 }
 
 // Run executes all registered analyzers and returns the combined results.
 func (ar *AnalyzerRegistry) Run(trades []metrics.Trade, equityCurve []metrics.EquityPoint) AnalysisResult {
 	results := make(AnalysisResult)
+	if ar == nil {
+		return results
+	}
 	for _, analyzer := range ar.analyzers {
 		results[analyzer.Name()] = analyzer.Analyze(trades, equityCurve)
 	}

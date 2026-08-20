@@ -30,7 +30,7 @@ func NewSuperTrendIndicator(s *series.TimeSeries, window int, multiplier float64
 }
 
 func (st *superTrendIndicator) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(st.series.Candles) {
+	if st == nil || st.series == nil || index < 0 || index >= len(st.series.Candles) {
 		return decimal.ZERO
 	}
 
@@ -51,6 +51,11 @@ func (st *superTrendIndicator) Calculate(index int) decimal.Decimal {
 	for i := start; i <= index; i++ {
 		candle := st.series.Candles[i]
 		prevCandle := st.series.Candles[i-1]
+		if candle == nil || prevCandle == nil {
+			st.cache = append(st.cache, decimal.ZERO)
+			st.cacheTrend = append(st.cacheTrend, st.cacheTrend[i-1])
+			continue
+		}
 		atr := st.atr.Calculate(i)
 
 		median := candle.MaxPrice.Add(candle.MinPrice).Div(decimal.New(2))

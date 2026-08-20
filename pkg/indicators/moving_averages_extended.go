@@ -18,6 +18,7 @@ type vwmaIndicator struct {
 
 // NewVWMAIndicator returns a Volume Weighted Moving Average
 func NewVWMAIndicator(indicator, volume Indicator, window int) Indicator {
+	window = safeWindow(window)
 	return vwmaIndicator{indicator, volume, window}
 }
 
@@ -31,6 +32,9 @@ func NewVWMAIndicatorFromSeries(s *series.TimeSeries, window int) Indicator {
 }
 
 func (vwma vwmaIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || vwma.indicator == nil || vwma.volume == nil {
+		return decimal.ZERO
+	}
 	if index < vwma.window-1 {
 		return decimal.ZERO
 	}
@@ -62,7 +66,14 @@ func NewTimeSeriesIndicator(s *series.TimeSeries) *TimeSeriesIndicator {
 }
 
 func (tsi *TimeSeriesIndicator) Calculate(index int) decimal.Decimal {
-	return tsi.series.GetCandle(index).ClosePrice
+	if tsi == nil || tsi.series == nil {
+		return decimal.ZERO
+	}
+	candle := tsi.series.GetCandle(index)
+	if candle == nil {
+		return decimal.ZERO
+	}
+	return candle.ClosePrice
 }
 
 // RMAIndicator is Running Moving Average (used in RSI, also known as SMMA)
@@ -75,6 +86,7 @@ type rmaIndicator struct {
 }
 
 func NewRMAIndicator(indicator Indicator, window int) Indicator {
+	window = safeWindow(window)
 	return &rmaIndicator{
 		indicator:   indicator,
 		window:      window,
@@ -84,6 +96,9 @@ func NewRMAIndicator(indicator Indicator, window int) Indicator {
 }
 
 func (rma *rmaIndicator) Calculate(index int) decimal.Decimal {
+	if index < 0 || rma.indicator == nil {
+		return decimal.ZERO
+	}
 	if cachedValue := returnIfCached(rma, index, func(i int) decimal.Decimal {
 		return NewSimpleMovingAverage(rma.indicator, rma.window).Calculate(i)
 	}); cachedValue != nil {
@@ -112,6 +127,7 @@ type trimaIndicator struct {
 }
 
 func NewTRIMAIndicator(indicator Indicator, window int) Indicator {
+	window = safeWindow(window)
 	return &trimaIndicator{
 		indicator: indicator,
 		window:    window,

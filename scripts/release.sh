@@ -3,11 +3,14 @@
 set -euf -o pipefail
 
 echo -n "Version: "
-read newversion
+read -r newversion
 
-tag_count=`git tag --list | grep "$newversion" | wc -l | tr -d '[:space:]' || true`
+if [[ ! "$newversion" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+  echo "Version must be semantic version text such as 0.0.6 or 0.0.6-rc.1"
+  exit 1
+fi
 
-if [[ $tag_count -gt 0 ]]; then
+if git rev-parse --verify --quiet "refs/tags/v$newversion" >/dev/null; then
   echo "Tag: $newversion already exists"
   exit 1
 else
@@ -15,16 +18,14 @@ else
 fi
 
 echo "Update CHANGELOG.md and press enter"
-read
+read -r
 
 git add CHANGELOG.md
 
-added_count=`git status --porcelain | grep "CHANGELOG.md" | wc -l | tr -d '[:space:]' || true`
-if [[ $added_count -gt 0 ]]; then
+if ! git diff --cached --quiet -- CHANGELOG.md; then
   git commit -m"Release version $newversion"
 fi
 
 git tag "v$newversion" -m "v$newversion"
 
-git push origin main
-git push --tags
+git push origin main "v$newversion"

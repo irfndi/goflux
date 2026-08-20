@@ -14,12 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation updates
 - CONTRIBUTING.md guidelines
 - Issue and PR templates
+- Compatibility shims for the historical database scaffolds
+- Reproducible telemetry-worker dependency lockfile and authenticated payload storage
 
 ### Changed
 - Updated Go version baseline and dependencies
 - Updated all dependencies to latest versions
 - Renamed package from `techan` to `goflux`
 - Modernized Makefile
+- Corrected decimal rounding, true range/ATR initialization, drawdown ordering, and flat-market RSI behavior
+- Hardened loaders, time-period parsing, telemetry lifecycle, partial fills, short backtests, and optimizer validation
+
+### Fixed
+- Restored assignable legacy root-facade factories and zero-value safety for core trading objects
+- Replaced flaky hosted-runner wall-time performance comparisons with CodSpeed simulation mode
 
 ### Removed
 - Travis CI configuration (replaced with GitHub Actions)

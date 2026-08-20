@@ -24,6 +24,13 @@ func NewPortfolioSimulator(initialCapital, fees, slippage float64) *PortfolioSim
 
 // SimulateLongOnly simulates a long-only portfolio based on buy/sell signals
 func (ps *PortfolioSimulator) SimulateLongOnly(s *series.TimeSeries, signals []int) BacktestResult {
+	if ps == nil || s == nil || s.Length() == 0 {
+		initial := decimal.ZERO
+		if ps != nil {
+			initial = ps.InitialCapital
+		}
+		return BacktestResult{InitialCapital: initial, FinalEquity: initial}
+	}
 	// Implementation of vectorized-like simulation in Go
 	// signals: 1 = buy, -1 = sell, 0 = neutral
 
@@ -78,6 +85,23 @@ func (ps *PortfolioSimulator) SimulateLongOnly(s *series.TimeSeries, signals []i
 		} else {
 			equityCurve[i] = equity
 		}
+	}
+
+	if position.IsPositive() {
+		lastIndex := s.LastIndex()
+		lastPrice := s.GetCandle(lastIndex).ClosePrice
+		exitPrice := lastPrice.Mul(decimal.ONE.Sub(ps.Slippage))
+		profit := exitPrice.Sub(entryPrice).Mul(position)
+		fee := exitPrice.Mul(position).Mul(ps.Fees)
+		profit = profit.Sub(fee)
+		trades = append(trades, Trade{
+			EntryTime: entryIndex, EntryPrice: entryPrice,
+			ExitTime: lastIndex, ExitPrice: exitPrice,
+			Direction: "long", Quantity: position, Profit: profit,
+			ProfitPercent: profit.Div(entryPrice.Mul(position)), Duration: lastIndex - entryIndex,
+		})
+		equity = equity.Add(profit)
+		equityCurve[lastIndex] = equity
 	}
 
 	// Finalize results

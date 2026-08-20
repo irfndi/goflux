@@ -94,6 +94,9 @@ type cache struct {
 	maxSize int
 }
 
+// Cache is a bounded, concurrency-safe cache for indicator results.
+type Cache = cache
+
 func NewCache(initialSize int) *cache {
 	size := initialSize
 	if size <= 0 {
@@ -150,13 +153,31 @@ func (c *cache) Clear() {
 }
 
 func ClearCache(indicator cachedIndicator) {
+	if indicator == nil {
+		return
+	}
+	mutex := indicator.cacheMutex()
+	mutex.Lock()
+	defer mutex.Unlock()
 	indicator.setCache(make([]*decimal.Decimal, 0, indicator.windowSize()))
 }
 
 func GetCacheSize(indicator cachedIndicator) int {
+	if indicator == nil {
+		return 0
+	}
+	mutex := indicator.cacheMutex()
+	mutex.RLock()
+	defer mutex.RUnlock()
 	return len(indicator.cache())
 }
 
 func GetCacheCapacity(indicator cachedIndicator) int {
+	if indicator == nil {
+		return 0
+	}
+	mutex := indicator.cacheMutex()
+	mutex.RLock()
+	defer mutex.RUnlock()
 	return cap(indicator.cache())
 }

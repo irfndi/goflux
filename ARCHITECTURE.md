@@ -187,7 +187,7 @@ goflux/
 
 ### Unit Tests
 - Each package has `*_test.go` files
-- High coverage target: 90%+ (currently 82.5%)
+- High coverage target: 90%+; CI enforces the configured 70% minimum
 - Mock data fixtures for testing
 
 ### Integration Tests

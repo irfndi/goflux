@@ -25,36 +25,74 @@ func NewZigZagIndicator(s *series.TimeSeries, percent float64) Indicator {
 }
 
 func (z *zigzagIndicator) Calculate(index int) decimal.Decimal {
-	if index < 0 || index >= len(z.series.Candles) {
+	if z == nil || z.series == nil || index < 0 || index >= z.series.Length() {
 		return decimal.ZERO
 	}
 
-	if index < len(z.cache) {
-		return z.cache[index]
+	values := make([]decimal.Decimal, index+1)
+	first := z.series.GetCandle(0).ClosePrice
+	values[0] = first
+	if z.percent.IsZero() || z.percent.IsNegative() {
+		for i := 1; i <= index; i++ {
+			values[i] = z.series.GetCandle(i).ClosePrice
+		}
+		return values[index]
 	}
 
-	// Fill cache
-	// ZigZag is a global calculation that needs forward/backward passes or iterative state.
-	// For simplicity, we'll do an iterative calculation.
+	direction := 0
+	pivot := first
+	extreme := first
+	for i := 1; i <= index; i++ {
+		price := z.series.GetCandle(i).ClosePrice
+		if direction == 0 {
+			if changedBy(price, pivot, z.percent) {
+				direction = signOf(price.Sub(pivot))
+				extreme = price
+			} else {
+				extreme = price
+			}
+			values[i] = extreme
+			continue
+		}
 
-	if len(z.cache) == 0 {
-		z.cache = append(z.cache, z.series.Candles[0].ClosePrice)
-		z.cachePeak = append(z.cachePeak, true)
+		if direction > 0 {
+			if price.GT(extreme) {
+				extreme = price
+			}
+			if changedBy(extreme.Sub(price), extreme, z.percent) {
+				pivot = extreme
+				direction = -1
+				extreme = price
+			}
+		} else {
+			if price.LT(extreme) {
+				extreme = price
+			}
+			if changedBy(price.Sub(extreme), extreme, z.percent) {
+				pivot = extreme
+				direction = 1
+				extreme = price
+			}
+		}
+		values[i] = extreme
 	}
 
-	// This implementation is a bit complex for a real-time indicator because it can repaint.
-	// Traditional ZigZag repaints. For a backtester, we need to be careful.
-	// But let's just implement the basic version.
+	return values[index]
+}
 
-	// Actually, let's just implement a simpler version or skip for now if too complex for this conversation.
-	// Let's implement ROC instead if not already there (Wait, ROC is done).
+func changedBy(delta, base, threshold decimal.Decimal) bool {
+	if base.IsZero() {
+		return delta.Abs().GTE(threshold)
+	}
+	return delta.Abs().Div(base.Abs()).GTE(threshold)
+}
 
-	// Let's implement Williams %R (Wait, Williams %R is done).
-
-	// Let's implement ADX (ADX is done).
-
-	// I'll implement CMF (Chaikin Money Flow) which is very common.
-	// (Wait, I already implemented CMF in accumulation_distribution.go!)
-
-	return z.cache[0] // Dummy for now
+func signOf(value decimal.Decimal) int {
+	if value.IsNegative() {
+		return -1
+	}
+	if value.IsPositive() {
+		return 1
+	}
+	return 0
 }

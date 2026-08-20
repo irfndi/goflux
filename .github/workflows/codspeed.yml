@@ -28,5 +28,5 @@ jobs:
       - name: Run Go benchmarks
         uses: CodSpeedHQ/action@v4.17.0
         with:
-          mode: walltime
+          mode: simulation
           run: go test -bench=. -benchtime=1s ./...
