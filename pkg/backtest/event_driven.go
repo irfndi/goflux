@@ -133,6 +133,7 @@ type SimulatedBroker struct {
 	closedTrades  []brokerTrade
 	record        *trading.TradingRecord
 	equityHistory []decimal.Decimal
+	mark          equityMark
 	currentIndex  int
 	lastCandle    *series.Candle
 	lastExecution *trading.Order
@@ -177,6 +178,7 @@ func (b *SimulatedBroker) ProcessBar(index int, candle *series.Candle) {
 	if candle == nil {
 		return
 	}
+	b.mark.advance(candle.ClosePrice)
 
 	var remaining []*trading.Order
 	for _, order := range b.pendingOrders {
@@ -194,7 +196,7 @@ func (b *SimulatedBroker) ProcessBar(index int, candle *series.Candle) {
 	}
 	b.pendingOrders = remaining
 	if len(b.equityHistory) > 0 {
-		b.equityHistory[len(b.equityHistory)-1] = b.markedEquity(candle)
+		b.equityHistory[len(b.equityHistory)-1] = b.Equity.Add(b.mark.value)
 	}
 }
 
@@ -239,30 +241,6 @@ func (b *SimulatedBroker) canEnterShort() bool {
 
 func (b *SimulatedBroker) hasOpenPosition() bool {
 	return len(b.openPositions) > 0
-}
-
-func (b *SimulatedBroker) markedEquity(candle *series.Candle) decimal.Decimal {
-	if candle == nil {
-		return b.Equity
-	}
-
-	marked := b.Equity
-	for _, bp := range b.openPositions {
-		if bp == nil || bp.pos == nil || !bp.remaining.IsPositive() {
-			continue
-		}
-		entryOrder := bp.pos.EntranceOrder()
-		entryPrice := entryOrder.FilledPrice
-		if entryPrice.IsZero() {
-			entryPrice = entryOrder.Price
-		}
-		if bp.pos.IsLong() {
-			marked = marked.Add(candle.ClosePrice.Sub(entryPrice).Mul(bp.remaining))
-		} else if bp.pos.IsShort() {
-			marked = marked.Add(entryPrice.Sub(candle.ClosePrice).Mul(bp.remaining))
-		}
-	}
-	return marked
 }
 
 func (b *SimulatedBroker) tryFill(order *trading.Order, candle *series.Candle) bool {
@@ -385,6 +363,17 @@ func (b *SimulatedBroker) handleFilledOrder(order *trading.Order, index int) {
 				entry.Amount = entry.Amount.Add(quantity)
 				entry.FilledAmount = entry.FilledAmount.Add(quantity)
 				bp.remaining = bp.remaining.Add(quantity)
+				if b.lastCandle != nil {
+					entryPrice := entry.FilledPrice
+					if entryPrice.IsZero() {
+						entryPrice = entry.Price
+					}
+					direction := "long"
+					if bp.pos.IsShort() {
+						direction = "short"
+					}
+					b.mark.add(direction, entryPrice, quantity, b.lastCandle.ClosePrice)
+				}
 			}
 		}
 		return
@@ -405,6 +394,17 @@ func (b *SimulatedBroker) enterPosition(order *trading.Order, index int) {
 	b.openPositions = append(b.openPositions, &brokerPosition{
 		pos: pos, entryIndex: index, remaining: effectiveQty(order),
 	})
+	if b.lastCandle != nil {
+		direction := "long"
+		if pos.IsShort() {
+			direction = "short"
+		}
+		entryPrice := order.FilledPrice
+		if entryPrice.IsZero() {
+			entryPrice = order.Price
+		}
+		b.mark.add(direction, entryPrice, effectiveQty(order), b.lastCandle.ClosePrice)
+	}
 
 	b.record.Operate(*order)
 }
@@ -421,6 +421,17 @@ func (b *SimulatedBroker) exitPosition(bp *brokerPosition, order *trading.Order,
 	}
 	if qty.IsZero() {
 		return
+	}
+	if b.lastCandle != nil {
+		direction := "long"
+		if bp.pos.IsShort() {
+			direction = "short"
+		}
+		entryPrice := entryOrder.FilledPrice
+		if entryPrice.IsZero() {
+			entryPrice = entryOrder.Price
+		}
+		b.mark.remove(direction, entryPrice, qty, b.lastCandle.ClosePrice)
 	}
 	var profit decimal.Decimal
 	if bp.pos.IsLong() {

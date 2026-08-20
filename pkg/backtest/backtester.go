@@ -101,11 +101,12 @@ func (b *Backtester) Run(config BacktestConfig) BacktestResult {
 	trades := make([]Trade, 0)
 	equityCurve := make([]decimal.Decimal, len(b.series.Candles))
 	equity := config.InitialCapital
+	mark := equityMark{value: decimal.ZERO}
 
 	record := trading.NewTradingRecord()
 
 	for i := 0; i < len(b.series.Candles); i++ {
-		b.step(i, &positions, &trades, equityCurve, &equity, record, config)
+		b.step(i, &positions, &trades, equityCurve, &equity, &mark, record, config)
 	}
 
 	b.finalizeOpenPositions(&positions, &trades, &equity, config)
@@ -157,6 +158,7 @@ func (b *Backtester) step(
 	trades *[]Trade,
 	equityCurve []decimal.Decimal,
 	equity *decimal.Decimal,
+	mark *equityMark,
 	record *trading.TradingRecord,
 	config BacktestConfig,
 ) {
@@ -167,14 +169,11 @@ func (b *Backtester) step(
 	}
 
 	currentPrice := candle.ClosePrice
+	mark.advance(currentPrice)
 
-	b.closePositionsByStops(index, currentPrice, positions, trades, equity, record, config)
-	b.applyStrategy(index, currentPrice, positions, trades, equity, record, config)
-	markedEquity := *equity
-	for _, position := range *positions {
-		markedEquity = markedEquity.Add(b.positionProfit(position, currentPrice))
-	}
-	equityCurve[index] = markedEquity
+	b.closePositionsByStops(index, currentPrice, positions, trades, equity, mark, record, config)
+	b.applyStrategy(index, currentPrice, positions, trades, equity, mark, record, config)
+	equityCurve[index] = equity.Add(mark.value)
 }
 
 func (b *Backtester) closePositionsByStops(
@@ -183,6 +182,7 @@ func (b *Backtester) closePositionsByStops(
 	positions *[]Position,
 	trades *[]Trade,
 	equity *decimal.Decimal,
+	mark *equityMark,
 	record *trading.TradingRecord,
 	config BacktestConfig,
 ) {
@@ -192,6 +192,7 @@ func (b *Backtester) closePositionsByStops(
 			continue
 		}
 
+		mark.remove(pos.Direction, pos.EntryPrice, pos.Quantity, currentPrice)
 		exitPrice := b.exitPrice(currentPrice, pos.Direction, config)
 		profit := b.positionProfit(pos, exitPrice)
 		*trades = append(*trades, b.makeTrade(pos, index, exitPrice, profit))
@@ -218,14 +219,15 @@ func (b *Backtester) applyStrategy(
 	positions *[]Position,
 	trades *[]Trade,
 	equity *decimal.Decimal,
+	mark *equityMark,
 	record *trading.TradingRecord,
 	config BacktestConfig,
 ) {
 	if b.strategy.ShouldEnter(index, record) {
 		if config.AllowLong {
-			b.openLong(index, currentPrice, positions, equity, record, config)
+			b.openLong(index, currentPrice, positions, equity, mark, record, config)
 		} else if config.AllowShort {
-			b.openShort(index, currentPrice, positions, equity, record, config)
+			b.openShort(index, currentPrice, positions, equity, mark, record, config)
 		}
 		return
 	}
@@ -234,7 +236,7 @@ func (b *Backtester) applyStrategy(
 		return
 	}
 
-	b.closeAllPositions(index, currentPrice, positions, trades, equity, record, config)
+	b.closeAllPositions(index, currentPrice, positions, trades, equity, mark, record, config)
 }
 
 func (b *Backtester) openLong(
@@ -242,6 +244,7 @@ func (b *Backtester) openLong(
 	currentPrice decimal.Decimal,
 	positions *[]Position,
 	equity *decimal.Decimal,
+	mark *equityMark,
 	record *trading.TradingRecord,
 	config BacktestConfig,
 ) {
@@ -257,6 +260,7 @@ func (b *Backtester) openLong(
 		Direction:  "long",
 		Quantity:   quantity,
 	})
+	mark.add("long", entryPrice, quantity, currentPrice)
 
 	record.Operate(trading.Order{
 		Side:   trading.BUY,
@@ -271,6 +275,7 @@ func (b *Backtester) openShort(
 	currentPrice decimal.Decimal,
 	positions *[]Position,
 	equity *decimal.Decimal,
+	mark *equityMark,
 	record *trading.TradingRecord,
 	config BacktestConfig,
 ) {
@@ -282,6 +287,7 @@ func (b *Backtester) openShort(
 	*positions = append(*positions, Position{
 		EntryTime: index, EntryPrice: entryPrice, Direction: "short", Quantity: quantity,
 	})
+	mark.add("short", entryPrice, quantity, currentPrice)
 	record.Operate(trading.Order{Side: trading.SELL, Price: entryPrice, Amount: quantity})
 	*equity = equity.Sub(config.Commission)
 }
@@ -292,11 +298,13 @@ func (b *Backtester) closeAllPositions(
 	positions *[]Position,
 	trades *[]Trade,
 	equity *decimal.Decimal,
+	mark *equityMark,
 	record *trading.TradingRecord,
 	config BacktestConfig,
 ) {
 	for j := len(*positions) - 1; j >= 0; j-- {
 		pos := (*positions)[j]
+		mark.remove(pos.Direction, pos.EntryPrice, pos.Quantity, exitPrice)
 		adjustedExitPrice := b.exitPrice(exitPrice, pos.Direction, config)
 		profit := b.positionProfit(pos, adjustedExitPrice)
 		*trades = append(*trades, b.makeTrade(pos, exitTime, adjustedExitPrice, profit))
