@@ -70,22 +70,13 @@ func (i *ichimokuIndicator) calculateKijunSen(index int) decimal.Decimal {
 }
 
 func (i *ichimokuIndicator) calculateHighestHighLowestLow(index int, period int) decimal.Decimal {
-	if index < period-1 {
+	if i == nil || i.series == nil || index < period-1 {
 		return decimal.ZERO
 	}
 
-	highestHigh := i.high.Calculate(index - period + 1)
-	lowestLow := i.low.Calculate(index - period + 1)
-
-	for j := index - period + 2; j <= index; j++ {
-		high := i.high.Calculate(j)
-		low := i.low.Calculate(j)
-		if high.GT(highestHigh) {
-			highestHigh = high
-		}
-		if low.LT(lowestLow) {
-			lowestLow = low
-		}
+	highestHigh, lowestLow, ok := i.series.HighLow(index-period+1, index+1)
+	if !ok {
+		return decimal.ZERO
 	}
 
 	return highestHigh.Add(lowestLow).Div(decimal.New(2))

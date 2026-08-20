@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/irfndi/goflux/pkg/decimal"
+	"github.com/irfndi/goflux/pkg/math"
 	"github.com/irfndi/goflux/pkg/series"
 	"github.com/irfndi/goflux/pkg/telemetry"
 )
@@ -21,6 +22,7 @@ type kIndicator struct {
 	minValue   Indicator
 	maxValue   Indicator
 	window     int
+	series     *series.TimeSeries
 }
 
 // NewFastStochasticIndicator returns a derivative Indicator which returns the fast stochastic indicator (%K) for the
@@ -33,10 +35,26 @@ func NewFastStochasticIndicator(series *series.TimeSeries, timeframe int) Indica
 		minValue:   NewMinimumValueIndicator(NewLowPriceIndicator(series), timeframe),
 		maxValue:   NewMaximumValueIndicator(NewHighPriceIndicator(series), timeframe),
 		window:     timeframe,
+		series:     series,
 	}
 }
 
 func (k kIndicator) Calculate(index int) decimal.Decimal {
+	if k.series != nil {
+		start := 0
+		if k.window > 0 {
+			start = math.Max(index-k.window+1, 0)
+		}
+		maxVal, minVal, closeVal, ok := k.series.HighLowClose(start, index+1)
+		if !ok {
+			return decimal.ZERO
+		}
+		if minVal.EQ(maxVal) {
+			return decimal.New(flatStochasticValue)
+		}
+		return closeVal.Sub(minVal).Div(maxVal.Sub(minVal)).Mul(decimal.New(100))
+	}
+
 	closeVal := k.closePrice.Calculate(index)
 	minVal := k.minValue.Calculate(index)
 	maxVal := k.maxValue.Calculate(index)

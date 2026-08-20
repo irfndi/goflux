@@ -3,6 +3,8 @@ package series
 import (
 	"fmt"
 	"sync"
+
+	"github.com/irfndi/goflux/pkg/decimal"
 )
 
 // TimeSeries represents an array of candles with thread-safe operations
@@ -125,6 +127,94 @@ func (ts *TimeSeries) GetCandlePair(index int) (current, previous *Candle) {
 		previous = ts.Candles[index-1]
 	}
 	return current, previous
+}
+
+// CandleRange returns a shallow copy of the candle references in [start, end).
+// The range is captured under one read lock, making it safe for callers that
+// need to inspect several adjacent candles while avoiding repeated locking.
+func (ts *TimeSeries) CandleRange(start, end int) []*Candle {
+	if ts == nil {
+		return nil
+	}
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
+	if start < 0 {
+		start = 0
+	}
+	if end > len(ts.Candles) {
+		end = len(ts.Candles)
+	}
+	if start >= end {
+		return nil
+	}
+
+	rangeCandles := make([]*Candle, end-start)
+	copy(rangeCandles, ts.Candles[start:end])
+	return rangeCandles
+}
+
+// HighLow returns the highest high and lowest low in [start, end).
+func (ts *TimeSeries) HighLow(start, end int) (highest, lowest decimal.Decimal, ok bool) {
+	if ts == nil {
+		return decimal.ZERO, decimal.ZERO, false
+	}
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
+	start, end, ok = normalizeStrictRange(start, end, len(ts.Candles))
+	if !ok {
+		return decimal.ZERO, decimal.ZERO, false
+	}
+	return highLowUnsafe(ts.Candles[start:end])
+}
+
+// HighLowClose returns the highest high, lowest low, and closing price of the
+// final candle in [start, end). All values are read under one lock.
+func (ts *TimeSeries) HighLowClose(start, end int) (highest, lowest, close decimal.Decimal, ok bool) {
+	if ts == nil {
+		return decimal.ZERO, decimal.ZERO, decimal.ZERO, false
+	}
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
+	start, end, ok = normalizeStrictRange(start, end, len(ts.Candles))
+	if !ok || ts.Candles[end-1] == nil {
+		return decimal.ZERO, decimal.ZERO, decimal.ZERO, false
+	}
+	highest, lowest, ok = highLowUnsafe(ts.Candles[start:end])
+	if !ok {
+		return decimal.ZERO, decimal.ZERO, decimal.ZERO, false
+	}
+	return highest, lowest, ts.Candles[end-1].ClosePrice, true
+}
+
+func normalizeStrictRange(start, end, length int) (int, int, bool) {
+	if start < 0 {
+		start = 0
+	}
+	return start, end, start < end && end <= length
+}
+
+func highLowUnsafe(candles []*Candle) (highest, lowest decimal.Decimal, ok bool) {
+	for _, candle := range candles {
+		if candle == nil {
+			continue
+		}
+		if !ok {
+			highest = candle.MaxPrice
+			lowest = candle.MinPrice
+			ok = true
+			continue
+		}
+		if candle.MaxPrice.GT(highest) {
+			highest = candle.MaxPrice
+		}
+		if candle.MinPrice.LT(lowest) {
+			lowest = candle.MinPrice
+		}
+	}
+	return highest, lowest, ok
 }
 
 // Length returns the number of candles in the series

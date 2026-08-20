@@ -147,3 +147,31 @@ func TestTimeSeries_GetCandlePair(t *testing.T) {
 	assert.Nil(t, current)
 	assert.Nil(t, previous)
 }
+
+func TestTimeSeries_CandleRange(t *testing.T) {
+	ts := series.NewTimeSeries()
+	first := series.NewCandle(series.NewTimePeriod(time.Now(), time.Minute))
+	second := series.NewCandle(series.NewTimePeriod(time.Now().Add(time.Minute), time.Minute))
+	ts.AddCandle(first)
+	ts.AddCandle(second)
+
+	rangeCandles := ts.CandleRange(-1, 10)
+	assert.Len(t, rangeCandles, 2)
+	assert.Same(t, first, rangeCandles[0])
+	assert.Same(t, second, rangeCandles[1])
+	assert.Empty(t, ts.CandleRange(2, 3))
+
+	highest, lowest, ok := ts.HighLow(0, 2)
+	assert.True(t, ok)
+	assert.Equal(t, first.MaxPrice, highest)
+	assert.Equal(t, first.MinPrice, lowest)
+
+	highest, lowest, close, ok := ts.HighLowClose(0, 2)
+	assert.True(t, ok)
+	assert.Equal(t, highest, first.MaxPrice)
+	assert.Equal(t, lowest, first.MinPrice)
+	assert.Equal(t, second.ClosePrice, close)
+
+	_, _, _, ok = ts.HighLowClose(0, 3)
+	assert.False(t, ok)
+}
