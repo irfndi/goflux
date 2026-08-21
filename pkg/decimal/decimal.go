@@ -218,29 +218,27 @@ func (d Decimal) Pow(y int) Decimal {
 		return ONE
 	}
 
-	var absY uint
-	neg := false
-	if y < 0 {
-		// Convert through y+1 so math.MinInt is handled without overflowing
-		// the signed int range before it is converted to an unsigned value.
-		absY = uint(-(y + 1))
-		absY++
-		neg = true
-	} else {
-		absY = uint(y)
+	exponent := y
+	neg := exponent < 0
+	if neg {
+		// Keep the exponent signed so math.MinInt is handled without an
+		// overflowing conversion to an unsigned integer. The omitted one
+		// factor is multiplied back into the result after exponentiation.
+		exponent = -(exponent + 1)
 	}
 
 	result := ONE
 	base := d
-	for absY > 0 {
-		if absY&1 == 1 {
+	for exponent > 0 {
+		if exponent%2 == 1 {
 			result = result.Mul(base)
 		}
 		base = base.Mul(base)
-		absY >>= 1
+		exponent /= 2
 	}
 
 	if neg {
+		result = result.Mul(d)
 		return ONE.Div(result)
 	}
 	return result

@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/irfndi/goflux?utm_source=badge)
 
-**GoFlux** is a modern technical analysis library for Go, forked from [techan](https://github.com/sdcoffey/techan) by sdcoffey. This project aims to revitalize and expand the library with modern Go best practices, comprehensive testing, and additional technical analysis indicators.
+**GoFlux** is a modern technical analysis library for Go. It began as a fork of [techan](https://github.com/sdcoffey/techan) by sdcoffey and continues its evolution as an independently developed project with modern Go practices, comprehensive testing, and additional technical analysis indicators.
 
 ## Features 
 

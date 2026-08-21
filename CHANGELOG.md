@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [0.0.8] - 2026-08-21
+
 ### Added
 - Forked from [techan](https://github.com/sdcoffey/techan) by sdcoffey
 - GitHub Actions CI/CD pipelines
@@ -24,10 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modernized Makefile
 - Corrected decimal rounding, true range/ATR initialization, drawdown ordering, and flat-market RSI behavior
 - Hardened loaders, time-period parsing, telemetry lifecycle, partial fills, short backtests, and optimizer validation
+- Incrementally tracked marked equity during backtests to reduce avoidable recalculation
+- Upgraded telemetry worker tooling and its transitive security fixes
 
 ### Fixed
 - Restored assignable legacy root-facade factories and zero-value safety for core trading objects
 - Replaced flaky hosted-runner wall-time performance comparisons with CodSpeed simulation mode
+- Corrected reference-value tolerance checks and zero-reference handling
 
 ### Removed
 - Travis CI configuration (replaced with GitHub Actions)

@@ -1,5 +1,7 @@
 package reftest
 
+import "math"
+
 // ReferenceTestData contains known values from TA-Lib for validation
 type ReferenceTestData struct {
 	Name           string
@@ -48,11 +50,16 @@ type ReferenceValue struct {
 
 // ValidateAgainstReference compares calculated value against reference
 func ValidateAgainstReference(calculated, expected, tolerance float64) bool {
+	tolerance = math.Abs(tolerance)
 	if tolerance == 0 {
 		tolerance = 0.01 // Default 1% tolerance
 	}
 
+	if expected == 0 {
+		return math.Abs(calculated) <= tolerance
+	}
+
 	// Calculate percentage difference
-	diff := (calculated - expected) / expected
-	return diff < tolerance || diff > -tolerance
+	diff := math.Abs((calculated - expected) / expected)
+	return diff <= tolerance
 }
