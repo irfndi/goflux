@@ -9,6 +9,9 @@ coverage.txt
 coverage.html
 /basic_example
 
+# AGENTS.md is canonical; keep the local Claude compatibility symlink untracked.
+CLAUDE.md
+
 # Beads issue tracker
 # beads-sync branch is managed by Beads daemon in .git/worktrees/
 # No need to ignore in working directory (it's a separate branch)
